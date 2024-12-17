@@ -57,7 +57,7 @@ router.get('/:id', [auth, validateObjectId], async (req, res) => {
 router.post('/', auth, async (req, res) => {
   try {
     const account = new Account({
-      name: req.body.name || 'New Account',
+      name: req.body.name || '',
       userId: req.user.id,
       position: (await Account.countDocuments({ userId: req.user.id }))
     });

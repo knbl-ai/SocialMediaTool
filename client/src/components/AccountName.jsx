@@ -7,13 +7,16 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 const AccountName = ({ account, onNameUpdate }) => {
   const [name, setName] = useState('');
-  const fileInputRef = useRef(null);
 
   useEffect(() => {
-    if (account?.name !== undefined) {
+    if (account?.name) {
       setName(account.name);
+    } else {
+      setName('');
     }
   }, [account]);
+
+  const fileInputRef = useRef(null);
 
   const debouncedUpdate = useCallback(
     debounce((value) => {
