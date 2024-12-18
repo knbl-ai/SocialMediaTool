@@ -166,6 +166,54 @@ router.post('/:id/logo', [auth, validateObjectId], upload.single('logo'), async 
   }
 });
 
+// Generate templates for an account
+router.post('/:id/generate-templates', auth, async (req, res) => {
+  try {
+    const account = await Account.findById(req.params.id);
+    if (!account) {
+      return res.status(404).json({ message: 'Account not found' });
+    }
+
+    // Make request to templates API
+    const response = await axios.post(
+      `${process.env.TEMPLATES_IMAGES_API}/api/template/generate-all`,
+      {
+        fields: {
+          backgroundColor1: account.colors.main,
+          backgroundColor2: account.colors.secondary,
+          titleColor: account.colors.title,
+          subtitleColor: account.colors.text,
+          logoURL: account.logoUrl
+        }
+      }
+    );
+
+    if (response.data.success) {
+      const newTemplateUrls = response.data.results.map(result => result.imageUrl);
+      
+      // Update account with new template URLs
+      account.templatesURLs = newTemplateUrls;
+      await account.save();
+
+      res.json({ 
+        success: true, 
+        templatesURLs: newTemplateUrls 
+      });
+    } else {
+      res.status(400).json({ 
+        success: false, 
+        message: 'Failed to generate templates' 
+      });
+    }
+  } catch (error) {
+    console.error('Error generating templates:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error while generating templates' 
+    });
+  }
+});
+
 // Delete an account
 router.delete('/:id', [auth, validateObjectId], async (req, res) => {
   try {
