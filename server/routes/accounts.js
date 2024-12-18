@@ -1,19 +1,14 @@
 import express from 'express';
 import auth from '../middleware/auth.js';
+import { validateObjectId } from '../middleware/validateObjectId.js';
 import Account from '../models/Account.js';
 import mongoose from 'mongoose';
 import multer from 'multer';
 import { uploadImage } from '../config/storage.js';
+import axios from 'axios';
+import { formatUrl } from '../utils/urlHelper.js';
 
 const router = express.Router();
-
-// Middleware to validate ObjectId
-const validateObjectId = (req, res, next) => {
-  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    return res.status(400).json({ message: 'Invalid account ID' });
-  }
-  next();
-};
 
 // Configure multer for memory storage
 const upload = multer({
@@ -87,6 +82,48 @@ router.patch('/:id', [auth, validateObjectId], async (req, res) => {
   }
 });
 
+// Analyze company website
+router.post('/:id/analyze', [auth, validateObjectId], async (req, res) => {
+  try {
+    const { url } = req.body;
+    if (!url) {
+      return res.status(400).json({ message: 'URL is required' });
+    }
+
+    const account = await Account.findOne({ _id: req.params.id, userId: req.user.id });
+    if (!account) {
+      return res.status(404).json({ message: 'Account not found' });
+    }
+
+    // Format the URL before sending to external API
+    const formattedUrl = formatUrl(url);
+    if (!formattedUrl) {
+      return res.status(400).json({ message: 'Invalid URL format' });
+    }
+
+    // Save the formatted URL to the account
+    account.websiteUrl = formattedUrl;
+    
+    // Make request to external API
+    const response = await axios.post(
+      `${process.env.COMPANY_ANALYZER_API}/api/analyze`, 
+      { url: formattedUrl }
+    );
+
+    if (response.data?.summary) {
+      account.accountReview = response.data.summary;
+      const updatedAccount = await account.save();
+      res.json(updatedAccount);
+    } else {
+      res.status(400).json({ message: 'Failed to analyze website' });
+    }
+  } catch (error) {
+    console.error('Error analyzing website:', error);
+    const message = error.response?.data?.message || 'Failed to analyze website';
+    res.status(500).json({ message });
+  }
+});
+
 // Upload account logo
 router.post('/:id/logo', [auth, validateObjectId], upload.single('logo'), async (req, res) => {
   try {
@@ -117,7 +154,7 @@ router.delete('/:id', [auth, validateObjectId], async (req, res) => {
     if (!account) {
       return res.status(404).json({ message: 'Account not found' });
     }
-    await Account.deleteOne({ _id: req.params.id });
+    await account.deleteOne();
     res.json({ message: 'Account deleted' });
   } catch (error) {
     console.error('Error deleting account:', error);
