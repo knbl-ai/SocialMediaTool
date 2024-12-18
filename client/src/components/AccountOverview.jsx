@@ -82,7 +82,8 @@ const AccountOverview = ({ account, onUpdate }) => {
         <Button
           onClick={handleAnalyze}
           disabled={isAnalyzing || !websiteUrl}
-          className="shrink-0"
+          variant="outline"
+          className="shrink-0 bg-gray-50 hover:bg-gray-100"
         >
           {isAnalyzing ? 'ANALYZING...' : 'ANALYZE WEBSITE'}
         </Button>
@@ -91,7 +92,7 @@ const AccountOverview = ({ account, onUpdate }) => {
         value={accountReview}
         onChange={handleReviewChange}
         placeholder="Account review will appear here"
-        className="w-full h-40 px-4 py-2 rounded-md bg-gray-50 focus:outline-none resize-none"
+        className="w-full h-40 px-4 py-2 rounded-md bg-gray-50 focus:outline-none resize-none h-44"
       />
     </div>
   );
