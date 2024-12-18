@@ -67,14 +67,33 @@ router.post('/', auth, async (req, res) => {
 // Update an account
 router.patch('/:id', [auth, validateObjectId], async (req, res) => {
   try {
+    const { colors, ...otherUpdates } = req.body;
+    
+    // Validate colors if they are being updated
+    if (colors) {
+      const requiredColors = ['main', 'secondary', 'title', 'text'];
+      const hasAllColors = requiredColors.every(color => 
+        typeof colors[color] === 'string' && 
+        colors[color].match(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/)
+      );
+      
+      if (!hasAllColors) {
+        return res.status(400).json({ 
+          message: 'Invalid colors format. All colors must be valid hex values.' 
+        });
+      }
+    }
+
     const account = await Account.findOneAndUpdate(
       { _id: req.params.id, userId: req.user.id },
-      { $set: req.body },
+      { $set: { ...otherUpdates, ...(colors && { colors }) } },
       { new: true }
     );
+
     if (!account) {
       return res.status(404).json({ message: 'Account not found' });
     }
+
     res.json(account);
   } catch (error) {
     console.error('Error updating account:', error);

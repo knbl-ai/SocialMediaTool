@@ -75,12 +75,12 @@ const AccountDashboard = () => {
         </div>
         <Button 
           onClick={handleBack}
-          variant="ghost"
+          variant="outline"
           size="icon"
-          className="rounded-full hover:bg-gray-100"
+          className="rounded-full hover:bg-gray-100 text-gray-500"
           aria-label="Back to Accounts"
         >
-          <ArrowLeft className="h-6 w-6 text-gray-600" />
+          <ArrowLeft className="h-6 w-6" />
         </Button>
       </div>
       {error && (
