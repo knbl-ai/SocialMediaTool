@@ -93,13 +93,13 @@ const AccountName = ({ account, onNameUpdate }) => {
         />
       </div>
       
-      <div className='flex items-center justify-center w-60'>
+      <div className='flex items-center justify-center'>
         <input
           type="text"
           value={name}
           onChange={handleNameChange}
           placeholder="Account Name"
-          className="text-3xl font-bold bg-transparent border-none focus:border-none focus:outline-none focus:ring-0 p-0 h-auto text-center
+          className="text-3xl font-bold bg-transparent border-none focus:border-none focus:outline-none focus:ring-0 p-0 h-auto text-center w-60
                    relative
                    after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-1
                    after:bg-gradient-to-r after:from-red-500 after:via-yellow-500 after:via-green-500 after:via-blue-500 after:to-purple-500"
