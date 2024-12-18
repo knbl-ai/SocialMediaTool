@@ -20,6 +20,8 @@ const AccountTemplates = ({ accountId, logoUrl }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imageModalOpen, setImageModalOpen] = useState(false);
 
   useEffect(() => {
     fetchColors();
@@ -200,15 +202,38 @@ const AccountTemplates = ({ accountId, logoUrl }) => {
               key={index}
               className="relative group flex-shrink-0"
             >
-              <img
-                src={imageUrl}
-                alt={`Template ${index + 1}`}
-                className="h-[150px] w-auto object-cover rounded-lg border border-gray-200 transition-transform hover:scale-105"
+              <img 
+                src={imageUrl} 
+                alt={`Template ${index + 1}`} 
+                className="w-40 h-40 object-cover rounded-lg shadow-md cursor-pointer hover:opacity-90 transition-opacity"
+                onClick={() => {
+                  setSelectedImage(imageUrl);
+                  setImageModalOpen(true);
+                }}
               />
             </div>
           ))}
         </div>
       </div>
+
+      {/* Image Modal */}
+      <Dialog.Root open={imageModalOpen} onOpenChange={setImageModalOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 bg-black/80 backdrop-blur-sm" />
+          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-transparent p-6 rounded-lg max-w-[90vw] max-h-[90vh] w-auto h-auto">
+            <div className="relative">
+              <img 
+                src={selectedImage} 
+                alt="Template Preview" 
+                className="max-w-full max-h-[80vh] object-contain rounded-lg"
+              />
+              <Dialog.Close className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center text-white cursor-pointer">
+                ×
+              </Dialog.Close>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </div>
   );
 };
