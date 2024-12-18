@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import * as Dialog from '@radix-ui/react-dialog';
 import { HexColorPicker } from 'react-colorful';
-import { IoRefreshOutline } from 'react-icons/io5';
+import { RefreshCw } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -103,76 +103,78 @@ const AccountTemplates = ({ accountId, logoUrl }) => {
 
   return (
     <div className="w-full h-full flex flex-col">
-      <div className="flex items-center justify-between mb-4 px-4">
-        <div className="flex items-center gap-6">
-          {colorEntries.map(([key, value]) => (
-            <Dialog.Root 
-              key={key} 
-              open={isOpen && selectedColor === key}
-              onOpenChange={(open) => {
-                setIsOpen(open);
-                if (open) {
-                  setSelectedColor(key);
-                  setInputColor(value.toUpperCase());
-                }
-              }}
-            >
-              <div className="flex flex-col items-center gap-2">
-                <label className="text-xs text-gray-500 capitalize">{key}</label>
-                <Dialog.Trigger asChild>
-                  <div 
-                    className="w-10 h-10 rounded-full border border-gray-200 transition-transform hover:scale-110 cursor-pointer"
-                    style={{ backgroundColor: value }}
-                  />
-                </Dialog.Trigger>
-              </div>
+      <div className="flex items-center justify-center gap-6 mb-4">
+        {colorEntries.map(([key, value]) => (
+          <Dialog.Root 
+            key={key} 
+            open={isOpen && selectedColor === key}
+            onOpenChange={(open) => {
+              setIsOpen(open);
+              if (open) {
+                setSelectedColor(key);
+                setInputColor(value.toUpperCase());
+              }
+            }}
+          >
+            <div className="flex flex-col items-center">
+              <label className="text-xs text-gray-500 capitalize mb-2">{key}</label>
+              <Dialog.Trigger asChild>
+                <div 
+                  className="w-10 h-10 rounded-full border border-gray-200 transition-transform hover:scale-110 cursor-pointer"
+                  style={{ backgroundColor: value }}
+                />
+              </Dialog.Trigger>
+            </div>
 
-              <Dialog.Portal>
-                <Dialog.Overlay className="fixed inset-0 bg-black/50" />
-                <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white p-6 rounded-lg shadow-lg">
-                  <Dialog.Title className="text-lg font-medium mb-4">
-                    Choose {key} Color
-                  </Dialog.Title>
-                  <div className="flex flex-col gap-4">
-                    <HexColorPicker
-                      color={value}
-                      onChange={(newColor) => {
-                        handleColorChange(key, newColor);
-                        setInputColor(newColor.toUpperCase());
-                      }}
+            <Dialog.Portal>
+              <Dialog.Overlay className="fixed inset-0 bg-black/50" />
+              <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white p-6 rounded-lg shadow-lg">
+                <Dialog.Title className="text-lg font-medium mb-4">
+                  Choose {key} Color
+                </Dialog.Title>
+                <div className="flex flex-col gap-4">
+                  <HexColorPicker
+                    color={value}
+                    onChange={(newColor) => {
+                      handleColorChange(key, newColor);
+                      setInputColor(newColor.toUpperCase());
+                    }}
+                  />
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={inputColor}
+                      onChange={(e) => handleInputChange(e, key)}
+                      placeholder="#000000"
+                      className="px-3 py-1 border border-gray-200 rounded-md text-sm focus:outline-none focus:border-blue-300 w-28 font-mono uppercase bg-gray-50"
+                      maxLength={7}
                     />
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={inputColor}
-                        onChange={(e) => handleInputChange(e, key)}
-                        placeholder="#000000"
-                        className="px-3 py-1 border border-gray-200 rounded-md text-sm focus:outline-none focus:border-blue-300 w-28 font-mono uppercase bg-gray-50"
-                        maxLength={7}
-                      />
-                      <div
-                        className="w-8 h-8 rounded-md"
-                        style={{ backgroundColor: value }}
-                      />
-                    </div>
+                    <div
+                      className="w-8 h-8 rounded-md"
+                      style={{ backgroundColor: value }}
+                    />
                   </div>
-                  <div className="mt-4 flex justify-end">
-                    <Dialog.Close className="px-4 py-2 text-sm font-medium bg-gray-50 text-gray-600 hover:bg-gray-100 rounded-md transition-colors">
-                      Done
-                    </Dialog.Close>
-                  </div>
-                </Dialog.Content>
-              </Dialog.Portal>
-            </Dialog.Root>
-          ))}
+                </div>
+                <div className="mt-4 flex justify-end">
+                  <Dialog.Close className="px-4 py-2 text-sm font-medium bg-gray-50 text-gray-600 hover:bg-gray-100 rounded-md transition-colors">
+                    Done
+                  </Dialog.Close>
+                </div>
+              </Dialog.Content>
+            </Dialog.Portal>
+          </Dialog.Root>
+        ))}
+        <div className="flex flex-col items-center">
+          <div className="h-[18px] mb-2"></div>
+          <button
+            onClick={generateTemplates}
+            disabled={isGenerating}
+            className="rounded-full bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-all duration-200 flex items-center justify-center h-15 w-15"
+            aria-label="Generate templates"
+          >
+            <RefreshCw size={20} className={`text-gray-600 ${isGenerating ? 'animate-spin' : ''}`} />
+          </button>
         </div>
-        <button
-          onClick={generateTemplates}
-          disabled={isGenerating}
-          className="p-2 bg-gray-50 hover:bg-gray-100 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <IoRefreshOutline className={`w-6 h-6 text-gray-600 ${isGenerating ? 'animate-spin' : ''}`} />
-        </button>
       </div>
       
       <div className="flex-1 flex justify-center overflow-x-auto py-2">
