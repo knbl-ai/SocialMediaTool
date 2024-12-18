@@ -43,4 +43,42 @@ export const uploadImage = async (file) => {
   }
 };
 
+export const deleteFile = async (fileUrl) => {
+  try {
+    // Extract filename from URL
+    const url = new URL(fileUrl);
+    const fileName = url.pathname.split('/').pop();
+    
+    // Delete the file
+    await bucket.file(fileName).delete();
+    console.log(`Successfully deleted file: ${fileName}`);
+    return true;
+  } catch (error) {
+    console.error(`Error deleting file ${fileUrl}:`, error);
+    return false;
+  }
+};
+
+export const deleteFiles = async (fileUrls) => {
+  if (!Array.isArray(fileUrls) || fileUrls.length === 0) return;
+
+  const results = await Promise.all(
+    fileUrls.map(async (url) => {
+      try {
+        await deleteFile(url);
+        return { url, success: true };
+      } catch (error) {
+        return { url, success: false, error };
+      }
+    })
+  );
+
+  const failed = results.filter(r => !r.success);
+  if (failed.length > 0) {
+    console.error('Some files failed to delete:', failed);
+  }
+
+  return results;
+};
+
 export default storage;

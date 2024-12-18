@@ -26,15 +26,29 @@ const AccountTemplates = ({ accountId, logoUrl }) => {
   }, [accountId]);
 
   const fetchColors = async () => {
+    if (!accountId) return;
+    
+    setLoading(true);
+    setError(null);
+    
     try {
       const response = await axios.get(`${API_URL}/api/accounts/${accountId}`, {
         withCredentials: true
       });
       
+      // First set the colors
       if (response.data.colors) {
         setColors(response.data.colors);
       }
-      if (response.data.templatesURLs) {
+  
+      // Wait for a bit to ensure state is updated
+      await new Promise(resolve => setTimeout(resolve, 500));
+  
+      // Then check and handle templates
+      if (!response.data.templatesURLs || response.data.templatesURLs.length === 0) {
+        console.log('No templates found, generating...');
+        await generateTemplates();
+      } else {
         setTemplateImages(response.data.templatesURLs);
       }
       setError(null);
@@ -65,19 +79,21 @@ const AccountTemplates = ({ accountId, logoUrl }) => {
   };
 
   const generateTemplates = async () => {
+    if (!accountId) return;
+    
     setIsGenerating(true);
     try {
       const response = await axios.post(
         `${API_URL}/api/accounts/${accountId}/generate-templates`,
-        { logoUrl },
+        {},  // Server will use account data
         { withCredentials: true }
       );
-
+  
       if (response.data.success) {
+        // Wait a bit before setting templates
+        await new Promise(resolve => setTimeout(resolve, 500));
         setTemplateImages(response.data.templatesURLs);
         setError(null);
-      } else {
-        setError('Failed to generate templates');
       }
     } catch (error) {
       console.error('Error generating templates:', error);

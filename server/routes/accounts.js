@@ -4,7 +4,7 @@ import { validateObjectId } from '../middleware/validateObjectId.js';
 import Account from '../models/Account.js';
 import mongoose from 'mongoose';
 import multer from 'multer';
-import { uploadImage } from '../config/storage.js';
+import { uploadImage, deleteFiles } from '../config/storage.js';
 import axios from 'axios';
 import { formatUrl } from '../utils/urlHelper.js';
 
@@ -169,10 +169,13 @@ router.post('/:id/logo', [auth, validateObjectId], upload.single('logo'), async 
 // Generate templates for an account
 router.post('/:id/generate-templates', auth, async (req, res) => {
   try {
+    // Find account and get old template URLs
     const account = await Account.findById(req.params.id);
     if (!account) {
       return res.status(404).json({ message: 'Account not found' });
     }
+
+    const oldTemplateUrls = account.templatesURLs || [];
 
     // Make request to templates API
     const response = await axios.post(
@@ -192,8 +195,22 @@ router.post('/:id/generate-templates', auth, async (req, res) => {
       const newTemplateUrls = response.data.results.map(result => result.imageUrl);
       
       // Update account with new template URLs
-      account.templatesURLs = newTemplateUrls;
-      await account.save();
+      const updatedAccount = await Account.findOneAndUpdate(
+        { _id: req.params.id },
+        { $set: { templatesURLs: newTemplateUrls } },
+        { new: true }
+      );
+
+      // Delete old templates from bucket
+      if (oldTemplateUrls.length > 0) {
+        try {
+          await deleteFiles(oldTemplateUrls);
+          console.log('Successfully deleted old templates');
+        } catch (deleteError) {
+          console.error('Error deleting old templates:', deleteError);
+          // Don't throw error here, as new templates were successfully generated
+        }
+      }
 
       res.json({ 
         success: true, 
