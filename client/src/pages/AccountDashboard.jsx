@@ -53,7 +53,7 @@ const AccountDashboard = () => {
   return (
     <div className="p-6 w-full h-full">
       <div className="flex justify-between items-start">
-        <div className="flex gap-12 items-start">
+        <div className="flex items-start flex-1">
           <div className="flex flex-col justify-evenly h-[216px] ps-4"> 
             <AccountName 
               account={account} 
@@ -63,13 +63,13 @@ const AccountDashboard = () => {
               <ConnectedPlatforms/>
             </div>
           </div>
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 mx-12">
             <AccountOverview 
               account={account}
               onUpdate={setAccount}
             />
           </div>
-          <div className="ps-2">
+          <div className="flex-1">
             <AccountTemplates accountId={accountId} />
           </div>
         </div>

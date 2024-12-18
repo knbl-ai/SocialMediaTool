@@ -43,6 +43,14 @@ const accountSchema = new mongoose.Schema({
       title: '#1F2937',
       text: '#4B5563'
     }
+  },
+  templatesURLs: {
+    type: [String],
+    default: [
+      "https://storage.googleapis.com/knbl-sma/0963d8f0-1d99-4329-b156-e0b15703161b.png",
+      "https://storage.googleapis.com/knbl-sma/656cbe87-6e68-4145-9b5b-be1081c2fddc.png",
+      "https://storage.googleapis.com/knbl-sma/3b23e776-cb44-4af8-ad67-41d57c1d4ffc.png"
+    ]
   }
 }, { timestamps: true });
 
