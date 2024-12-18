@@ -4,6 +4,9 @@ import { ArrowLeft } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import AccountName from '../components/AccountName';
+import AccountOverview from '../components/AccountOverview';
+import ConnectedPlatforms from '../components/ConnectedPlatforms';
+import AccountTemplates from '../components/AccountTemplates';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -48,26 +51,43 @@ const AccountDashboard = () => {
   };
 
   return (
-    <div className="p-6 w-full h-full flex justify-between">
-      <div className="mt-4">
-       
-        <AccountName 
-          account={account} 
-          onNameUpdate={handleNameUpdate}
-        />
-        {error && (
-          <div className="text-red-500 mt-2">
-            {error}
+    <div className="p-6 w-full h-full">
+      <div className="flex justify-between items-start">
+        <div className="flex gap-12 items-start">
+          <div className="flex flex-col justify-evenly h-[216px] ps-4"> 
+            <AccountName 
+              account={account} 
+              onNameUpdate={handleNameUpdate}
+            />
+            <div className="">
+              <ConnectedPlatforms/>
+            </div>
           </div>
-        )}
-      </div>
-      <Button 
-          className="mb-4"
+          <div className="flex flex-col gap-4">
+            <AccountOverview 
+              account={account}
+              onUpdate={setAccount}
+            />
+          </div>
+          <div className="ps-2">
+            <AccountTemplates accountId={accountId} />
+          </div>
+        </div>
+        <Button 
           onClick={handleBack}
+          variant="ghost"
+          size="icon"
+          className="rounded-full hover:bg-gray-100"
+          aria-label="Back to Accounts"
         >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Accounts
+          <ArrowLeft className="h-6 w-6 text-gray-600" />
         </Button>
+      </div>
+      {error && (
+        <div className="text-red-500 mt-2">
+          {error}
+        </div>
+      )}
     </div>
   );
 };
