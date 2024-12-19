@@ -7,6 +7,7 @@ import AccountName from '../components/AccountName';
 import AccountOverview from '../components/AccountOverview';
 import ConnectedPlatforms from '../components/ConnectedPlatforms';
 import AccountTemplates from '../components/AccountTemplates';
+import PostsDashboard from '../components/PostsDashboard';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -52,9 +53,9 @@ const AccountDashboard = () => {
 
   return (
     <div className="p-6 w-full h-full">
-      <div className="flex justify-between items-start">
+      <div className="flex justify-between items-start mb-8">
         <div className="flex items-start flex-1">
-          <div className="flex flex-col justify-evenly h-[216px] align-center "> 
+          <div className="flex flex-col justify-evenly h-[216px] align-center"> 
             <AccountName 
               account={account} 
               onNameUpdate={handleNameUpdate}
@@ -83,6 +84,12 @@ const AccountDashboard = () => {
           <ArrowLeft className="h-6 w-6" />
         </Button>
       </div>
+
+      {/* Posts Dashboard */}
+      <div className="mt-8">
+        <PostsDashboard accountId={accountId} />
+      </div>
+
       {error && (
         <div className="text-red-500 mt-2">
           {error}

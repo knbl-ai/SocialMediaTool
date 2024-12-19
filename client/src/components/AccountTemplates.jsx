@@ -114,7 +114,7 @@ const AccountTemplates = ({ accountId, logoUrl }) => {
     }
   };
 
-  if (loading) return <div className="animate-pulse">Loading colors...</div>;
+  if (loading) return <div className="animate-pulse">Loading Templates...</div>;
   if (error) return <div className="text-red-500">{error}</div>;
 
   const colorEntries = Object.entries(colors).filter(([key]) => key !== '_id');
