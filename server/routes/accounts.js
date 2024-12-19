@@ -2,7 +2,6 @@ import express from 'express';
 import auth from '../middleware/auth.js';
 import { validateObjectId } from '../middleware/validateObjectId.js';
 import Account from '../models/Account.js';
-import mongoose from 'mongoose';
 import multer from 'multer';
 import { uploadImage, deleteFiles } from '../config/storage.js';
 import axios from 'axios';

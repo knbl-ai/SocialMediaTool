@@ -1,8 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import EditPost from './EditPost';
 
-const DayCell = ({ day, isToday, posts = [] }) => {
+const DayCell = ({ day, isToday, posts = [], accountId }) => {
   const [showEditPost, setShowEditPost] = useState(false);
+
+  useEffect(() => {
+    if (showEditPost) {
+      console.log('DayCell opening EditPost with accountId:', accountId);
+    }
+  }, [showEditPost, accountId]);
 
   if (!day) return <div className="aspect-square" />;
 
@@ -69,11 +75,14 @@ const DayCell = ({ day, isToday, posts = [] }) => {
         </div>
       </div>
 
-      <EditPost
-        show={showEditPost}
-        onClose={() => setShowEditPost(false)}
-        date={day ? new Date(new Date().getFullYear(), new Date().getMonth(), day) : null}
-      />
+      {showEditPost && (
+        <EditPost
+          show={showEditPost}
+          onClose={() => setShowEditPost(false)}
+          date={day ? new Date(new Date().getFullYear(), new Date().getMonth(), day) : null}
+          accountId={accountId}
+        />
+      )}
     </>
   );
 };

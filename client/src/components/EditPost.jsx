@@ -1,8 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { 
   ImagePlus, 
-  Wand2, 
-  Upload, 
+  Wand2,
   PlayCircle, 
   MessageSquarePlus,
   X 
@@ -10,95 +9,135 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Modal } from "@/components/ui/modal";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import SelectTemplate from './EditPost/SelectTemplate';
 
-const EditPost = ({ show, onClose, date }) => {
+const EditPost = ({ show, onClose, date, accountId }) => {
+  useEffect(() => {
+    console.log('EditPost received accountId:', accountId);
+  }, [accountId]);
+
+  if (!accountId) {
+    console.warn('EditPost: No accountId provided');
+  }
+
   return (
     <Modal show={show} onClose={onClose}>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-semibold">Edit Post for {date?.toLocaleDateString()}</h2>
-        <Button variant="ghost" size="icon" onClick={onClose} className="hover:bg-gray-100">
-          <X className="h-4 w-4 text-white" />
+        <Button variant="ghost" size="icon" onClick={onClose}>
+          <X className="h-4 w-4" />
         </Button>
       </div>
 
-      <div className="space-y-8">
-        {/* Top Section: Image Preview and Generation Controls */}
+      <div className="flex flex-col gap-6">
+        {/* Main Content Section */}
         <div className="flex gap-6">
-          {/* Left - Image Preview */}
-          <div className="w-[450px] h-[450px] bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+          {/* Left - Templates */}
+          <div className="w-[25vw]">
+            <SelectTemplate accountId={accountId} />
+          </div>
+
+          {/* Middle - Image Preview */}
+          <div className="w-[35vw] h-[35vw] bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
             <ImagePlus className="h-12 w-12 text-gray-400" />
           </div>
 
-          {/* Right - Image and Video Controls */}
-          <div className="flex-1 space-y-6">
+          {/* Right - Generation Controls */}
+          <div className="flex-1">
             {/* Image Generation Section */}
-            <div className="space-y-4 w-[350px]">
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Image Prompt
-                </label>
-                <Textarea
-                  placeholder="Describe the image you want to generate..."
-                  className="resize-none h-20"
-                />
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-medium">Image Generation</h3>
+                <Select defaultValue="dall-e-3">
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Select model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="dall-e-3">DALL-E 3</SelectItem>
+                    <SelectItem value="dall-e-2">DALL-E 2</SelectItem>
+                    <SelectItem value="sdxl">Stable Diffusion XL</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="icon" title="Generate Image">
-                  <Wand2 className="h-4 w-4" />
-                </Button>
-                <Button variant="outline" size="icon" title="Upload Image">
-                  <Upload className="h-4 w-4" />
-                </Button>
-              </div>
+              <Textarea 
+                placeholder="Describe the image you want to generate..."
+                className="min-h-[100px] mb-2"
+              />
+              <Button className="w-full">
+                <Wand2 className="w-4 h-4 mr-2" />
+                Generate Image
+              </Button>
             </div>
 
             {/* Video Generation Section */}
-            <div className="space-y-4 w-[350px]">
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Video Prompt
-                </label>
-                <Textarea
-                  placeholder="Describe the video you want to generate..."
-                  className="resize-none h-20"
-                />
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-medium">Video Generation</h3>
+                <Select defaultValue="runway">
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Select model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="runway">Runway Gen-2</SelectItem>
+                    <SelectItem value="pika">Pika Labs</SelectItem>
+                    <SelectItem value="stable">Stable Video</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <Button variant="outline" size="icon" title="Generate Video">
-                <PlayCircle className="h-4 w-4" />
+              <Textarea 
+                placeholder="Describe the video you want to generate..."
+                className="min-h-[100px] mb-2"
+              />
+              <Button className="w-full">
+                <PlayCircle className="w-4 h-4 mr-2" />
+                Generate Video
               </Button>
             </div>
           </div>
         </div>
 
         {/* Bottom Section: Text Controls */}
-        <div className="flex gap-6">
-          {/* Left - Post Text */}
-          <div className="w-[450px] space-y-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                Post Text
-              </label>
-              <Textarea
+        <div className="pt-4 border-t">
+          <div className="flex gap-6">
+            {/* Left - Post Text */}
+            <div className="flex-1">
+              <Textarea 
                 placeholder="Enter your post text..."
-                className="resize-none h-20"
+                className="min-h-[100px]"
               />
             </div>
-          </div>
 
-          {/* Right - Text Generation */}
-          <div className="w-[350px] space-y-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                Text Generation Prompt
-              </label>
-              <Textarea
-                placeholder="Prompt for generating post text..."
-                className="resize-none h-20"
+            {/* Right - Text Generation */}
+            <div className="w-[250px]">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-medium">Text Generation</h3>
+                <Select defaultValue="gpt-4">
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Select model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gpt-4">GPT-4</SelectItem>
+                    <SelectItem value="gpt-3.5">GPT-3.5</SelectItem>
+                    <SelectItem value="claude">Claude 2</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Textarea 
+                placeholder="Write your prompt for AI text generation..."
+                className="min-h-[80px] mb-2"
               />
+              <Button className="w-full">
+                <MessageSquarePlus className="w-4 h-4 mr-2" />
+                Generate Text
+              </Button>
             </div>
-            <Button variant="outline" size="icon" title="Generate Text">
-              <MessageSquarePlus className="h-4 w-4" />
-            </Button>
           </div>
         </div>
       </div>

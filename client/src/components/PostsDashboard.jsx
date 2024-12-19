@@ -111,6 +111,7 @@ const PostsDashboard = ({ accountId }) => {
               day={day}
               isToday={isToday}
               posts={[]}
+              accountId={accountId}
             />
           );
         })}
