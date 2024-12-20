@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import EditPost from './EditPost';
+import EditPostResponsive from './EditPostResponsive';
 
 const DayCell = ({ day, isToday, posts = [], accountId }) => {
   const [showEditPost, setShowEditPost] = useState(false);
@@ -76,10 +76,9 @@ const DayCell = ({ day, isToday, posts = [], accountId }) => {
       </div>
 
       {showEditPost && (
-        <EditPost
+        <EditPostResponsive
           show={showEditPost}
           onClose={() => setShowEditPost(false)}
-          date={day ? new Date(new Date().getFullYear(), new Date().getMonth(), day) : null}
           accountId={accountId}
         />
       )}
