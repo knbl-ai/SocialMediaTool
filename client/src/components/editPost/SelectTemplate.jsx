@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
+import { Textarea } from '../ui/textarea';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -80,8 +81,8 @@ export function SelectTemplate({ accountId }) {
   }
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="space-y-4 flex-1 overflow-y-auto px-3 py-3">
+    <div className="h-full flex flex-col ">
+      <div className="space-y-4 overflow-y-auto px-3 py-3 h-[70vh]">
         <div
           onClick={() => setSelectedTemplate(null)}
           className={`relative rounded-lg overflow-hidden cursor-pointer transition-all duration-300 ${
@@ -115,16 +116,15 @@ export function SelectTemplate({ accountId }) {
           </div>
         ))}
       </div>
-      <div className="space-y-2 mt-4 pb-4">
+      <div className="space-y-2 mt-3 h-[10vh] outline-none  ">
         <Input
           type="text"
           placeholder="Title"
-          className="w-full"
+          className="w-full outline-none"
         />
-        <Input
-          type="text"
+        <Textarea
           placeholder="Subtitle"
-          className="w-full"
+          className="w-full h-36 outline-none "
         />
       </div>
     </div>

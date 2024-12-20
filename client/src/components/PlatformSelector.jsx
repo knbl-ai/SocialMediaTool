@@ -11,7 +11,7 @@ const platforms = [
 
 const PlatformSelector = ({ currentPlatform, onPlatformSelect }) => {
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-1">
       {platforms.map((platform) => {
         const Icon = platform.icon;
         const isSelected = currentPlatform === platform.name;
