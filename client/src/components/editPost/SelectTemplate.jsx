@@ -78,9 +78,24 @@ const SelectTemplate = ({ accountId }) => {
   }
 
   return (
-    <div className="h-full flex flex-col">
-      <h3 className="text-sm font-medium mb-2">Templates</h3>
-      <div className="flex-1 overflow-y-auto space-y-3">
+    <div className="h-[35vw] flex flex-col">
+      <div className="overflow-y-auto space-y-3 pr-2">
+        {/* No Template Square */}
+        <div className="relative group bg-gray-100 rounded-lg overflow-hidden aspect-square">
+          <div className="absolute inset-0 flex items-center justify-center text-gray-400 font-medium">
+            No Template
+          </div>
+          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <Button 
+              variant="secondary" 
+              size="sm"
+              className="opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              Clear Template
+            </Button>
+          </div>
+        </div>
+
         {templates.map((templateUrl, index) => (
           <div 
             key={index} 
