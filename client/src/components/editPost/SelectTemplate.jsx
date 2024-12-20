@@ -1,25 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-const SelectTemplate = ({ accountId }) => {
+export function SelectTemplate({ accountId }) {
   const [templates, setTemplates] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
 
   useEffect(() => {
     if (!accountId) {
       console.warn('SelectTemplate: No accountId provided');
-      setLoading(false);
+      setIsLoading(false);
       setError('No account selected');
       return;
     }
 
     const fetchTemplates = async () => {
       try {
-        setLoading(true);
+        setIsLoading(true);
         setError(null);
         
         const url = `${API_URL}/api/accounts/${accountId}`;
@@ -43,14 +45,14 @@ const SelectTemplate = ({ accountId }) => {
         console.error('Error fetching templates:', error);
         setError(error.message || 'Failed to load templates');
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
     fetchTemplates();
   }, [accountId]);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -78,48 +80,53 @@ const SelectTemplate = ({ accountId }) => {
   }
 
   return (
-    <div className="h-[35vw] flex flex-col">
-      <div className="overflow-y-auto space-y-3 pr-2">
-        {/* No Template Square */}
-        <div className="relative group bg-gray-100 rounded-lg overflow-hidden aspect-square">
-          <div className="absolute inset-0 flex items-center justify-center text-gray-400 font-medium">
-            No Template
-          </div>
-          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-            <Button 
-              variant="secondary" 
-              size="sm"
-              className="opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              Clear Template
-            </Button>
+    <div className="h-full flex flex-col">
+      <div className="space-y-4 flex-1 overflow-y-auto px-3 py-3">
+        <div
+          onClick={() => setSelectedTemplate(null)}
+          className={`relative rounded-lg overflow-hidden cursor-pointer transition-all duration-300 ${
+            selectedTemplate === null 
+              ? 'ring-2 ring-offset-2 ring-[#6499E9] shadow-[0_0_15px_rgba(255,28,247,0.5)]' 
+              : 'hover:scale-[1.02]'
+          }`}
+        >
+          <div className="aspect-square relative bg-gray-50 flex items-center justify-center">
+            <span className="text-gray-500 font-medium">No Template</span>
           </div>
         </div>
 
         {templates.map((templateUrl, index) => (
-          <div 
-            key={index} 
-            className="relative group bg-gray-100 rounded-lg overflow-hidden aspect-square"
+          <div
+            key={index}
+            onClick={() => setSelectedTemplate(templateUrl)}
+            className={`relative rounded-lg overflow-hidden cursor-pointer transition-all duration-300 ${
+              selectedTemplate === templateUrl 
+                ? 'ring-2 ring-offset-2 ring-[#6499E9] shadow-[0_0_15px_rgba(255,28,247,0.5)]' 
+                : 'hover:scale-[1.02]'
+            }`}
           >
-            <img 
-              src={templateUrl} 
-              alt={`Template ${index + 1}`}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <Button 
-                variant="secondary" 
-                size="sm"
-                className="opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                Use Template
-              </Button>
+            <div className="aspect-square relative">
+              <img
+                src={templateUrl}
+                alt={`Template ${index + 1}`}
+                className="object-cover w-full h-full"
+              />
             </div>
           </div>
         ))}
       </div>
+      <div className="space-y-2 mt-4 pb-4">
+        <Input
+          type="text"
+          placeholder="Title"
+          className="w-full"
+        />
+        <Input
+          type="text"
+          placeholder="Subtitle"
+          className="w-full"
+        />
+      </div>
     </div>
   );
 };
-
-export default SelectTemplate;
