@@ -1,16 +1,46 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import EditPostResponsive from './EditPostResponsive';
+import PlatformSelector from './PlatformSelector';
 
-const DayCell = ({ day, isToday, posts = [], accountId }) => {
-  const [showEditPost, setShowEditPost] = useState(false);
+const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlatform }) => {
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    platform: currentPlatform
+  });
 
+  // Update modalState when currentPlatform prop changes
   useEffect(() => {
-    if (showEditPost) {
-      console.log('DayCell opening EditPost with accountId:', accountId);
-    }
-  }, [showEditPost, accountId]);
+    setModalState(prev => ({
+      ...prev,
+      platform: currentPlatform
+    }));
+  }, [currentPlatform]);
+
+  const handleCellClick = useCallback((e) => {
+    if (!day || e.target.closest('.platform-selector')) return;
+    setModalState(prev => ({
+      isOpen: true,
+      platform: prev.platform
+    }));
+  }, [day]);
+
+  const handlePlatformSelect = useCallback((platform) => {
+    setModalState({
+      isOpen: true,
+      platform
+    });
+  }, []);
+
+  const handleModalClose = useCallback(() => {
+    setModalState(prev => ({
+      isOpen: false,
+      platform: prev.platform // Preserve the platform when closing
+    }));
+  }, []);
 
   if (!day) return <div className="aspect-square" />;
+
+  const cellDate = new Date(year, month, day);
 
   return (
     <>
@@ -23,7 +53,7 @@ const DayCell = ({ day, isToday, posts = [], accountId }) => {
         `}
       >
         <div 
-          onClick={() => setShowEditPost(true)}
+          onClick={handleCellClick}
           className={`
             w-full h-full rounded-xl bg-gray-50
             hover:bg-gray-100 cursor-pointer
@@ -37,36 +67,37 @@ const DayCell = ({ day, isToday, posts = [], accountId }) => {
             {day}
           </span>
 
-          {/* Posts container */}
           <div className="p-2 pt-8 h-full overflow-y-auto">
             {posts.map((post, index) => (
               <div
                 key={index}
                 className="mb-2 p-2 bg-white rounded-lg shadow-sm hover:shadow transition-shadow"
+                onClick={(e) => e.stopPropagation()}
               >
-                {/* Post preview content */}
                 <div className="flex items-center space-x-2">
                   {post.image && (
-                    <img 
-                      src={post.image} 
-                      alt="Post preview" 
-                      className="w-8 h-8 rounded object-cover"
+                    <img
+                      src={post.image}
+                      alt="Post preview"
+                      className="w-10 h-10 rounded object-cover"
                     />
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs text-gray-600 truncate">
-                      {post.text || 'No caption'}
+                    <p className="text-sm text-gray-600 truncate">
+                      {post.content || 'No content'}
                     </p>
-                    <div className="flex items-center space-x-1 mt-1">
-                      {post.platforms?.map((platform, i) => (
-                        <span 
-                          key={i}
-                          className="w-4 h-4 text-gray-400"
-                        >
-                          {platform}
-                        </span>
-                      ))}
-                    </div>
+                  </div>
+                  <div 
+                    className="platform-selector" 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                    }}
+                  >
+                    <PlatformSelector
+                      currentPlatform={modalState.platform}
+                      onPlatformSelect={handlePlatformSelect}
+                    />
                   </div>
                 </div>
               </div>
@@ -75,11 +106,13 @@ const DayCell = ({ day, isToday, posts = [], accountId }) => {
         </div>
       </div>
 
-      {showEditPost && (
+      {modalState.isOpen && (
         <EditPostResponsive
-          show={showEditPost}
-          onClose={() => setShowEditPost(false)}
+          show={modalState.isOpen}
+          onClose={handleModalClose}
+          date={cellDate}
           accountId={accountId}
+          initialPlatform={modalState.platform}
         />
       )}
     </>

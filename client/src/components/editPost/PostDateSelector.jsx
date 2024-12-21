@@ -4,30 +4,39 @@ import { Button } from "@/components/ui/button"
 import { CalendarIcon } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
-import { useState } from "react"
+import { useState, useMemo } from "react"
 
 export function PostDateSelector({ date, onChange }) {
   const [open, setOpen] = useState(false)
 
-  const handleSelect = (date) => {
-    onChange(date)
-    setOpen(false)
+  const formattedDate = useMemo(() => {
+    try {
+      return date instanceof Date && !isNaN(date) ? format(date, "PPP") : "Select date"
+    } catch (error) {
+      console.error("Error formatting date:", error)
+      return "Select date"
+    }
+  }, [date])
+
+  const handleSelect = (newDate) => {
+    if (newDate instanceof Date && !isNaN(newDate)) {
+      onChange(newDate)
+      setOpen(false)
+    }
   }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" className="w-[600px] justify-start text-left font-normal truncate">
-          <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
-          <span className="truncate">
-            {date ? format(date, "PPP") : "Select date"}
-          </span>
+        <Button variant="outline" className="w-[280px] justify-start text-left font-normal">
+          <CalendarIcon className="mr-2 h-4 w-4" />
+          {formattedDate}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
         <Calendar
           mode="single"
-          selected={date}
+          selected={date instanceof Date && !isNaN(date) ? date : undefined}
           onSelect={handleSelect}
           initialFocus
           className="bg-white"

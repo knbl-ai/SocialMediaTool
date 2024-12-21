@@ -109,9 +109,12 @@ const PostsDashboard = ({ accountId }) => {
             <DayCell
               key={index}
               day={day}
+              month={currentDate.getMonth()}
+              year={currentDate.getFullYear()}
               isToday={isToday}
               posts={[]}
               accountId={accountId}
+              currentPlatform={currentPlatform}
             />
           );
         })}
