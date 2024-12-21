@@ -6,7 +6,13 @@ import { Textarea } from '../ui/textarea';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-export function SelectTemplate({ accountId }) {
+export function SelectTemplate({ 
+  accountId,
+  title,
+  subtitle,
+  onTitleChange,
+  onSubtitleChange 
+}) {
   const [templates, setTemplates] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -116,15 +122,19 @@ export function SelectTemplate({ accountId }) {
           </div>
         ))}
       </div>
-      <div className="space-y-2 mt-3 h-[10vh] outline-none  ">
+      <div className="space-y-2 mt-3 h-[10vh] outline-none">
         <Input
           type="text"
           placeholder="Title"
           className="w-full outline-none"
+          value={title}
+          onChange={(e) => onTitleChange?.(e.target.value)}
         />
         <Textarea
           placeholder="Subtitle"
-          className="w-full h-36 outline-none "
+          className="w-full h-36 outline-none"
+          value={subtitle}
+          onChange={(e) => onSubtitleChange?.(e.target.value)}
         />
       </div>
     </div>

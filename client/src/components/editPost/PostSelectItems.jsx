@@ -10,7 +10,9 @@ const PostSelectItems = ({
   onModelChange, 
   models, 
   placeholder, 
-  buttonText 
+  buttonText,
+  value,
+  onChange
 }) => {
   return (
     <div>
@@ -19,6 +21,8 @@ const PostSelectItems = ({
       <Textarea 
         placeholder={placeholder}
         className="min-h-[13vh] mt-2 resize-none"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
       />
       <Button className="w-full mt-2">
         <ImagePlus className="w-4 h-4 mr-2" />

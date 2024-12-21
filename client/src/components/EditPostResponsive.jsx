@@ -25,6 +25,8 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform })
 
   // Content states
   const [postText, setPostText] = useState('');
+  const [postTitle, setPostTitle] = useState('');
+  const [postSubtitle, setPostSubtitle] = useState('');
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
   const [imageTemplate, setImageTemplate] = useState('');
 
@@ -48,6 +50,8 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform })
       console.log('Resetting modal state');
       setPostId(null);
       setPostText('');
+      setPostTitle('');
+      setPostSubtitle('');
       setSelectedTime("10");
       setImagePrompt('');
       setVideoPrompt('');
@@ -93,6 +97,8 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform })
         setSelectedPlatforms(post.platforms);
         setSelectedTime(post.timePost);
         setPostText(post.text?.post || '');
+        setPostTitle(post.text?.title || '');
+        setPostSubtitle(post.text?.subtitle || '');
         setImagePrompt(post.prompts?.image || '');
         setVideoPrompt(post.prompts?.video || '');
         setTextPrompt(post.prompts?.text || '');
@@ -120,6 +126,22 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform })
 
     const saveChanges = async () => {
       try {
+        console.log('Saving post changes:', {
+          platforms: selectedPlatforms,
+          datePost: selectedDate,
+          timePost: selectedTime,
+          text: {
+            post: postText,
+            title: postTitle,
+            subtitle: postSubtitle
+          },
+          prompts: {
+            image: imagePrompt,
+            video: videoPrompt,
+            text: textPrompt
+          }
+        });
+        
         await updatePost(postId, {
           platforms: selectedPlatforms,
           datePost: selectedDate,
@@ -131,8 +153,8 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform })
           },
           text: {
             post: postText,
-            title: '',
-            subtitle: ''
+            title: postTitle,
+            subtitle: postSubtitle
           },
           prompts: {
             image: imagePrompt,
@@ -154,7 +176,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform })
     return () => clearTimeout(timeoutId);
   }, [
     postId, selectedPlatforms, selectedDate, selectedTime,
-    imageSize, imageTemplate, postText,
+    imageSize, imageTemplate, postText, postTitle, postSubtitle,
     imagePrompt, videoPrompt, textPrompt,
     selectedImageModel, selectedVideoModel, selectedLLMModel
   ]);
@@ -167,7 +189,13 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform })
           {/* Left Column - Templates */}
           <div className="col-span-2 h-full">
             <div className="rounded-lg overflow-hidden h-full">
-              <SelectTemplate accountId={accountId} />
+              <SelectTemplate 
+                accountId={accountId}
+                title={postTitle}
+                subtitle={postSubtitle}
+                onTitleChange={setPostTitle}
+                onSubtitleChange={setPostSubtitle}
+              />
             </div>
           </div>
 
