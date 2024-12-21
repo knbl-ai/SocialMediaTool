@@ -56,7 +56,7 @@ const DEFAULT_POST = {
   }
 };
 
-// Find or create a post for a specific date
+// Find or create post
 export const findOrCreatePost = async (params) => {
   const { accountId, date, platform } = params;
   
@@ -68,37 +68,19 @@ export const findOrCreatePost = async (params) => {
     throw new Error('date is required');
   }
   
-  // First try to find existing post
-  const searchDate = new Date(date);
-  searchDate.setHours(0, 0, 0, 0);
-  
   const queryParams = new URLSearchParams({
     accountId,
-    date: formatDate(searchDate)
+    startDate: formatDate(date),
+    endDate: formatDate(date),
+    createIfNotFound: 'true'
   });
   
   if (platform) {
     queryParams.set('platform', platform);
   }
   
-  const posts = await apiCall(`/search?${queryParams}`);
-  
-  if (posts && posts.length > 0) {
-    console.log('Found existing post:', posts[0]);
-    return posts[0];
-  }
-  
-  // If no post exists, create one
-  console.log('Creating new post:', params);
-  return apiCall('/', {
-    method: 'POST',
-    body: JSON.stringify({
-      ...DEFAULT_POST,
-      accountId,
-      platforms: platform ? [platform] : [],
-      datePost: date
-    })
-  });
+  const response = await apiCall(`/search?${queryParams}`);
+  return Array.isArray(response) && response.length > 0 ? response[0] : null;
 };
 
 // Create new post
@@ -127,7 +109,7 @@ export const getPost = async (postId) => {
 
 // Search for posts
 export const searchPosts = async (params) => {
-  const { accountId, date, platform } = params;
+  const { accountId, startDate, endDate, platform } = params;
   
   if (!accountId) {
     throw new Error('accountId is required');
@@ -135,8 +117,12 @@ export const searchPosts = async (params) => {
   
   const queryParams = new URLSearchParams({ accountId });
   
-  if (date) {
-    queryParams.set('date', formatDate(date));
+  if (startDate) {
+    queryParams.set('startDate', startDate);
+  }
+  
+  if (endDate) {
+    queryParams.set('endDate', endDate);
   }
   
   if (platform) {

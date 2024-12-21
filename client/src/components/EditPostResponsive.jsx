@@ -10,7 +10,7 @@ import PostPlatformSelector from "./editPost/PostPlatformSelector"
 import PostSelectItems from "./editPost/PostSelectItems"
 import { models } from "@/config/models"
 import DimensionsSelector from "./editPost/DimensionsSelector"
-import { createPost, updatePost, searchPosts, findOrCreatePost } from '@/services/posts'
+import { createPost, updatePost, searchPosts, findOrCreatePost, getPost } from '@/services/posts'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -30,13 +30,13 @@ const DEFAULT_STATE = {
   selectedLLMModel: models.llm[0]?.value
 };
 
-const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform }) => {
-  console.log('EditPostResponsive render:', { show, date, accountId, initialPlatform });
+const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, postId: initialPostId }) => {
+  console.log('EditPostResponsive render:', { show, date, accountId, initialPlatform, initialPostId });
   
   // Basic post states
   const [selectedTime, setSelectedTime] = useState(DEFAULT_STATE.selectedTime)
   const [selectedDate, setSelectedDate] = useState(date)
-  const [postId, setPostId] = useState(DEFAULT_STATE.postId);
+  const [postId, setPostId] = useState(initialPostId);
   const initializationRef = useRef(false);
 
   // Content states
@@ -72,9 +72,9 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform })
     }
   }, [show]);
 
-  // Initialize or find existing post
+  // Initialize post data
   useEffect(() => {
-    console.log('Initialization effect running:', { show, accountId, date, isInitialized: initializationRef.current });
+    console.log('Initialization effect running:', { show, accountId, date, postId: initialPostId, isInitialized: initializationRef.current });
     
     let isActive = true;
 
@@ -85,13 +85,20 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform })
       }
 
       try {
-        console.log('Finding or creating post:', { date, initialPlatform, accountId });
-        
-        const post = await findOrCreatePost({
-          accountId,
-          date,
-          platform: initialPlatform
-        });
+        let post;
+        if (initialPostId) {
+          // If we have a postId, fetch the existing post
+          console.log('Fetching existing post:', initialPostId);
+          post = await getPost(initialPostId);
+        } else {
+          // Otherwise, find or create a new post
+          console.log('Finding or creating post:', { date, initialPlatform, accountId });
+          post = await findOrCreatePost({
+            accountId,
+            date,
+            platform: initialPlatform
+          });
+        }
 
         // If component is unmounted or modal closed, don't update state
         if (!isActive || !show) {
@@ -125,7 +132,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform })
     return () => {
       isActive = false;
     };
-  }, [show, accountId, date, initialPlatform]);
+  }, [show, accountId, date, initialPlatform, initialPostId]);
 
   // Save changes when form values change
   useEffect(() => {

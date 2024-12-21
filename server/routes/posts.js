@@ -56,47 +56,50 @@ router.get('/search', async (req, res) => {
   session.startTransaction();
   
   try {
-    const { accountId, date, platform } = req.query;
-    console.log('Search params:', { accountId, date, platform });
+    const { accountId, startDate, endDate, platform, createIfNotFound } = req.query;
+    console.log('Search params:', { accountId, startDate, endDate, platform, createIfNotFound });
     
     if (!accountId) {
       throw new Error('accountId is required');
     }
     
-    if (!date) {
-      throw new Error('date is required');
-    }
+    // Build date range query
+    const query = { accountId };
     
-    // Try to find existing post
-    const { startDate, endDate } = createDateRange(date);
-    const query = {
-      accountId,
-      datePost: { $gte: startDate, $lte: endDate }
-    };
+    if (startDate || endDate) {
+      query.datePost = {};
+      if (startDate) {
+        query.datePost.$gte = parseDate(startDate);
+      }
+      if (endDate) {
+        query.datePost.$lte = parseDate(endDate);
+      }
+    }
     
     if (platform) {
       query.platforms = platform;
     }
     
     console.log('Search query:', query);
-    let post = await Post.findOne(query).session(session);
-    
-    if (!post) {
+    let posts = await Post.find(query).session(session);
+
+    // If createIfNotFound is true and no posts found, create a new one
+    if (createIfNotFound === 'true' && posts.length === 0 && startDate && platform) {
       console.log('No post found, creating new one');
-      post = await Post.create([{
+      const newPost = await Post.create([{
         ...DEFAULT_POST,
         accountId,
-        platforms: platform ? [platform] : [],
-        datePost: parseDate(date)
+        platforms: [platform],
+        datePost: parseDate(startDate)
       }], { session });
-      post = post[0];
+      posts = [newPost[0]];
     }
     
     await session.commitTransaction();
-    res.json([post]); // Return as array for consistency
+    res.json(posts);
   } catch (error) {
     await session.abortTransaction();
-    console.error('Search/create error:', error);
+    console.error('Search error:', error);
     res.status(400).json({ message: error.message });
   } finally {
     session.endSession();
