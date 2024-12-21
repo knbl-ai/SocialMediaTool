@@ -10,7 +10,7 @@ const platforms = [
 ];
 
 const PlatformSelector = ({ currentPlatform, onPlatformSelect }) => {
-  console.log('PlatformSelector render with currentPlatform:', currentPlatform);
+
   
   const handleClick = (e, platformName) => {
     e.stopPropagation();
@@ -24,7 +24,7 @@ const PlatformSelector = ({ currentPlatform, onPlatformSelect }) => {
       {platforms.map((platform) => {
         const Icon = platform.icon;
         const isSelected = currentPlatform === platform.name;
-        console.log(`Platform ${platform.name} isSelected:`, isSelected);
+    
         
         return (
           <div

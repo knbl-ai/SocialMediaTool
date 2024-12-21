@@ -9,13 +9,11 @@ const PostsDashboard = ({ accountId }) => {
   
   const [currentPlatform, setCurrentPlatform] = useState(() => {
     const saved = localStorage.getItem(storageKey);
-    console.log('Initial load for account', accountId, 'platform:', saved);
     return saved || 'Instagram';
   });
 
   // Effect to update localStorage when platform changes
   useEffect(() => {
-    console.log('Saving platform for account', accountId, 'platform:', currentPlatform);
     localStorage.setItem(storageKey, currentPlatform);
   }, [currentPlatform, accountId, storageKey]);
 

@@ -5,19 +5,30 @@ import { ImagePlus, X } from "lucide-react"
 import { SelectTemplate } from "./EditPost/SelectTemplate"
 import { PostDateSelector } from "./EditPost/PostDateSelector"
 import { PostTimeSelector } from "./EditPost/PostTimeSelector"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import PostPlatformSelector from "./editPost/PostPlatformSelector"
 import PostSelectItems from "./editPost/PostSelectItems"
 import { models } from "@/config/models"
 import DimensionsSelector from "./editPost/DimensionsSelector"
+import { createPost, updatePost, searchPosts, findOrCreatePost } from '@/services/posts'
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform }) => {
+  console.log('EditPostResponsive render:', { show, date, accountId, initialPlatform });
+  
+  // Basic post states
   const [selectedTime, setSelectedTime] = useState("10") // Default to 10:00
-  const [selectedDate, setSelectedDate] = useState(() => {
-    return date instanceof Date && !isNaN(date) ? date : new Date()
-  })
+  const [selectedDate, setSelectedDate] = useState(date)
+  const [postId, setPostId] = useState(null);
+  const initializationRef = useRef(false);
 
-  // Initialize platforms with initialPlatform if provided
+  // Content states
+  const [postText, setPostText] = useState('');
+  const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
+  const [imageTemplate, setImageTemplate] = useState('');
+
+  // Platform and model states
   const [selectedPlatforms, setSelectedPlatforms] = useState(() => {
     return initialPlatform ? [initialPlatform] : [];
   });
@@ -26,61 +37,127 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform })
   const [selectedVideoModel, setSelectedVideoModel] = useState(models.video[0]?.value)
   const [selectedLLMModel, setSelectedLLMModel] = useState(models.llm[0]?.value)
 
-  // Create post when modal opens
+  // Prompt states
+  const [imagePrompt, setImagePrompt] = useState('');
+  const [videoPrompt, setVideoPrompt] = useState('');
+  const [textPrompt, setTextPrompt] = useState('');
+
+  // Reset states when modal closes
   useEffect(() => {
-    const createPost = async () => {
+    if (!show) {
+      console.log('Resetting modal state');
+      setPostId(null);
+      setPostText('');
+      setSelectedTime("10");
+      setImagePrompt('');
+      setVideoPrompt('');
+      setTextPrompt('');
+      setSelectedImageModel(models.image[0]?.value);
+      setSelectedVideoModel(models.video[0]?.value);
+      setSelectedLLMModel(models.llm[0]?.value);
+      setImageSize({ width: 0, height: 0 });
+      setImageTemplate('');
+      initializationRef.current = false;
+    }
+  }, [show]);
+
+  // Initialize or find existing post
+  useEffect(() => {
+    console.log('Initialization effect running:', { show, accountId, date, isInitialized: initializationRef.current });
+    
+    let isActive = true;
+
+    const initializePost = async () => {
+      if (!show || !accountId || !date || initializationRef.current) {
+        console.log('Skipping initialization:', { show, accountId, date, isInitialized: initializationRef.current });
+        return;
+      }
+
       try {
-        const response = await fetch('http://localhost:5000/api/posts', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            accountId,
-            platforms: selectedPlatforms,
-            datePost: selectedDate,
-            timePost: selectedTime,
-            models: {
-              image: selectedImageModel,
-              video: selectedVideoModel,
-              text: selectedLLMModel
-            }
-          })
+        console.log('Finding or creating post:', { date, initialPlatform, accountId });
+        
+        const post = await findOrCreatePost({
+          accountId,
+          date,
+          platform: initialPlatform
         });
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+        // If component is unmounted or modal closed, don't update state
+        if (!isActive || !show) {
+          console.log('Component no longer active or modal closed, skipping state updates');
+          return;
         }
 
-        const data = await response.json();
-        console.log('Post created:', data);
+        console.log('Initializing with post:', post);
+        setPostId(post._id);
+        setSelectedPlatforms(post.platforms);
+        setSelectedTime(post.timePost);
+        setPostText(post.text?.post || '');
+        setImagePrompt(post.prompts?.image || '');
+        setVideoPrompt(post.prompts?.video || '');
+        setTextPrompt(post.prompts?.text || '');
+        setSelectedImageModel(post.models?.image || models.image[0]?.value);
+        setSelectedVideoModel(post.models?.video || models.video[0]?.value);
+        setSelectedLLMModel(post.models?.text || models.llm[0]?.value);
+        setImageSize(post.image?.size || { width: 0, height: 0 });
+        setImageTemplate(post.image?.template || '');
+
+        initializationRef.current = true;
       } catch (error) {
-        console.error('Error creating post:', error);
+        console.error('Error during post initialization:', error);
       }
     };
 
-    if (show && accountId) {
-      createPost();
-    }
-  }, [show, accountId]);
+    initializePost();
+    return () => {
+      isActive = false;
+    };
+  }, [show, accountId, date, initialPlatform]);
 
-  // Update platforms when initialPlatform changes
+  // Save changes when form values change
   useEffect(() => {
-    if (initialPlatform && !selectedPlatforms.includes(initialPlatform)) {
-      setSelectedPlatforms([initialPlatform]);
-    }
-  }, [initialPlatform]);
+    if (!postId) return;
 
-  // Update date when prop changes
-  useEffect(() => {
-    if (date instanceof Date && !isNaN(date)) {
-      setSelectedDate(date)
-    }
-  }, [date])
+    const saveChanges = async () => {
+      try {
+        await updatePost(postId, {
+          platforms: selectedPlatforms,
+          datePost: selectedDate,
+          timePost: selectedTime,
+          image: {
+            url: '',
+            size: imageSize,
+            template: imageTemplate
+          },
+          text: {
+            post: postText,
+            title: '',
+            subtitle: ''
+          },
+          prompts: {
+            image: imagePrompt,
+            video: videoPrompt,
+            text: textPrompt
+          },
+          models: {
+            image: selectedImageModel,
+            video: selectedVideoModel,
+            text: selectedLLMModel
+          }
+        });
+      } catch (error) {
+        console.error('Error saving changes:', error);
+      }
+    };
 
-  const handlePlatformsChange = (platforms) => {
-    setSelectedPlatforms(platforms);
-  };
+    const timeoutId = setTimeout(saveChanges, 1000);
+    return () => clearTimeout(timeoutId);
+  }, [
+    postId, selectedPlatforms, selectedDate, selectedTime,
+    imageSize, imageTemplate, postText,
+    imagePrompt, videoPrompt, textPrompt,
+    selectedImageModel, selectedVideoModel, selectedLLMModel
+  ]);
 
   return (
     <Modal show={show} onClose={onClose}>
@@ -105,7 +182,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform })
                 <div className="flex items-center justify-center">
                   <PostPlatformSelector
                     selectedPlatforms={selectedPlatforms}
-                    onPlatformsChange={handlePlatformsChange}
+                    onPlatformsChange={setSelectedPlatforms}
                   />
                 </div>
                 <div className="flex items-center justify-center ps-2 pe-2 ms-3">
@@ -124,6 +201,8 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform })
               <Textarea 
                 placeholder="Write your post..."
                 className="h-full resize-none"
+                value={postText}
+                onChange={(e) => setPostText(e.target.value)}
               />
             </div>
           </div>
@@ -149,6 +228,8 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform })
                   models={models.image}
                   placeholder="Describe the image you want to generate..."
                   buttonText="Generate Image"
+                  value={imagePrompt}
+                  onChange={setImagePrompt}
                 />
 
                 {/* Video Generation */}
@@ -159,6 +240,8 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform })
                   models={models.video}
                   placeholder="Describe the video you want to generate..."
                   buttonText="Generate Video"
+                  value={videoPrompt}
+                  onChange={setVideoPrompt}
                 />
 
                 {/* Text Generation */}
@@ -169,6 +252,8 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform })
                   models={models.llm}
                   placeholder="Write your prompt for AI text generation..."
                   buttonText="Generate Text"
+                  value={textPrompt}
+                  onChange={setTextPrompt}
                 />
               </div>
             </div>
