@@ -3,6 +3,32 @@ import Post from '../models/Post.js';
 
 const router = express.Router();
 
+// Default post structure
+const DEFAULT_POST = {
+  platforms: [],
+  timePost: "10:00",
+  image: {
+    url: '',
+    size: { width: 0, height: 0 },
+    template: ''
+  },
+  text: {
+    post: '',
+    title: '',
+    subtitle: ''
+  },
+  prompts: {
+    image: '',
+    video: '',
+    text: ''
+  },
+  models: {
+    image: '',
+    video: '',
+    text: ''
+  }
+};
+
 // Helper to parse and validate date
 const parseDate = (dateStr) => {
   const date = new Date(dateStr);
@@ -58,30 +84,10 @@ router.get('/search', async (req, res) => {
     if (!post) {
       console.log('No post found, creating new one');
       post = await Post.create([{
+        ...DEFAULT_POST,
         accountId,
         platforms: platform ? [platform] : [],
-        datePost: parseDate(date),
-        timePost: "10:00",
-        image: {
-          url: '',
-          size: { width: 0, height: 0 },
-          template: ''
-        },
-        text: {
-          post: '',
-          title: '',
-          subtitle: ''
-        },
-        prompts: {
-          image: '',
-          video: '',
-          text: ''
-        },
-        models: {
-          image: '',
-          video: '',
-          text: ''
-        }
+        datePost: parseDate(date)
       }], { session });
       post = post[0];
     }
@@ -111,30 +117,9 @@ router.post('/', async (req, res) => {
     }
 
     const post = new Post({
-      accountId: req.body.accountId,
-      platforms: req.body.platforms || [],
-      datePost: parseDate(req.body.datePost),
-      timePost: req.body.timePost || "10:00",
-      image: req.body.image || {
-        url: '',
-        size: { width: 0, height: 0 },
-        template: ''
-      },
-      text: req.body.text || {
-        post: '',
-        title: '',
-        subtitle: ''
-      },
-      prompts: req.body.prompts || {
-        image: '',
-        video: '',
-        text: ''
-      },
-      models: {
-        image: req.body.models?.image || '',
-        video: req.body.models?.video || '',
-        text: req.body.models?.text || ''
-      }
+      ...DEFAULT_POST,
+      ...req.body,
+      datePost: parseDate(req.body.datePost)
     });
 
     const savedPost = await post.save();

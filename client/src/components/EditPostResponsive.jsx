@@ -14,53 +14,60 @@ import { createPost, updatePost, searchPosts, findOrCreatePost } from '@/service
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
+const DEFAULT_STATE = {
+  postId: null,
+  postText: '',
+  postTitle: '',
+  postSubtitle: '',
+  selectedTime: "10",
+  imagePrompt: '',
+  videoPrompt: '',
+  textPrompt: '',
+  imageSize: { width: 0, height: 0 },
+  imageTemplate: '',
+  selectedImageModel: models.image[0]?.value,
+  selectedVideoModel: models.video[0]?.value,
+  selectedLLMModel: models.llm[0]?.value
+};
+
 const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform }) => {
   console.log('EditPostResponsive render:', { show, date, accountId, initialPlatform });
   
   // Basic post states
-  const [selectedTime, setSelectedTime] = useState("10") // Default to 10:00
+  const [selectedTime, setSelectedTime] = useState(DEFAULT_STATE.selectedTime)
   const [selectedDate, setSelectedDate] = useState(date)
-  const [postId, setPostId] = useState(null);
+  const [postId, setPostId] = useState(DEFAULT_STATE.postId);
   const initializationRef = useRef(false);
 
   // Content states
-  const [postText, setPostText] = useState('');
-  const [postTitle, setPostTitle] = useState('');
-  const [postSubtitle, setPostSubtitle] = useState('');
-  const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
-  const [imageTemplate, setImageTemplate] = useState('');
+  const [postText, setPostText] = useState(DEFAULT_STATE.postText);
+  const [postTitle, setPostTitle] = useState(DEFAULT_STATE.postTitle);
+  const [postSubtitle, setPostSubtitle] = useState(DEFAULT_STATE.postSubtitle);
+  const [imageSize, setImageSize] = useState(DEFAULT_STATE.imageSize);
+  const [imageTemplate, setImageTemplate] = useState(DEFAULT_STATE.imageTemplate);
 
   // Platform and model states
   const [selectedPlatforms, setSelectedPlatforms] = useState(() => {
     return initialPlatform ? [initialPlatform] : [];
   });
 
-  const [selectedImageModel, setSelectedImageModel] = useState(models.image[0]?.value)
-  const [selectedVideoModel, setSelectedVideoModel] = useState(models.video[0]?.value)
-  const [selectedLLMModel, setSelectedLLMModel] = useState(models.llm[0]?.value)
+  const [selectedImageModel, setSelectedImageModel] = useState(DEFAULT_STATE.selectedImageModel)
+  const [selectedVideoModel, setSelectedVideoModel] = useState(DEFAULT_STATE.selectedVideoModel)
+  const [selectedLLMModel, setSelectedLLMModel] = useState(DEFAULT_STATE.selectedLLMModel)
 
   // Prompt states
-  const [imagePrompt, setImagePrompt] = useState('');
-  const [videoPrompt, setVideoPrompt] = useState('');
-  const [textPrompt, setTextPrompt] = useState('');
+  const [imagePrompt, setImagePrompt] = useState(DEFAULT_STATE.imagePrompt);
+  const [videoPrompt, setVideoPrompt] = useState(DEFAULT_STATE.videoPrompt);
+  const [textPrompt, setTextPrompt] = useState(DEFAULT_STATE.textPrompt);
 
   // Reset states when modal closes
   useEffect(() => {
     if (!show) {
       console.log('Resetting modal state');
-      setPostId(null);
-      setPostText('');
-      setPostTitle('');
-      setPostSubtitle('');
-      setSelectedTime("10");
-      setImagePrompt('');
-      setVideoPrompt('');
-      setTextPrompt('');
-      setSelectedImageModel(models.image[0]?.value);
-      setSelectedVideoModel(models.video[0]?.value);
-      setSelectedLLMModel(models.llm[0]?.value);
-      setImageSize({ width: 0, height: 0 });
-      setImageTemplate('');
+      Object.entries(DEFAULT_STATE).forEach(([key, value]) => {
+        const setter = eval(`set${key.charAt(0).toUpperCase() + key.slice(1)}`);
+        setter(value);
+      });
       initializationRef.current = false;
     }
   }, [show]);
@@ -126,23 +133,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform })
 
     const saveChanges = async () => {
       try {
-        console.log('Saving post changes:', {
-          platforms: selectedPlatforms,
-          datePost: selectedDate,
-          timePost: selectedTime,
-          text: {
-            post: postText,
-            title: postTitle,
-            subtitle: postSubtitle
-          },
-          prompts: {
-            image: imagePrompt,
-            video: videoPrompt,
-            text: textPrompt
-          }
-        });
-        
-        await updatePost(postId, {
+        const postData = {
           platforms: selectedPlatforms,
           datePost: selectedDate,
           timePost: selectedTime,
@@ -166,14 +157,25 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform })
             video: selectedVideoModel,
             text: selectedLLMModel
           }
-        });
+        };
+
+        console.log('Saving post changes:', postData);
+        await updatePost(postId, postData);
       } catch (error) {
         console.error('Error saving changes:', error);
       }
     };
 
-    const timeoutId = setTimeout(saveChanges, 1000);
-    return () => clearTimeout(timeoutId);
+    const debouncedSave = (() => {
+      let timeoutId;
+      return () => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(saveChanges, 1000);
+      };
+    })();
+
+    debouncedSave();
+    return () => clearTimeout(debouncedSave);
   }, [
     postId, selectedPlatforms, selectedDate, selectedTime,
     imageSize, imageTemplate, postText, postTitle, postSubtitle,

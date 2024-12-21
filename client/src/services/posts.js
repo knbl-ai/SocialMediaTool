@@ -30,6 +30,32 @@ const apiCall = async (endpoint, options = {}) => {
   }
 };
 
+// Default post structure
+const DEFAULT_POST = {
+  platforms: [],
+  timePost: "10:00",
+  image: {
+    url: '',
+    size: { width: 0, height: 0 },
+    template: ''
+  },
+  text: {
+    post: '',
+    title: '',
+    subtitle: ''
+  },
+  prompts: {
+    image: '',
+    video: '',
+    text: ''
+  },
+  models: {
+    image: '',
+    video: '',
+    text: ''
+  }
+};
+
 // Find or create a post for a specific date
 export const findOrCreatePost = async (params) => {
   const { accountId, date, platform } = params;
@@ -67,30 +93,10 @@ export const findOrCreatePost = async (params) => {
   return apiCall('/', {
     method: 'POST',
     body: JSON.stringify({
+      ...DEFAULT_POST,
       accountId,
       platforms: platform ? [platform] : [],
-      datePost: date,
-      timePost: "10:00",
-      image: {
-        url: '',
-        size: { width: 0, height: 0 },
-        template: ''
-      },
-      text: {
-        post: '',
-        title: '',
-        subtitle: ''
-      },
-      prompts: {
-        image: '',
-        video: '',
-        text: ''
-      },
-      models: {
-        image: '',
-        video: '',
-        text: ''
-      }
+      datePost: date
     })
   });
 };
@@ -99,7 +105,10 @@ export const findOrCreatePost = async (params) => {
 export const createPost = async (postData) => {
   return apiCall('/', {
     method: 'POST',
-    body: JSON.stringify(postData)
+    body: JSON.stringify({
+      ...DEFAULT_POST,
+      ...postData
+    })
   });
 };
 
