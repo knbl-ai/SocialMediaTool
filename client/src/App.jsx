@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider } from './context/AuthContext';
+import { PlatformProvider } from './context/PlatformContext';
 import Auth from './pages/Auth';
 import Main from './pages/Main';
 import AccountDashboard from './pages/AccountDashboard';
@@ -12,12 +13,14 @@ function App() {
     <Router>
       <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
         <AuthProvider>
-          <Routes>
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/" element={<Main />} />
-            <Route path="/account/:accountId" element={<AccountDashboard />} />
-            <Route path="*" element={<Navigate to="/" />} />
-          </Routes>
+          <PlatformProvider>
+            <Routes>
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/" element={<Main />} />
+              <Route path="/account/:accountId" element={<AccountDashboard />} />
+              <Route path="*" element={<Navigate to="/" />} />
+            </Routes>
+          </PlatformProvider>
         </AuthProvider>
       </GoogleOAuthProvider>
     </Router>

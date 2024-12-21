@@ -1,23 +1,22 @@
-// Parse array from environment variable string
-const parseEnvArray = (envVar) => {
+const parseEnvModels = (envVar, defaultValue = []) => {
   try {
-    return envVar ? JSON.parse(envVar) : [];
+    return JSON.parse(envVar || '[]');
   } catch (error) {
-    console.error(`Error parsing environment variable: ${error}`);
-    return [];
+    console.error(`Error parsing models from environment variable:`, error);
+    return defaultValue;
   }
 };
 
-// Default models if environment variables are not set
-const defaultModels = {
-  image: [{ value: "dalle3", label: "DALL-E 3" }],
-  video: [{ value: "runway", label: "Runway Gen-2" }],
-  llm: [{ value: "gpt4", label: "GPT-4" }]
+const MODELS = {
+  image: parseEnvModels(import.meta.env.VITE_IMAGE_MODELS, [
+    { value: "fal-ai/flux/schnell", label: "flux-schnell" }
+  ]),
+  video: parseEnvModels(import.meta.env.VITE_VIDEO_MODELS, [
+    { value: "runway", label: "Runway Gen-3" }
+  ]),
+  llm: parseEnvModels(import.meta.env.VITE_LLM_MODELS, [
+    { value: "claude-3-5-haiku@20241022", label: "claude-haiku" }
+  ])
 };
 
-// Get models from environment variables or use defaults
-export const models = {
-  image: parseEnvArray(import.meta.env.VITE_IMAGE_MODELS) || defaultModels.image,
-  video: parseEnvArray(import.meta.env.VITE_VIDEO_MODELS) || defaultModels.video,
-  llm: parseEnvArray(import.meta.env.VITE_LLM_MODELS) || defaultModels.llm
-};
+export default MODELS;

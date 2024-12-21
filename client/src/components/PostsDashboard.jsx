@@ -1,74 +1,42 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import DayCell from './DayCell';
 import PlatformSelector from './PlatformSelector';
-import { searchPosts } from '@/services/posts';
+import { usePlatform } from '../context/PlatformContext';
+import { usePosts } from '../hooks/usePosts';
+import { Alert, AlertDescription } from '../components/ui/alert';
 
 const PostsDashboard = ({ accountId }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [monthPosts, setMonthPosts] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const storageKey = `selectedPlatform_${accountId}`;
-  
-  const [currentPlatform, setCurrentPlatform] = useState(() => {
-    const saved = localStorage.getItem(storageKey);
-    return saved || 'Instagram';
-  });
+  const { getAccountPlatform, setAccountPlatform } = usePlatform();
+  const currentPlatform = getAccountPlatform(accountId);
+  const { 
+    loading, 
+    error, 
+    fetchPosts, 
+    getPostsByDate,
+    clearError 
+  } = usePosts(accountId);
 
-  // Effect to update localStorage when platform changes
-  useEffect(() => {
-    localStorage.setItem(storageKey, currentPlatform);
-  }, [currentPlatform, accountId, storageKey]);
+  const fetchMonthPosts = useCallback(async () => {
+    const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+    
+    await fetchPosts({
+      startDate: firstDay.toISOString().split('T')[0],
+      endDate: lastDay.toISOString().split('T')[0],
+      platform: currentPlatform
+    });
+  }, [currentDate, currentPlatform, fetchPosts]);
 
-  // Effect to load platform when account changes
   useEffect(() => {
-    const saved = localStorage.getItem(storageKey);
-    console.log('Account changed to', accountId, 'loading platform:', saved);
-    if (saved && saved !== currentPlatform) {
-      setCurrentPlatform(saved);
+    if (accountId) {
+      fetchMonthPosts();
     }
-  }, [accountId, storageKey]);
-
-  // Effect to fetch posts for the current month
-  useEffect(() => {
-    if (!accountId) return;
-
-    const fetchMonthPosts = async () => {
-      setIsLoading(true);
-      try {
-        // Get first and last day of current month
-        const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-        const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
-        
-        // Format dates for API
-        const startDate = firstDay.toISOString().split('T')[0];
-        const endDate = lastDay.toISOString().split('T')[0];
-        
-        console.log('Fetching posts:', { accountId, startDate, endDate, currentPlatform });
-        
-        // Fetch posts for the month
-        const posts = await searchPosts({
-          accountId,
-          startDate,
-          endDate,
-          platform: currentPlatform
-        });
-        
-        console.log('Fetched posts:', posts);
-        setMonthPosts(posts);
-      } catch (error) {
-        console.error('Error fetching posts:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchMonthPosts();
-  }, [accountId, currentDate, currentPlatform]);
+  }, [accountId, fetchMonthPosts]);
 
   const handlePlatformSelect = (platformName) => {
-    console.log('Clicking platform for account', accountId, 'new platform:', platformName);
-    setCurrentPlatform(platformName);
+    setAccountPlatform(accountId, platformName);
   };
 
   const handlePreviousMonth = () => {
@@ -95,16 +63,11 @@ const PostsDashboard = ({ accountId }) => {
 
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  // Helper to get posts for a specific day
-  const getPostsForDay = (day) => {
+  const getPostsForDay = useCallback((day) => {
     if (!day) return [];
     const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-    const dateStr = date.toISOString().split('T')[0];
-    return monthPosts.filter(post => {
-      const postDate = new Date(post.datePost);
-      return postDate.toISOString().split('T')[0] === dateStr;
-    });
-  };
+    return getPostsByDate(date);
+  }, [currentDate, getPostsByDate]);
 
   return (
     <div className="w-full p-4">
@@ -135,8 +98,15 @@ const PostsDashboard = ({ accountId }) => {
         </button>
       </div>
 
+      {/* Error State */}
+      {error && (
+        <Alert variant="destructive" className="mb-4" onClose={clearError}>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
       {/* Loading State */}
-      {isLoading && (
+      {loading && (
         <div className="absolute inset-0 bg-white/50 flex items-center justify-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
         </div>
@@ -172,6 +142,7 @@ const PostsDashboard = ({ accountId }) => {
               posts={getPostsForDay(day)}
               accountId={accountId}
               currentPlatform={currentPlatform}
+              onUpdate={fetchMonthPosts}
             />
           );
         })}

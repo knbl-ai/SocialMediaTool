@@ -1,18 +1,22 @@
 import jwt from 'jsonwebtoken';
+import { ApiError } from '../utils/ApiError.js';
 
 const auth = (req, res, next) => {
   try {
     const token = req.cookies.token;
     if (!token) {
-      return res.status(401).json({ message: 'Authentication required' });
+      throw ApiError.unauthorized('Authentication required');
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
-    next();
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      req.user = decoded;
+      next();
+    } catch (jwtError) {
+      throw ApiError.unauthorized('Invalid token');
+    }
   } catch (error) {
-    console.error('Auth middleware error:', error);
-    res.status(401).json({ message: 'Invalid token' });
+    next(error);
   }
 };
 

@@ -1,70 +1,41 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import axios from 'axios';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { useAccounts } from '../hooks/useAccounts';
+import { Button } from '../components/ui/button';
+import { Card, CardContent } from '../components/ui/card';
 import NewAccountButton from '../components/NewAccountButton';
 import AccountCard from '../components/AccountCard';
-import { useNavigate } from 'react-router-dom';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-
-axios.defaults.withCredentials = true;
-axios.defaults.baseURL = API_URL;
+import api from '../lib/api';
 
 const Main = () => {
-  const { user, loading: authLoading, logout } = useAuth();
-  const [accounts, setAccounts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const { user, loading: authLoading, logout } = useAuth();
+  const { accounts, loading, error, deleteAccount } = useAccounts();
 
   useEffect(() => {
-    // If authentication is still loading, wait
     if (authLoading) return;
-
-    // If no user after auth loading is complete, redirect to login
     if (!user) {
       navigate('/auth');
-      return;
     }
-
-    const fetchAccounts = async () => {
-      try {
-        const response = await axios.get('/api/accounts', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-        setAccounts(response.data);
-        setError(null);
-      } catch (error) {
-        console.error('Error fetching accounts:', error);
-        setError(error.response?.data?.message || 'Failed to fetch accounts');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAccounts();
   }, [user, authLoading, navigate]);
 
   const handleLogout = async () => {
     try {
+      await api.logout();
       await logout();
       navigate('/auth');
     } catch (error) {
       console.error('Logout failed:', error);
-      setError('Failed to logout. Please try again.');
     }
   };
 
-  const handleAccountCreated = (newAccount) => {
-    setAccounts(prevAccounts => [...prevAccounts, newAccount]);
-  };
-
-  const handleAccountDeleted = (accountId) => {
-    setAccounts(prevAccounts => prevAccounts.filter(account => account._id !== accountId));
+  const handleAccountDeleted = async (accountId) => {
+    try {
+      await deleteAccount(accountId);
+    } catch (error) {
+      console.error('Error deleting account:', error);
+    }
   };
 
   // Show loading state while authentication is in progress
@@ -87,13 +58,10 @@ const Main = () => {
     <div className="w-full h-full flex flex-col bg-background">
       <main className="flex-1 overflow-auto p-4 w-full">
         <div className="flex justify-between items-center mb-8">
- 
-           
-            <span className="text-sm text-muted-foreground">
-              {user.email}
-            </span>
-            <h1 className="text-2xl font-bold">Social Media Tool</h1>
-   
+          <span className="text-sm text-muted-foreground">
+            {user.email}
+          </span>
+          <h1 className="text-2xl font-bold">Social Media Tool</h1>
           <Button 
             variant="outline" 
             onClick={handleLogout}
@@ -104,7 +72,7 @@ const Main = () => {
         </div>
 
         <div className="flex justify-center items-center mb-8">
-          <NewAccountButton onAccountCreated={handleAccountCreated} />
+          <NewAccountButton />
         </div>
 
         {error && (
