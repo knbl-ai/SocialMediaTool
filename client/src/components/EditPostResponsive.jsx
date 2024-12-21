@@ -6,9 +6,10 @@ import { SelectTemplate } from "./EditPost/SelectTemplate"
 import { PostDateSelector } from "./EditPost/PostDateSelector"
 import { PostTimeSelector } from "./EditPost/PostTimeSelector"
 import { useState, useEffect } from "react"
-import PostPlatformSelector from "./EditPost/PostPlatformSelector"
-import PostSelectItems from "./EditPost/PostSelectItems"
+import PostPlatformSelector from "./editPost/PostPlatformSelector"
+import PostSelectItems from "./editPost/PostSelectItems"
 import { models } from "@/config/models"
+import DimensionsSelector from "./editPost/DimensionsSelector"
 
 const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform }) => {
   const [selectedTime, setSelectedTime] = useState("10") // Default to 10:00
@@ -24,6 +25,44 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform })
   const [selectedImageModel, setSelectedImageModel] = useState(models.image[0]?.value)
   const [selectedVideoModel, setSelectedVideoModel] = useState(models.video[0]?.value)
   const [selectedLLMModel, setSelectedLLMModel] = useState(models.llm[0]?.value)
+
+  // Create post when modal opens
+  useEffect(() => {
+    const createPost = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/posts', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            accountId,
+            platforms: selectedPlatforms,
+            datePost: selectedDate,
+            timePost: selectedTime,
+            models: {
+              image: selectedImageModel,
+              video: selectedVideoModel,
+              text: selectedLLMModel
+            }
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Post created:', data);
+      } catch (error) {
+        console.error('Error creating post:', error);
+      }
+    };
+
+    if (show && accountId) {
+      createPost();
+    }
+  }, [show, accountId]);
 
   // Update platforms when initialPlatform changes
   useEffect(() => {
@@ -93,6 +132,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform })
           <div className="col-span-3 flex flex-col gap-4">
             {/* Top Box - Close Button */}
             <div className="h-16 rounded-lg flex justify-end items-center pr-2">
+              <DimensionsSelector value="square_hd" onChange={() => {}} />
               <Button variant="ghost" size="icon" onClick={onClose} className="text-gray-400 hover:text-gray-500">
                 <X className="h-4 w-4" />
               </Button>
