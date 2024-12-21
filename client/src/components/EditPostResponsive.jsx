@@ -21,7 +21,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId }) => {
           {/* Left Column - Templates */}
           <div className="col-span-2 h-full">
             {/* Templates section taking full height */}
-            <div className="bg-gray-50 rounded-lg overflow-hidden h-full">
+            <div className=" rounded-lg overflow-hidden h-full">
               <SelectTemplate accountId={accountId} />
             </div>
           </div>
@@ -29,7 +29,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId }) => {
           {/* Middle Column */}
           <div className="col-span-7 flex flex-col gap-4">
             {/* Top Section - Date, Platform, Time in equal blocks */}
-            <div className="h-16 bg-gray-50 rounded-lg">
+            <div className="h-16  rounded-lg">
               <div className="grid grid-cols-3 h-full">
                 <div className="flex items-center justify-center ps-2 pe-2">
                   <PostDateSelector date={selectedDate} onChange={setSelectedDate} />
@@ -44,7 +44,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId }) => {
             </div>
 
             {/* Middle Section - Image Preview */}
-            <div className="flex-[4] bg-gray-50 rounded-lg min-h-0 flex items-center justify-center">
+            <div className="flex-[4] bg-gray-100  rounded-lg min-h-0 flex items-center justify-center">
               <ImagePlus className="h-12 w-12 text-gray-400" />
             </div>
 
@@ -60,14 +60,14 @@ const EditPostResponsive = ({ show, onClose, date, accountId }) => {
           {/* Right Column */}
           <div className="col-span-3 flex flex-col gap-4">
             {/* Top Box - Close Button */}
-            <div className="h-16 bg-gray-50 rounded-lg flex justify-end items-center pr-2">
+            <div className="h-16  rounded-lg flex justify-end items-center pr-2">
               <Button variant="ghost" size="icon" onClick={onClose} className="text-gray-400 hover:text-gray-500">
                 <X className="h-4 w-4" />
               </Button>
             </div>
 
             {/* Bottom Box - Generation Controls */}
-            <div className="flex-1 bg-gray-50 rounded-lg p-4">
+            <div className="flex-1  rounded-lg p-4">
               <div className="h-full flex flex-col justify-between">
                 {/* Image Generation */}
                 <div>
