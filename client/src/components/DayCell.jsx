@@ -1,6 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import EditPostResponsive from './EditPostResponsive';
-import PlatformSelector from './PlatformSelector';
 import api from '../lib/api';
 
 const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlatform, onUpdate }) => {
@@ -29,7 +28,6 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
         createIfNotFound: true
       });
 
-      // Return the first post or create a new one
       return Array.isArray(response) && response.length > 0 
         ? response[0] 
         : await api.createPost({
@@ -45,11 +43,10 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
   };
 
   const handleCellClick = useCallback(async (e) => {
-    if (!day || !accountId || e.target.closest('.platform-selector')) return;
+    if (!day || !accountId) return;
     
     setIsLoading(true);
     try {
-      // Find existing post for this platform or create new one
       const date = new Date(year, month, day);
       const post = await findOrCreatePost({
         accountId,
@@ -71,33 +68,6 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
     }
   }, [day, month, year, accountId, currentPlatform]);
 
-  const handlePlatformSelect = useCallback(async (platform) => {
-    if (!day || !accountId) return;
-
-    setIsLoading(true);
-    try {
-      // Find or create post for the selected platform
-      const date = new Date(year, month, day);
-      const post = await findOrCreatePost({
-        accountId,
-        date,
-        platform
-      });
-
-      if (post) {
-        setModalState({
-          isOpen: true,
-          platform,
-          postId: post._id
-        });
-      }
-    } catch (error) {
-      console.error('Error finding/creating post:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [day, month, year, accountId]);
-
   const handleModalClose = useCallback(() => {
     setModalState(prev => ({
       isOpen: false,
@@ -109,23 +79,13 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
   if (!day) return <div className="aspect-square" />;
 
   const cellDate = new Date(year, month, day);
-  const hasPosts = Array.isArray(posts) && posts.length > 0;
-  const hasScheduledPosts = Array.isArray(posts) && posts.some(post => post?.scheduled);
-  const hasPublishedPosts = Array.isArray(posts) && posts.some(post => post?.published);
+  const currentPost = Array.isArray(posts) && posts.length > 0 ? posts[0] : null;
+  const hasPost = Boolean(currentPost);
 
-  // Determine cell background color based on post status
+  // Determine cell background color
   const getCellBackground = () => {
     if (isToday) {
       return 'bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500';
-    }
-    if (hasPublishedPosts) {
-      return 'bg-green-100 hover:bg-green-200';
-    }
-    if (hasScheduledPosts) {
-      return 'bg-yellow-100 hover:bg-yellow-200';
-    }
-    if (hasPosts) {
-      return 'bg-blue-50 hover:bg-blue-100';
     }
     return 'bg-gray-50 hover:bg-gray-100';
   };
@@ -144,87 +104,77 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
           className={`
             w-full h-full rounded-xl cursor-pointer
             ${!isToday ? getCellBackground() : 'bg-white'}
-            transition-colors duration-200
+            transition-all duration-200
             ${isLoading ? 'opacity-50' : ''}
-            relative
+            relative overflow-hidden
+            hover:shadow-lg
+            group
           `}
         >
+          {/* Loading Spinner */}
           {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center justify-center bg-white/50 z-20">
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900"></div>
             </div>
           )}
           
-          <span className={`
-            absolute top-2 right-2 text-sm font-medium
-            ${isToday ? 'text-blue-600' : 'text-gray-600'}
-          `}>
-            {day}
-          </span>
-
-          <div className="p-2 pt-8 h-full overflow-y-auto">
-            {Array.isArray(posts) && posts.map((post, index) => {
-              if (!post) return null;
-              
-              return (
-                <div
-                  key={post._id || index}
-                  className="mb-2 p-2 bg-white rounded-lg shadow-sm hover:shadow transition-shadow"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setModalState({
-                      isOpen: true,
-                      platform: post.platforms?.[0] || currentPlatform,
-                      postId: post._id
-                    });
-                  }}
-                >
-                  <div className="flex items-center space-x-2">
-                    {post.image?.url && (
-                      <img
-                        src={post.image.url}
-                        alt="Post preview"
-                        className="w-10 h-10 rounded object-cover"
-                      />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {post.text?.title || 'Untitled'}
-                      </p>
-                      <p className="text-sm text-gray-600 truncate">
-                        {post.text?.subtitle || 'No subtitle'}
-                      </p>
-                    </div>
-                    <div 
-                      className="platform-selector" 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                      }}
-                    >
-                      <PlatformSelector
-                        currentPlatform={modalState.platform}
-                        onPlatformSelect={handlePlatformSelect}
-                      />
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+          {/* Date Badge */}
+          <div className="absolute top-2 right-2 z-20">
+            <span className={`
+              inline-block px-2.5 py-1 rounded-lg text-sm font-bold shadow-sm
+              ${hasPost 
+                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white' 
+                : isToday 
+                  ? 'bg-blue-100 text-blue-600' 
+                  : 'text-gray-600'
+              }
+            `}>
+              {day}
+            </span>
           </div>
+
+          {/* Post Content */}
+          {hasPost ? (
+            <div className="absolute inset-0 flex flex-col">
+              {/* Image Container */}
+              <div className="flex-1 p-2 pt-10">
+                {currentPost.image?.url ? (
+                  <img
+                    src={currentPost.image.url}
+                    alt="Post preview"
+                    className="w-full h-full object-cover rounded-lg shadow-sm"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-100 rounded-lg flex items-center justify-center">
+                    <span className="text-gray-400 text-sm">No image</span>
+                  </div>
+                )}
+              </div>
+              
+              {/* Text Overlay */}
+              {currentPost.text?.post && (
+                <div className="p-2 bg-gradient-to-t from-white via-white/95 to-white/80 transform transition-transform duration-200 group-hover:translate-y-0 translate-y-1">
+                  <p className="text-xs text-gray-800 line-clamp-2 font-medium">
+                    {currentPost.text.post}
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : null}
         </div>
       </div>
 
+      {/* Edit Modal */}
       {modalState.isOpen && (
-          <EditPostResponsive
-            show={modalState.isOpen}
-            onClose={handleModalClose}
-            date={cellDate}
-            accountId={accountId}
-            initialPlatform={modalState.platform}
-            postId={modalState.postId}
-            onUpdate={onUpdate}
-          />
+        <EditPostResponsive
+          show={modalState.isOpen}
+          onClose={handleModalClose}
+          date={cellDate}
+          accountId={accountId}
+          initialPlatform={modalState.platform}
+          postId={modalState.postId}
+          onUpdate={onUpdate}
+        />
       )}
     </>
   );
