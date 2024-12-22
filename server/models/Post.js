@@ -39,6 +39,10 @@ const PostSchema = new mongoose.Schema({
     template: {
       type: String,
       default: ''
+    },
+    dimensions: {
+      type: String,
+      default: 'square_hd'
     }
   },
   text: {

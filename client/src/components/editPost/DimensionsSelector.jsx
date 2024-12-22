@@ -1,22 +1,29 @@
-import React from 'react'
+import React from 'react';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "../ui/select";
 
 const dimensions = [
-  { name: 'Square', value: 'square_hd' },
-  { name: 'Horizontal', value: 'landscape_4_3' },
-  { name: 'Horizontal Wide', value: 'landscape_16_9' },
-  { name: 'Story', value: 'portrait_16_9' }
+  { name: 'Square', value: 'square', size: { width: 1280, height: 1280} },
+  { name: 'Horizontal', value: 'horizontal', size: { width: 1280, height: 960} },
+  { name: 'Horizontal Wide', value: 'horizontal_wide', size: { width: 1280, height: 720} },
+  { name: 'Story', value: 'story', size: { width: 720, height: 1280} }
 ];
 
 export const DimensionsSelector = ({ value, onChange }) => {
+  const handleChange = (selectedValue) => {
+    const selectedDimension = dimensions.find(d => d.value === selectedValue);
+    if (selectedDimension) {
+      onChange(selectedValue, selectedDimension.size);
+    }
+  };
+
   return (
-    <Select value={value} onValueChange={onChange}>
+    <Select value={value} onValueChange={handleChange}>
       <SelectTrigger className="w-[180px] bg-white">
         <SelectValue placeholder="Select format" />
       </SelectTrigger>
@@ -31,7 +38,7 @@ export const DimensionsSelector = ({ value, onChange }) => {
         ))}
       </SelectContent>
     </Select>
-  )
-}
+  );
+};
 
-export default DimensionsSelector
+export default DimensionsSelector;

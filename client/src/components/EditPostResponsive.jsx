@@ -45,6 +45,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
   const [postSubtitle, setPostSubtitle] = useState(DEFAULT_STATE.postSubtitle);
   const [imageSize, setImageSize] = useState(DEFAULT_STATE.imageSize);
   const [imageTemplate, setImageTemplate] = useState(DEFAULT_STATE.imageTemplate);
+  const [dimensions, setDimensions] = useState(initialPost?.image?.dimensions || 'square');
 
   // Platform and model states
   const [selectedPlatforms, setSelectedPlatforms] = useState(() => {
@@ -59,6 +60,11 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
   const [imagePrompt, setImagePrompt] = useState(DEFAULT_STATE.imagePrompt);
   const [videoPrompt, setVideoPrompt] = useState(DEFAULT_STATE.videoPrompt);
   const [textPrompt, setTextPrompt] = useState(DEFAULT_STATE.textPrompt);
+
+  const handleDimensionsChange = (dimensionValue, dimensionSize) => {
+    setDimensions(dimensionValue);
+    setImageSize(dimensionSize);
+  };
 
   const handleClose = useCallback(async () => {
     if (onUpdate) {
@@ -97,6 +103,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
       setSelectedLLMModel(initialPost.models?.text || DEFAULT_STATE.selectedLLMModel);
       setImageSize(initialPost.image?.size || DEFAULT_STATE.imageSize);
       setImageTemplate(initialPost.image?.template || '');
+      setDimensions(initialPost.image?.dimensions || 'square');
       setCurrentPost(initialPost);
       initializationRef.current = true;
     }
@@ -115,7 +122,8 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
           image: {
             ...(currentPost?.image || {}),
             size: imageSize,
-            template: imageTemplate
+            template: imageTemplate,
+            dimensions: dimensions
           },
           text: {
             post: postText,
@@ -155,7 +163,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
     return () => clearTimeout(debouncedSave);
   }, [
     postId, selectedPlatforms, selectedDate, selectedTime,
-    imageSize, imageTemplate, postText, postTitle, postSubtitle,
+    imageSize, imageTemplate, dimensions, postText, postTitle, postSubtitle,
     imagePrompt, videoPrompt, textPrompt,
     selectedImageModel, selectedVideoModel, selectedLLMModel,
     currentPost, updatePost
@@ -233,7 +241,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
           <div className="col-span-3 flex flex-col gap-4">
             {/* Top Box - Close Button */}
             <div className="h-16 rounded-lg flex justify-end items-center pr-2">
-              <DimensionsSelector value="square_hd" onChange={() => {}} />
+              <DimensionsSelector value={dimensions} onChange={handleDimensionsChange} />
               <Button variant="ghost" size="icon" onClick={handleClose} className="text-gray-400 hover:text-gray-500">
                 <X className="h-4 w-4" />
               </Button>
