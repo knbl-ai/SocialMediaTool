@@ -7,11 +7,10 @@ export const createPost = async (req, res) => {
     platforms: req.body.platforms,
     datePost: req.body.datePost,
     timePost: req.body.timePost,
-    models: req.body.models || {
-      image: '',
-      video: '',
-      text: ''
-    }
+    text: req.body.text || { post: '', title: '', subtitle: '' },
+    image: req.body.image || { url: '', size: { width: 0, height: 0 }, template: '' },
+    prompts: req.body.prompts || { image: '', video: '', text: '' },
+    models: req.body.models || { image: '', video: '', text: '' }
   });
 
   const savedPost = await post.save();
@@ -27,6 +26,9 @@ export const updatePost = async (req, res) => {
         platforms: req.body.platforms,
         datePost: req.body.datePost,
         timePost: req.body.timePost,
+        text: req.body.text,
+        image: req.body.image,
+        prompts: req.body.prompts,
         models: req.body.models,
         updatedAt: new Date()
       }

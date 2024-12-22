@@ -9,7 +9,7 @@ import { PostTimeSelector } from "./editPost/PostTimeSelector";
 import PostPlatformSelector from "./editPost/PostPlatformSelector";
 import PostSelectItems from "./editPost/PostSelectItems";
 import DimensionsSelector from "./editPost/DimensionsSelector";
-import api from '../lib/api';
+import { usePosts } from '../hooks/usePosts';
 import MODELS from '../config/models';
 
 const DEFAULT_STATE = {
@@ -28,12 +28,15 @@ const DEFAULT_STATE = {
   selectedLLMModel: MODELS.llm[0]?.value
 };
 
-const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, postId: initialPostId, onUpdate }) => {
+const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, postId: initialPostId, initialPost, onUpdate }) => {
   // Basic post states
   const [selectedTime, setSelectedTime] = useState(DEFAULT_STATE.selectedTime)
   const [selectedDate, setSelectedDate] = useState(date)
-  const [postId, setPostId] = useState(initialPostId);
-  const [error, setError] = useState(null);
+  const [currentPost, setCurrentPost] = useState(initialPost || null);
+  const [postId, setPostId] = useState(initialPost?._id || initialPostId);
+  const { updatePost, error: postsError, clearError } = usePosts(accountId);
+  const [localError, setLocalError] = useState(null);
+  const error = localError || postsError;
   const initializationRef = useRef(false);
 
   // Content states
@@ -61,8 +64,9 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
     if (onUpdate) {
       await onUpdate();
     }
+    clearError();
     onClose();
-  }, [onClose, onUpdate]);
+  }, [onClose, onUpdate, clearError]);
 
   // Reset states when modal closes
   useEffect(() => {
@@ -72,81 +76,31 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
         if (setter) setter(value);
       });
       initializationRef.current = false;
-      setError(null);
+      setLocalError(null);
+      clearError();
     }
-  }, [show]);
+  }, [show, clearError]);
 
-  // Initialize post data
+  // Initialize state from initialPost if available
   useEffect(() => {
-    let isActive = true;
-
-    const initializePost = async () => {
-      if (!show || !accountId || !date || initializationRef.current) {
-        return;
-      }
-
-      try {
-        let post;
-        try {
-          if (initialPostId) {
-            post = await api.getPost(initialPostId);
-          } else {
-            // Try to find existing post
-            const response = await api.getPosts({
-              accountId,
-              startDate: date.toISOString().split('T')[0],
-              endDate: date.toISOString().split('T')[0],
-              platform: initialPlatform
-            });
-            
-            post = Array.isArray(response) && response.length > 0 ? response[0] : null;
-
-            // If no post exists, create a new one
-            if (!post) {
-              post = await api.createPost({
-                accountId,
-                platforms: [initialPlatform],
-                datePost: date.toISOString().split('T')[0],
-                timePost: DEFAULT_STATE.selectedTime
-              });
-            }
-          }
-        } catch (error) {
-          console.error('Error fetching/creating post:', error);
-          throw new Error('Failed to initialize post: ' + error.message);
-        }
-
-        if (!isActive || !show) return;
-
-        if (post) {
-          setPostId(post._id);
-          setSelectedPlatforms(post.platforms || []);
-          setSelectedTime(post.timePost || DEFAULT_STATE.selectedTime);
-          setPostText(post.text?.post || '');
-          setPostTitle(post.text?.title || '');
-          setPostSubtitle(post.text?.subtitle || '');
-          setImagePrompt(post.prompts?.image || '');
-          setVideoPrompt(post.prompts?.video || '');
-          setTextPrompt(post.prompts?.text || '');
-          setSelectedImageModel(post.models?.image || DEFAULT_STATE.selectedImageModel);
-          setSelectedVideoModel(post.models?.video || DEFAULT_STATE.selectedVideoModel);
-          setSelectedLLMModel(post.models?.text || DEFAULT_STATE.selectedLLMModel);
-          setImageSize(post.image?.size || DEFAULT_STATE.imageSize);
-          setImageTemplate(post.image?.template || '');
-        }
-
-        initializationRef.current = true;
-      } catch (error) {
-        console.error('Error during post initialization:', error);
-        setError(error.message || 'Failed to initialize post');
-      }
-    };
-
-    initializePost();
-    return () => {
-      isActive = false;
-    };
-  }, [show, accountId, date, initialPlatform, initialPostId]);
+    if (initialPost) {
+      setSelectedPlatforms(initialPost.platforms || []);
+      setSelectedTime(initialPost.timePost || DEFAULT_STATE.selectedTime);
+      setPostText(initialPost.text?.post || '');
+      setPostTitle(initialPost.text?.title || '');
+      setPostSubtitle(initialPost.text?.subtitle || '');
+      setImagePrompt(initialPost.prompts?.image || '');
+      setVideoPrompt(initialPost.prompts?.video || '');
+      setTextPrompt(initialPost.prompts?.text || '');
+      setSelectedImageModel(initialPost.models?.image || DEFAULT_STATE.selectedImageModel);
+      setSelectedVideoModel(initialPost.models?.video || DEFAULT_STATE.selectedVideoModel);
+      setSelectedLLMModel(initialPost.models?.text || DEFAULT_STATE.selectedLLMModel);
+      setImageSize(initialPost.image?.size || DEFAULT_STATE.imageSize);
+      setImageTemplate(initialPost.image?.template || '');
+      setCurrentPost(initialPost);
+      initializationRef.current = true;
+    }
+  }, [initialPost]);
 
   // Save changes when form values change
   useEffect(() => {
@@ -159,7 +113,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
           datePost: selectedDate,
           timePost: selectedTime,
           image: {
-            url: '',
+            ...(currentPost?.image || {}),
             size: imageSize,
             template: imageTemplate
           },
@@ -180,11 +134,12 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
           }
         };
 
-        await api.updatePost(postId, postData);
-        setError(null);
+        const updatedPost = await updatePost(postId, postData);
+        setCurrentPost(updatedPost);
+        setLocalError(null);
       } catch (error) {
         console.error('Error saving changes:', error);
-        setError(error.message || 'Failed to save changes');
+        setLocalError(error.message || 'Failed to save changes');
       }
     };
 
@@ -202,7 +157,8 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
     postId, selectedPlatforms, selectedDate, selectedTime,
     imageSize, imageTemplate, postText, postTitle, postSubtitle,
     imagePrompt, videoPrompt, textPrompt,
-    selectedImageModel, selectedVideoModel, selectedLLMModel
+    selectedImageModel, selectedVideoModel, selectedLLMModel,
+    currentPost, updatePost
   ]);
 
   return (
@@ -250,8 +206,16 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
             </div>
 
             {/* Middle Section - Image Preview */}
-            <div className="flex-[4] bg-gray-100 rounded-lg min-h-0 flex items-center justify-center">
-              <ImagePlus className="h-12 w-12 text-gray-400" />
+            <div className="flex-[4] bg-gray-100 rounded-lg min-h-0 flex items-center justify-center overflow-hidden">
+              {currentPost?.image?.url ? (
+                <img
+                  src={currentPost.image.url}
+                  alt="Post preview"
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <ImagePlus className="h-12 w-12 text-gray-400" />
+              )}
             </div>
 
             {/* Bottom Section - Post Text */}

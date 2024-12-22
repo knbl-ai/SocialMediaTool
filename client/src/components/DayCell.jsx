@@ -1,14 +1,19 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import EditPostResponsive from './EditPostResponsive';
-import api from '../lib/api';
+import { usePosts } from '../hooks/usePosts';
 
 const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlatform, onUpdate }) => {
+  // Get current post before hooks
+  const currentPost = Array.isArray(posts) && posts.length > 0 ? posts[0] : null;
+  const hasPost = Boolean(currentPost);
+
   const [modalState, setModalState] = useState({
     isOpen: false,
     platform: currentPlatform,
     postId: null
   });
   const [isLoading, setIsLoading] = useState(false);
+  const { createPost } = usePosts(accountId);
 
   // Update modalState when currentPlatform prop changes
   useEffect(() => {
@@ -18,55 +23,41 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
     }));
   }, [currentPlatform]);
 
-  const findOrCreatePost = async ({ accountId, date, platform }) => {
-    try {
-      const response = await api.getPosts({
-        accountId,
-        startDate: date.toISOString().split('T')[0],
-        endDate: date.toISOString().split('T')[0],
-        platform,
-        createIfNotFound: true
-      });
-
-      return Array.isArray(response) && response.length > 0 
-        ? response[0] 
-        : await api.createPost({
-            accountId,
-            platforms: [platform],
-            datePost: date.toISOString().split('T')[0],
-            timePost: "10:00"
-          });
-    } catch (error) {
-      console.error('Error in findOrCreatePost:', error);
-      throw error;
-    }
-  };
-
-  const handleCellClick = useCallback(async (e) => {
+  const handleEmptyCellClick = useCallback(async () => {
     if (!day || !accountId) return;
     
     setIsLoading(true);
     try {
       const date = new Date(year, month, day);
-      const post = await findOrCreatePost({
-        accountId,
-        date,
-        platform: currentPlatform
+      const post = await createPost({
+        platforms: [currentPlatform],
+        datePost: date.toISOString().split('T')[0],
+        timePost: "10:00"
       });
 
       if (post) {
-        setModalState(prev => ({
+        setModalState({
           isOpen: true,
           platform: currentPlatform,
           postId: post._id
-        }));
+        });
       }
     } catch (error) {
-      console.error('Error finding/creating post:', error);
+      console.error('Error creating post:', error);
     } finally {
       setIsLoading(false);
     }
-  }, [day, month, year, accountId, currentPlatform]);
+  }, [day, month, year, accountId, currentPlatform, createPost]);
+
+  const handleExistingPostClick = useCallback(() => {
+    if (!currentPost?._id) return;
+
+    setModalState({
+      isOpen: true,
+      platform: currentPost.platforms[0] || currentPlatform,
+      postId: currentPost._id
+    });
+  }, [currentPost, currentPlatform]);
 
   const handleModalClose = useCallback(() => {
     setModalState(prev => ({
@@ -79,8 +70,6 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
   if (!day) return <div className="aspect-square" />;
 
   const cellDate = new Date(year, month, day);
-  const currentPost = Array.isArray(posts) && posts.length > 0 ? posts[0] : null;
-  const hasPost = Boolean(currentPost);
 
   // Determine cell background color
   const getCellBackground = () => {
@@ -100,7 +89,7 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
         `}
       >
         <div 
-          onClick={handleCellClick}
+          onClick={hasPost ? handleExistingPostClick : handleEmptyCellClick}
           className={`
             w-full h-full rounded-xl cursor-pointer
             ${!isToday ? getCellBackground() : 'bg-white'}
@@ -166,15 +155,16 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
 
       {/* Edit Modal */}
       {modalState.isOpen && (
-        <EditPostResponsive
-          show={modalState.isOpen}
-          onClose={handleModalClose}
-          date={cellDate}
-          accountId={accountId}
-          initialPlatform={modalState.platform}
-          postId={modalState.postId}
-          onUpdate={onUpdate}
-        />
+          <EditPostResponsive
+            show={modalState.isOpen}
+            onClose={handleModalClose}
+            date={cellDate}
+            accountId={accountId}
+            initialPlatform={modalState.platform}
+            postId={modalState.postId}
+            initialPost={hasPost ? currentPost : null}
+            onUpdate={onUpdate}
+          />
       )}
     </>
   );
