@@ -3,14 +3,17 @@ import { useDrop, useDrag } from 'react-dnd';
 import EditPostResponsive from './EditPostResponsive';
 import { usePosts } from '../hooks/usePosts';
 
-const DraggablePost = ({ post, children }) => {
+const DraggablePost = ({ post, index, onDragStart, children }) => {
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'POST',
-    item: { id: post._id },
+    item: () => {
+      onDragStart(index);
+      return { id: post._id, index };
+    },
     collect: (monitor) => ({
       isDragging: monitor.isDragging()
     })
-  }));
+  }), [post._id, index, onDragStart]);
 
   return (
     <div 
@@ -23,9 +26,18 @@ const DraggablePost = ({ post, children }) => {
 };
 
 const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlatform, onUpdate, onPostDrop }) => {
-  const currentPost = Array.isArray(posts) && posts.length > 0 ? posts[0] : null;
-  const hasPost = Boolean(currentPost);
+  const hasPosts = posts.length > 0;
+  const [activePostIndex, setActivePostIndex] = useState(0);
+  
+  // Ensure activePostIndex is valid
+  useEffect(() => {
+    if (activePostIndex >= posts.length) {
+      setActivePostIndex(Math.max(0, posts.length - 1));
+    }
+  }, [posts.length, activePostIndex]);
 
+  const currentPost = posts[Math.min(activePostIndex, posts.length - 1)];
+  
   const [modalState, setModalState] = useState({
     isOpen: false,
     platform: currentPlatform,
@@ -33,6 +45,19 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
   });
   const [isLoading, setIsLoading] = useState(false);
   const { createPost } = usePosts(accountId);
+
+  // Reset active post index when posts change
+  useEffect(() => {
+    setActivePostIndex(0);
+  }, [posts]);
+
+  // Cycle through posts on click if there are multiple
+  const cyclePost = useCallback((e) => {
+    if (posts.length > 1) {
+      e.stopPropagation();
+      setActivePostIndex((prev) => (prev + 1) % posts.length);
+    }
+  }, [posts.length]);
 
   // Drop target setup
   const [{ isOver }, drop] = useDrop(() => ({
@@ -125,7 +150,7 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
           `}
         >
           <div 
-            onClick={hasPost ? handleExistingPostClick : handleEmptyCellClick}
+            onClick={hasPosts ? handleExistingPostClick : handleEmptyCellClick}
             className={`
               w-full h-full rounded-xl cursor-pointer
               ${!isToday ? getCellBackground() : 'bg-white'}
@@ -146,7 +171,7 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
             <div className="absolute top-2 right-2 z-20">
               <span className={`
                 inline-block px-2.5 py-1 rounded-lg text-sm font-bold shadow-sm
-                ${hasPost 
+                ${hasPosts 
                   ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white' 
                   : isToday 
                     ? 'bg-blue-100 text-blue-600' 
@@ -158,43 +183,59 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
             </div>
 
             {/* Post Content */}
-            {hasPost ? (
-              <DraggablePost post={currentPost}>
-                <>
-                  {/* Image Container - Full size */}
-                  <div className="absolute inset-0">
-                    {currentPost.image?.url ? (
-                      <img
-                        src={currentPost.image.url}
-                        alt="Post preview"
-                        className="w-full h-full object-cover rounded-xl"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gray-100 rounded-xl flex items-center justify-center">
-                        <span className="text-gray-400 text-sm">No image</span>
+            {hasPosts ? (
+              <>
+                <DraggablePost 
+                  post={currentPost}
+                  index={activePostIndex}
+                  onDragStart={setActivePostIndex}
+                >
+                  <>
+                    {/* Image Container - Full size */}
+                    <div className="absolute inset-0">
+                      {currentPost.image?.url ? (
+                        <img
+                          src={currentPost.image.url}
+                          alt="Post preview"
+                          className="w-full h-full object-cover rounded-xl"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gray-100 rounded-xl flex items-center justify-center">
+                          <span className="text-gray-400 text-sm">No image</span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Text Content */}
+                    {currentPost.text?.post && (
+                      <div className="absolute inset-x-0 bottom-0 z-10">
+                        {/* Preview text */}
+                        <div className="p-2 bg-gradient-to-t from-white via-white/95 to-white/80 transition-opacity duration-300 group-hover:opacity-0 group-hover:invisible">
+                          <p className="text-xs text-gray-800 line-clamp-2 font-medium">
+                            {currentPost.text.post}
+                          </p>
+                        </div>
                       </div>
                     )}
+                  </>
+                </DraggablePost>
+
+                {/* Multiple posts indicator */}
+                {posts.length > 1 && (
+                  <div 
+                    onClick={cyclePost}
+                    className="absolute bottom-2 right-2 z-30 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center cursor-pointer hover:bg-red-600 transition-colors"
+                  >
+                    {posts.length}
                   </div>
-                  
-                  {/* Text Content */}
-                  {currentPost.text?.post && (
-                    <div className="absolute inset-x-0 bottom-0 z-10">
-                      {/* Preview text */}
-                      <div className="p-2 bg-gradient-to-t from-white via-white/95 to-white/80 transition-opacity duration-300 group-hover:opacity-0 group-hover:invisible">
-                        <p className="text-xs text-gray-800 line-clamp-2 font-medium">
-                          {currentPost.text.post}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </>
-              </DraggablePost>
+                )}
+              </>
             ) : null}
           </div>
         </div>
         
         {/* Expanded text - Outside of cell container */}
-        {hasPost && currentPost.text?.post && (
+        {hasPosts && currentPost.text?.post && (
           <div 
             className="
               absolute left-0 right-0 top-[calc(100%-1px)]
@@ -222,7 +263,7 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
             accountId={accountId}
             initialPlatform={modalState.platform}
             postId={modalState.postId}
-            initialPost={hasPost ? currentPost : null}
+            initialPost={hasPosts ? currentPost : null}
             onUpdate={onUpdate}
           />
       )}
