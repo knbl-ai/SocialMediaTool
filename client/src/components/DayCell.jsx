@@ -126,18 +126,22 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
           {hasPost ? (
             <div className="absolute inset-0 flex flex-col">
               {/* Image Container */}
-              <div className="flex-1 p-2 pt-10">
-                {currentPost.image?.url ? (
-                  <img
-                    src={currentPost.image.url}
-                    alt="Post preview"
-                    className="w-full h-full object-cover rounded-lg shadow-sm"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gray-100 rounded-lg flex items-center justify-center">
-                    <span className="text-gray-400 text-sm">No image</span>
-                  </div>
-                )}
+              <div className="flex-1 p-2 pt-10 relative">
+                <div className="absolute inset-0 m-2 mt-10">
+                  {currentPost.image?.url ? (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <img
+                        src={currentPost.image.url}
+                        alt="Post preview"
+                        className="max-w-full max-h-full object-contain rounded-lg shadow-sm"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-full h-full bg-gray-100 rounded-lg flex items-center justify-center">
+                      <span className="text-gray-400 text-sm">No image</span>
+                    </div>
+                  )}
+                </div>
               </div>
               
               {/* Text Overlay */}

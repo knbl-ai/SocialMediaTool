@@ -223,16 +223,20 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
             </div>
 
             {/* Middle Section - Image Preview */}
-            <div className="flex-[4] bg-gray-100 rounded-lg min-h-0 flex items-center justify-center overflow-hidden">
-              {currentPost?.image?.url ? (
-                <img
-                  src={currentPost.image.url}
-                  alt="Post preview"
-                  className="w-full h-full object-contain"
-                />
-              ) : (
-                <ImagePlus className="h-12 w-12 text-gray-400" />
-              )}
+            <div className="flex-[4] bg-gray-100 rounded-lg min-h-0 relative">
+              <div className="absolute inset-0 flex items-center justify-center">
+                {currentPost?.image?.url ? (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <img
+                      src={currentPost.image.url}
+                      alt="Post preview"
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  </div>
+                ) : (
+                  <ImagePlus className="h-12 w-12 text-gray-400" />
+                )}
+              </div>
             </div>
 
             {/* Bottom Section - Post Text */}
