@@ -1,9 +1,28 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import { useDrop, useDrag } from 'react-dnd';
 import EditPostResponsive from './EditPostResponsive';
 import { usePosts } from '../hooks/usePosts';
 
-const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlatform, onUpdate }) => {
-  // Get current post before hooks
+const DraggablePost = ({ post, children }) => {
+  const [{ isDragging }, drag] = useDrag(() => ({
+    type: 'POST',
+    item: { id: post._id },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging()
+    })
+  }));
+
+  return (
+    <div 
+      ref={drag} 
+      className={`${isDragging ? 'opacity-50' : ''} cursor-move`}
+    >
+      {children}
+    </div>
+  );
+};
+
+const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlatform, onUpdate, onPostDrop }) => {
   const currentPost = Array.isArray(posts) && posts.length > 0 ? posts[0] : null;
   const hasPost = Boolean(currentPost);
 
@@ -14,6 +33,21 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
   });
   const [isLoading, setIsLoading] = useState(false);
   const { createPost } = usePosts(accountId);
+
+  // Drop target setup
+  const [{ isOver }, drop] = useDrop(() => ({
+    accept: 'POST',
+    drop: (item) => {
+      if (day) {
+        const targetDate = new Date(year, month, day);
+        onPostDrop(item.id, targetDate);
+      }
+    },
+    collect: (monitor) => ({
+      isOver: !!monitor.isOver()
+    }),
+    canDrop: () => !!day // Only allow drops on valid days
+  }), [day, month, year, onPostDrop]);
 
   // Update modalState when currentPlatform prop changes
   useEffect(() => {
@@ -81,12 +115,13 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
 
   return (
     <>
-      <div className="relative group">
+      <div ref={drop} className="relative group">
         <div
           className={`
             aspect-square rounded-xl relative
             ${isToday ? 'p-[2px]' : ''}
             ${isToday ? getCellBackground() : ''}
+            ${isOver ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}
           `}
         >
           <div 
@@ -99,60 +134,62 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
               relative
               hover:shadow-lg
             `}
-        >
-          {/* Loading Spinner */}
-          {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white/50 z-20">
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900"></div>
-            </div>
-          )}
-          
-          {/* Date Badge */}
-          <div className="absolute top-2 right-2 z-20">
-            <span className={`
-              inline-block px-2.5 py-1 rounded-lg text-sm font-bold shadow-sm
-              ${hasPost 
-                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white' 
-                : isToday 
-                  ? 'bg-blue-100 text-blue-600' 
-                  : 'text-gray-600'
-              }
-            `}>
-              {day}
-            </span>
-          </div>
-
-          {/* Post Content */}
-          {hasPost ? (
-            <>
-              {/* Image Container - Full size */}
-              <div className="absolute inset-0">
-                {currentPost.image?.url ? (
-                  <img
-                    src={currentPost.image.url}
-                    alt="Post preview"
-                    className="w-full h-full object-cover rounded-xl"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gray-100 rounded-xl flex items-center justify-center">
-                    <span className="text-gray-400 text-sm">No image</span>
-                  </div>
-                )}
+          >
+            {/* Loading Spinner */}
+            {isLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-white/50 z-20">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900"></div>
               </div>
-              
-              {/* Text Content */}
-              {currentPost.text?.post && (
-                <div className="absolute inset-x-0 bottom-0 z-10">
-                  {/* Preview text */}
-                  <div className="p-2 bg-gradient-to-t from-white via-white/95 to-white/80 transition-opacity duration-300 group-hover:opacity-0 group-hover:invisible">
-                    <p className="text-xs text-gray-800 line-clamp-2 font-medium">
-                      {currentPost.text.post}
-                    </p>
+            )}
+            
+            {/* Date Badge */}
+            <div className="absolute top-2 right-2 z-20">
+              <span className={`
+                inline-block px-2.5 py-1 rounded-lg text-sm font-bold shadow-sm
+                ${hasPost 
+                  ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white' 
+                  : isToday 
+                    ? 'bg-blue-100 text-blue-600' 
+                    : 'text-gray-600'
+                }
+              `}>
+                {day}
+              </span>
+            </div>
+
+            {/* Post Content */}
+            {hasPost ? (
+              <DraggablePost post={currentPost}>
+                <>
+                  {/* Image Container - Full size */}
+                  <div className="absolute inset-0">
+                    {currentPost.image?.url ? (
+                      <img
+                        src={currentPost.image.url}
+                        alt="Post preview"
+                        className="w-full h-full object-cover rounded-xl"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gray-100 rounded-xl flex items-center justify-center">
+                        <span className="text-gray-400 text-sm">No image</span>
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
-            </>
-          ) : null}
+                  
+                  {/* Text Content */}
+                  {currentPost.text?.post && (
+                    <div className="absolute inset-x-0 bottom-0 z-10">
+                      {/* Preview text */}
+                      <div className="p-2 bg-gradient-to-t from-white via-white/95 to-white/80 transition-opacity duration-300 group-hover:opacity-0 group-hover:invisible">
+                        <p className="text-xs text-gray-800 line-clamp-2 font-medium">
+                          {currentPost.text.post}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </>
+              </DraggablePost>
+            ) : null}
           </div>
         </div>
         
