@@ -1,6 +1,7 @@
 import Post from '../models/Post.js';
 import { ApiError } from '../utils/ApiError.js';
 import { generateImage as generateImageService } from '../services/imageService.js';
+import { generateText as generateTextService } from '../services/llmService.js';
 
 export const createPost = async (req, res) => {
   const post = new Post({
@@ -107,5 +108,28 @@ export const generateImage = async (req, res) => {
       throw error;
     }
     throw new ApiError(500, `Failed to generate image: ${error.message}`);
+  }
+};
+
+export const generateText = async (req, res) => {
+  try {
+    const { prompt, model } = req.body;
+    
+    if (!process.env.ANTHROPIC_API_KEY) {
+      throw new ApiError(500, 'ANTHROPIC_API_KEY is not configured');
+    }
+    
+    const generatedText = await generateTextService({
+      prompt,
+      model
+    });
+
+    res.json({ text: generatedText });
+  } catch (error) {
+    console.error('Error generating text:', error);
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    throw new ApiError(500, `Failed to generate text: ${error.message}`);
   }
 };

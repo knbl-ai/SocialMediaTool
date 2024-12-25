@@ -16,6 +16,7 @@ const PostSelectItems = ({
   onGenerate,
   isLoading
 }) => {
+
   return (
     <div>
       <div className="flex items-center justify-between">

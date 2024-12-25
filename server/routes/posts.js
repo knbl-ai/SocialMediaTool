@@ -8,7 +8,8 @@ import {
   getPost,
   searchPosts,
   deletePost,
-  generateImage
+  generateImage,
+  generateText
 } from '../controllers/postsController.js';
 
 const router = express.Router();
@@ -67,6 +68,17 @@ router.post('/generate-image',
     })
   })),
   generateImage
+);
+
+// Generate text
+router.post('/generate-text',
+  validateRequest(Joi.object({
+    body: Joi.object({
+      prompt: Joi.string().required(),
+      model: Joi.string().required()
+    })
+  })),
+  generateText
 );
 
 export default router;

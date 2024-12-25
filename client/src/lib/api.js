@@ -101,6 +101,11 @@ class ApiClient {
     return this.client.post('/posts/generate-image', data);
   }
 
+  // Text generation endpoint
+  async generateText(data) {
+    return this.client.post('/posts/generate-text', data);
+  }
+
   // Generic request method for custom endpoints
   async request(method, endpoint, data = null, config = {}) {
     const options = {

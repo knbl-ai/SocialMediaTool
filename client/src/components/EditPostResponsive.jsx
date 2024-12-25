@@ -14,6 +14,7 @@ import api from '../lib/api';
 import MODELS from '../config/models';
 import PulsatingButton from "@/components/ui/pulsating-button";
 
+
 const DEFAULT_STATE = {
   postId: null,
   postText: '',
@@ -29,6 +30,7 @@ const DEFAULT_STATE = {
   selectedVideoModel: MODELS.video[0]?.value,
   selectedLLMModel: MODELS.llm[0]?.value
 };
+
 
 const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, postId: initialPostId, initialPost, onUpdate }) => {
   // Basic post states
@@ -58,13 +60,18 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
 
   const [selectedImageModel, setSelectedImageModel] = useState(DEFAULT_STATE.selectedImageModel)
   const [selectedVideoModel, setSelectedVideoModel] = useState(DEFAULT_STATE.selectedVideoModel)
-  const [selectedLLMModel, setSelectedLLMModel] = useState(DEFAULT_STATE.selectedLLMModel)
+  const [selectedLLMModel, setSelectedLLMModel] = useState(() => {
+    console.log('Initial LLM Models:', MODELS.llm);
+    console.log('Default LLM Model:', DEFAULT_STATE.selectedLLMModel);
+    return DEFAULT_STATE.selectedLLMModel;
+  })
 
   // Prompt states
   const [imagePrompt, setImagePrompt] = useState(DEFAULT_STATE.imagePrompt);
   const [videoPrompt, setVideoPrompt] = useState(DEFAULT_STATE.videoPrompt);
   const [textPrompt, setTextPrompt] = useState(DEFAULT_STATE.textPrompt);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [isGeneratingText, setIsGeneratingText] = useState(false);
 
   const handleDimensionsChange = (dimensionName, dimensionSize) => {
     setDimensions(dimensionName);
@@ -109,7 +116,9 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
       setTextPrompt(initialPost.prompts?.text || '');
       setSelectedImageModel(initialPost.models?.image || DEFAULT_STATE.selectedImageModel);
       setSelectedVideoModel(initialPost.models?.video || DEFAULT_STATE.selectedVideoModel);
-      setSelectedLLMModel(initialPost.models?.text || DEFAULT_STATE.selectedLLMModel);
+      const modelToSet = initialPost.models?.text || DEFAULT_STATE.selectedLLMModel;
+      console.log('Setting LLM Model:', modelToSet);
+      setSelectedLLMModel(modelToSet);
       setImageSize(initialPost.image?.size || DEFAULT_STATE.imageSize);
       setImageTemplate(initialPost.image?.template || '');
       setDimensions(initialPost.image?.dimensions || 'Square');
@@ -353,6 +362,37 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                   buttonText="Generate Text"
                   value={textPrompt}
                   onChange={setTextPrompt}
+                  isLoading={isGeneratingText}
+                  onGenerate={async () => {
+                    if (!textPrompt || !selectedLLMModel) {
+                      setLocalError('Please provide all required fields for text generation');
+                      return;
+                    }
+                    try {
+                      setIsGeneratingText(true);
+                      const result = await api.generateText({
+                        prompt: textPrompt,
+                        model: selectedLLMModel
+                      });
+                      
+                      // Update the current post with the generated text
+                      const updatedPost = await updatePost(postId, {
+                        ...currentPost,
+                        text: {
+                          ...currentPost?.text,
+                          post: result.text
+                        }
+                      });
+                      setCurrentPost(updatedPost);
+                      setPostText(result.text);
+                      setLocalError(null);
+                    } catch (error) {
+                      console.error('Error generating text:', error);
+                      setLocalError(error.message || 'Failed to generate text');
+                    } finally {
+                      setIsGeneratingText(false);
+                    }
+                  }}
                 />
                  <PulsatingButton 
                    onClick={handleClose}
