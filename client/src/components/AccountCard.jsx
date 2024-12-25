@@ -1,16 +1,23 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { useNavigate } from 'react-router-dom';
 import { Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
 
 const AccountCard = ({ account, onAccountDeleted }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [deleteState, setDeleteState] = useState('initial'); // 'initial' | 'confirm'
   const [isDeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState(null);
 
   const handleDelete = async (e) => {
     e.stopPropagation(); // Prevent card click navigation
+
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
 
     if (deleteState === 'initial') {
       setDeleteState('confirm');
@@ -21,17 +28,15 @@ const AccountCard = ({ account, onAccountDeleted }) => {
 
     if (deleteState === 'confirm') {
       setIsDeleting(true);
+      setError(null);
       try {
-        await axios.delete(`http://localhost:5000/api/accounts/${account._id}`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-        if (onAccountDeleted) {
-          onAccountDeleted(account._id);
-        }
+        await onAccountDeleted(account._id);
       } catch (error) {
         console.error('Error deleting account:', error);
+        setError(error.message);
+        if (error.status === 401) {
+          navigate('/auth');
+        }
       }
       setIsDeleting(false);
       setDeleteState('initial');
@@ -63,7 +68,11 @@ const AccountCard = ({ account, onAccountDeleted }) => {
         <CardDescription>{account.description || 'No description'}</CardDescription>
       </CardHeader>
       <CardContent className="p-6">
-        {/* Card content will be added later */}
+        {error && (
+          <div className="text-sm text-red-500 mt-2">
+            {error}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

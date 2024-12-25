@@ -1,12 +1,10 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "./ui/button";
 import { Plus } from "lucide-react";
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription } from "./ui/alert";
 import { AlertTriangle } from "lucide-react";
-
-const API_URL = import.meta.env.VITE_API_URL;
+import api from '../lib/api';
 
 const NewAccountButton = ({ onAccountCreated }) => {
   const [error, setError] = useState(null);
@@ -18,19 +16,18 @@ const NewAccountButton = ({ onAccountCreated }) => {
       setLoading(true);
       setError(null);
 
-      const response = await axios.post(`${API_URL}/api/accounts`, {}, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      const response = await api.createAccount({});
 
       if (onAccountCreated) {
-        onAccountCreated(response.data);
+        onAccountCreated(response);
       }
-      navigate(`/account/${response.data._id}`);
+      navigate(`/account/${response._id}`);
     } catch (error) {
       console.error('Error creating account:', error);
-      setError(error.response?.data?.message || 'Failed to create account');
+      setError(error.message || 'Failed to create account');
+      if (error.status === 401) {
+        navigate('/auth');
+      }
     } finally {
       setLoading(false);
     }

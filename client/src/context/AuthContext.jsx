@@ -1,7 +1,5 @@
 import { createContext, useState, useContext, useEffect } from 'react';
-import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL;
+import api from '../lib/api';
 
 const AuthContext = createContext();
 
@@ -16,11 +14,11 @@ export const AuthProvider = ({ children }) => {
 
   const verifyToken = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/auth/verify`, { withCredentials: true });
-      setUser(response.data);
+      const response = await api.request('get', '/auth/verify');
+      setUser(response);
       setError(null);
     } catch (error) {
-      if (error.response?.status === 401) {
+      if (error.status === 401) {
         setUser(null);
       } else {
         console.error('Verification error:', error);
@@ -33,17 +31,13 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       setLoading(true);
-      const response = await axios.post(
-        `${API_URL}/api/auth/login`, 
-        { email, password },
-        { withCredentials: true }
-      );
-      setUser(response.data);
+      const response = await api.login({ email, password });
+      setUser(response);
       setError(null);
-      return response.data;
+      return response;
     } catch (error) {
       console.error('Login error:', error);
-      const message = error.response?.data?.message || 'Login failed';
+      const message = error.message || 'Login failed';
       setError(message);
       throw new Error(message);
     } finally {
@@ -54,17 +48,13 @@ export const AuthProvider = ({ children }) => {
   const googleLogin = async (credential) => {
     try {
       setLoading(true);
-      const response = await axios.post(
-        `${API_URL}/api/auth/google`, 
-        { credential },
-        { withCredentials: true }
-      );
-      setUser(response.data);
+      const response = await api.request('post', '/auth/google', { credential });
+      setUser(response);
       setError(null);
-      return response.data;
+      return response;
     } catch (error) {
       console.error('Google login error:', error);
-      const message = error.response?.data?.message || 'Google login failed';
+      const message = error.message || 'Google login failed';
       setError(message);
       throw new Error(message);
     } finally {
@@ -74,12 +64,12 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      await axios.post(`${API_URL}/api/auth/logout`, {}, { withCredentials: true });
+      await api.logout();
       setUser(null);
       setError(null);
     } catch (error) {
       console.error('Logout error:', error);
-      const message = error.response?.data?.message || 'Logout failed';
+      const message = error.message || 'Logout failed';
       setError(message);
     }
   };
