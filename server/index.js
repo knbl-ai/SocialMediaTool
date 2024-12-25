@@ -17,7 +17,7 @@ app.use(express.json());
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:5173',
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
@@ -49,13 +49,15 @@ app.use(limiter);
 app.use(errorHandler);
 
 // Start server
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001; // Change 5000 to 5001 or another port
+
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log('Environment:', {
-    mongoUri: process.env.MONGODB_URI ? '✓' : '✗',
-    jwtSecret: process.env.JWT_SECRET ? '✓' : '✗',
-    googleProjectId: process.env.GOOGLE_CLOUD_PROJECT_ID ? '✓' : '✗',
-    googleBucket: process.env.GOOGLE_CLOUD_BUCKET_NAME ? '✓' : '✗'
-  });
+  console.log(`Server is running on port ${PORT}`);
+}).on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.log(`Port ${PORT} is busy, trying ${PORT + 1}`);
+    app.listen(PORT + 1);
+  } else {
+    console.error(err);
+  }
 });

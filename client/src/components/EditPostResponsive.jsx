@@ -11,6 +11,7 @@ import PostSelectItems from "./editPost/PostSelectItems";
 import DimensionsSelector from "./editPost/DimensionsSelector";
 import { usePosts } from '../hooks/usePosts';
 import MODELS from '../config/models';
+import PulsatingButton from "@/components/ui/pulsating-button";
 
 const DEFAULT_STATE = {
   postId: null,
@@ -34,10 +35,12 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
   const [selectedDate, setSelectedDate] = useState(date)
   const [currentPost, setCurrentPost] = useState(initialPost || null);
   const [postId, setPostId] = useState(initialPost?._id || initialPostId);
-  const { updatePost, error: postsError, clearError } = usePosts(accountId);
+  const { updatePost, deletePost, error: postsError, clearError } = usePosts(accountId);
   const [localError, setLocalError] = useState(null);
   const error = localError || postsError;
   const initializationRef = useRef(false);
+  const isDeletingRef = useRef(false);
+  const saveTimeoutRef = useRef(null);
 
   // Content states
   const [postText, setPostText] = useState(DEFAULT_STATE.postText);
@@ -82,6 +85,10 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
         if (setter) setter(value);
       });
       initializationRef.current = false;
+      isDeletingRef.current = false;
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
       setLocalError(null);
       clearError();
     }
@@ -111,7 +118,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
 
   // Save changes when form values change
   useEffect(() => {
-    if (!postId) return;
+    if (!postId || !show || isDeletingRef.current) return; // Don't run if modal is closed, post is deleted, or deletion is in progress
 
     const saveChanges = async () => {
       try {
@@ -151,22 +158,22 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
       }
     };
 
-    const debouncedSave = (() => {
-      let timeoutId;
-      return () => {
-        clearTimeout(timeoutId);
-        timeoutId = setTimeout(saveChanges, 1000);
-      };
-    })();
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
 
-    debouncedSave();
-    return () => clearTimeout(debouncedSave);
+    saveTimeoutRef.current = setTimeout(saveChanges, 1000);
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
   }, [
     postId, selectedPlatforms, selectedDate, selectedTime,
     imageSize, imageTemplate, dimensions, postText, postTitle, postSubtitle,
     imagePrompt, videoPrompt, textPrompt,
     selectedImageModel, selectedVideoModel, selectedLLMModel,
-    currentPost, updatePost
+    currentPost, updatePost, show
   ]);
 
   return (
@@ -238,17 +245,39 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
           </div>
 
           {/* Right Column */}
-          <div className="col-span-3 flex flex-col gap-4">
+          <div className="col-span-3 flex flex-col ">
             {/* Top Box - Close Button */}
             <div className="h-16 rounded-lg flex justify-end items-center pr-2">
-              <DimensionsSelector value={dimensions} onChange={handleDimensionsChange} />
-              <Button variant="ghost" size="icon" onClick={handleClose} className="text-gray-400 hover:text-gray-500">
+              <DimensionsSelector value={dimensions} onChange={handleDimensionsChange}/>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={async () => {
+                  if (postId) {
+                    try {
+                      isDeletingRef.current = true;
+                      if (saveTimeoutRef.current) {
+                        clearTimeout(saveTimeoutRef.current);
+                      }
+                      await deletePost(postId);
+                      setPostId(null);
+                      setCurrentPost(null);
+                      if (onUpdate) await onUpdate();
+                      handleClose();
+                    } catch (error) {
+                      setLocalError(error.message || 'Failed to delete post');
+                      isDeletingRef.current = false;
+                    }
+                  }
+                }} 
+                className="text-red-400 hover:text-red-500 ml-4"
+              >
                 <X className="h-4 w-4" />
               </Button>
             </div>
 
             {/* Bottom Box - Generation Controls */}
-            <div className="flex-1 rounded-lg p-4">
+            <div className="flex-1 rounded-lg">
               <div className="h-full flex flex-col justify-between">
                 {/* Image Generation */}
                 <PostSelectItems 
@@ -285,7 +314,15 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                   value={textPrompt}
                   onChange={setTextPrompt}
                 />
+                 <PulsatingButton 
+                   onClick={handleClose}
+                   className="w-full mt-5 text-white bg-[#5CB338]" 
+                   pulseColor="#ECE852"
+                 >
+                   Save Changes
+                 </PulsatingButton>
               </div>
+             
             </div>
           </div>
         </div>
