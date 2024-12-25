@@ -81,24 +81,24 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
 
   return (
     <>
-      <div
-        className={`
-          aspect-square rounded-xl relative
-          ${isToday ? 'p-[2px]' : ''}
-          ${isToday ? getCellBackground() : ''}
-        `}
-      >
-        <div 
-          onClick={hasPost ? handleExistingPostClick : handleEmptyCellClick}
+      <div className="relative group">
+        <div
           className={`
-            w-full h-full rounded-xl cursor-pointer
-            ${!isToday ? getCellBackground() : 'bg-white'}
-            transition-all duration-200
-            ${isLoading ? 'opacity-50' : ''}
-            relative overflow-hidden
-            hover:shadow-lg
-            group
+            aspect-square rounded-xl relative
+            ${isToday ? 'p-[2px]' : ''}
+            ${isToday ? getCellBackground() : ''}
           `}
+        >
+          <div 
+            onClick={hasPost ? handleExistingPostClick : handleEmptyCellClick}
+            className={`
+              w-full h-full rounded-xl cursor-pointer
+              ${!isToday ? getCellBackground() : 'bg-white'}
+              transition-all duration-200
+              ${isLoading ? 'opacity-50' : ''}
+              relative
+              hover:shadow-lg
+            `}
         >
           {/* Loading Spinner */}
           {isLoading && (
@@ -124,37 +124,56 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
 
           {/* Post Content */}
           {hasPost ? (
-            <div className="absolute inset-0 flex flex-col">
-              {/* Image Container */}
-              <div className="flex-1 p-2 pt-10 relative">
-                <div className="absolute inset-0 m-2 mt-10">
-                  {currentPost.image?.url ? (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <img
-                        src={currentPost.image.url}
-                        alt="Post preview"
-                        className="max-w-full max-h-full object-contain rounded-lg shadow-sm"
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-full h-full bg-gray-100 rounded-lg flex items-center justify-center">
-                      <span className="text-gray-400 text-sm">No image</span>
-                    </div>
-                  )}
-                </div>
+            <>
+              {/* Image Container - Full size */}
+              <div className="absolute inset-0">
+                {currentPost.image?.url ? (
+                  <img
+                    src={currentPost.image.url}
+                    alt="Post preview"
+                    className="w-full h-full object-cover rounded-xl"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-100 rounded-xl flex items-center justify-center">
+                    <span className="text-gray-400 text-sm">No image</span>
+                  </div>
+                )}
               </div>
               
-              {/* Text Overlay */}
+              {/* Text Content */}
               {currentPost.text?.post && (
-                <div className="p-2 bg-gradient-to-t from-white via-white/95 to-white/80 transform transition-transform duration-200 group-hover:translate-y-0 translate-y-1">
-                  <p className="text-xs text-gray-800 line-clamp-2 font-medium">
-                    {currentPost.text.post}
-                  </p>
+                <div className="absolute inset-x-0 bottom-0 z-10">
+                  {/* Preview text */}
+                  <div className="p-2 bg-gradient-to-t from-white via-white/95 to-white/80 transition-opacity duration-300 group-hover:opacity-0 group-hover:invisible">
+                    <p className="text-xs text-gray-800 line-clamp-2 font-medium">
+                      {currentPost.text.post}
+                    </p>
+                  </div>
                 </div>
               )}
-            </div>
+            </>
           ) : null}
+          </div>
         </div>
+        
+        {/* Expanded text - Outside of cell container */}
+        {hasPost && currentPost.text?.post && (
+          <div 
+            className="
+              absolute left-0 right-0 top-[calc(100%-1px)]
+              opacity-0 invisible 
+              group-hover:opacity-100 group-hover:visible 
+              transition-all duration-300 delay-75
+              z-[100]
+            "
+          >
+            <div className="bg-white shadow-xl p-3 rounded-b-xl border-t border-gray-100">
+              <p className="text-xs text-gray-800 font-medium">
+                {currentPost.text.post}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Edit Modal */}
