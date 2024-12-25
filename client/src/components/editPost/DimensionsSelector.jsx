@@ -8,17 +8,17 @@ import {
 } from "../ui/select";
 
 const dimensions = [
-  { name: 'Square', value: 'square', size: { width: 1280, height: 1280} },
-  { name: 'Horizontal', value: 'horizontal', size: { width: 1280, height: 960} },
-  { name: 'Horizontal Wide', value: 'horizontal_wide', size: { width: 1280, height: 720} },
-  { name: 'Story', value: 'story', size: { width: 720, height: 1280} }
+  { name: 'Square', size: { width: 1280, height: 1280} },
+  { name: 'Horizontal', size: { width: 1280, height: 960} },
+  { name: 'Horizontal Wide', size: { width: 1280, height: 720} },
+  { name: 'Story', size: { width: 720, height: 1280} }
 ];
 
 export const DimensionsSelector = ({ value, onChange }) => {
-  const handleChange = (selectedValue) => {
-    const selectedDimension = dimensions.find(d => d.value === selectedValue);
+  const handleChange = (selectedName) => {
+    const selectedDimension = dimensions.find(d => d.name === selectedName);
     if (selectedDimension) {
-      onChange(selectedValue, selectedDimension.size);
+      onChange(selectedName, selectedDimension.size);
     }
   };
 
@@ -30,8 +30,8 @@ export const DimensionsSelector = ({ value, onChange }) => {
       <SelectContent>
         {dimensions.map((dimension) => (
           <SelectItem 
-            key={dimension.value} 
-            value={dimension.value}
+            key={dimension.name} 
+            value={dimension.name}
           >
             {dimension.name}
           </SelectItem>

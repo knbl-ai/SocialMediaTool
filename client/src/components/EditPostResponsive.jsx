@@ -10,6 +10,7 @@ import PostPlatformSelector from "./editPost/PostPlatformSelector";
 import PostSelectItems from "./editPost/PostSelectItems";
 import DimensionsSelector from "./editPost/DimensionsSelector";
 import { usePosts } from '../hooks/usePosts';
+import api from '../lib/api';
 import MODELS from '../config/models';
 import PulsatingButton from "@/components/ui/pulsating-button";
 
@@ -22,7 +23,7 @@ const DEFAULT_STATE = {
   imagePrompt: '',
   videoPrompt: '',
   textPrompt: '',
-  imageSize: { width: 0, height: 0 },
+  imageSize: { width: 1280, height: 1280 },
   imageTemplate: '',
   selectedImageModel: MODELS.image[0]?.value,
   selectedVideoModel: MODELS.video[0]?.value,
@@ -48,7 +49,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
   const [postSubtitle, setPostSubtitle] = useState(DEFAULT_STATE.postSubtitle);
   const [imageSize, setImageSize] = useState(DEFAULT_STATE.imageSize);
   const [imageTemplate, setImageTemplate] = useState(DEFAULT_STATE.imageTemplate);
-  const [dimensions, setDimensions] = useState(initialPost?.image?.dimensions || 'square');
+  const [dimensions, setDimensions] = useState(initialPost?.image?.dimensions || 'Square');
 
   // Platform and model states
   const [selectedPlatforms, setSelectedPlatforms] = useState(() => {
@@ -63,9 +64,10 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
   const [imagePrompt, setImagePrompt] = useState(DEFAULT_STATE.imagePrompt);
   const [videoPrompt, setVideoPrompt] = useState(DEFAULT_STATE.videoPrompt);
   const [textPrompt, setTextPrompt] = useState(DEFAULT_STATE.textPrompt);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
 
-  const handleDimensionsChange = (dimensionValue, dimensionSize) => {
-    setDimensions(dimensionValue);
+  const handleDimensionsChange = (dimensionName, dimensionSize) => {
+    setDimensions(dimensionName);
     setImageSize(dimensionSize);
   };
 
@@ -110,7 +112,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
       setSelectedLLMModel(initialPost.models?.text || DEFAULT_STATE.selectedLLMModel);
       setImageSize(initialPost.image?.size || DEFAULT_STATE.imageSize);
       setImageTemplate(initialPost.image?.template || '');
-      setDimensions(initialPost.image?.dimensions || 'square');
+      setDimensions(initialPost.image?.dimensions || 'Square');
       setCurrentPost(initialPost);
       initializationRef.current = true;
     }
@@ -289,6 +291,40 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                   buttonText="Generate Image"
                   value={imagePrompt}
                   onChange={setImagePrompt}
+                  isLoading={isGeneratingImage}
+                  onGenerate={async () => {
+                    if (!imagePrompt || !selectedImageModel || !imageSize.width || !imageSize.height) {
+                      setLocalError('Please provide all required fields for image generation');
+                      return;
+                    }
+                    try {
+                      setIsGeneratingImage(true);
+                      const result = await api.generateImage({
+                        prompt: imagePrompt,
+                        model: selectedImageModel,
+                        width: imageSize.width,
+                        height: imageSize.height
+                      });
+                      
+                      // Update the current post with the new image URL
+                      const updatedPost = await updatePost(postId, {
+                        ...currentPost,
+                        image: {
+                          ...currentPost?.image,
+                          url: result.url,
+                          size: imageSize,
+                          dimensions: dimensions
+                        }
+                      });
+                      setCurrentPost(updatedPost);
+                      setLocalError(null);
+                    } catch (error) {
+                      console.error('Error generating image:', error);
+                      setLocalError(error.message || 'Failed to generate image');
+                    } finally {
+                      setIsGeneratingImage(false);
+                    }
+                  }}
                 />
 
                 {/* Video Generation */}

@@ -1,5 +1,6 @@
 import Post from '../models/Post.js';
 import { ApiError } from '../utils/ApiError.js';
+import { generateImage as generateImageService } from '../services/imageService.js';
 
 export const createPost = async (req, res) => {
   const post = new Post({
@@ -82,4 +83,29 @@ export const deletePost = async (req, res) => {
   }
 
   res.status(204).send();
+};
+
+export const generateImage = async (req, res) => {
+  try {
+    const { prompt, model, width, height } = req.body;
+    
+    if (!process.env.FAL_KEY) {
+      throw new ApiError(500, 'FAL_KEY is not configured');
+    }
+    
+    const imageUrl = await generateImageService({
+      prompt,
+      model,
+      width,
+      height
+    });
+
+    res.json({ url: imageUrl });
+  } catch (error) {
+    console.error('Error generating image:', error);
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    throw new ApiError(500, `Failed to generate image: ${error.message}`);
+  }
 };

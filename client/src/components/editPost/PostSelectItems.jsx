@@ -12,7 +12,9 @@ const PostSelectItems = ({
   placeholder, 
   buttonText,
   value,
-  onChange
+  onChange,
+  onGenerate,
+  isLoading
 }) => {
   return (
     <div>
@@ -24,9 +26,22 @@ const PostSelectItems = ({
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />
-      <Button className="w-full mt-2">
-        <ImagePlus className="w-4 h-4 mr-2" />
-        {buttonText}
+      <Button 
+        className="w-full mt-2"
+        onClick={onGenerate}
+        disabled={!value || isLoading}
+      >
+        {isLoading ? (
+          <div className="flex items-center">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+            Generating...
+          </div>
+        ) : (
+          <>
+            <ImagePlus className="w-4 h-4 mr-2" />
+            {buttonText}
+          </>
+        )}
       </Button>
       <Select 
         value={selectedModel}

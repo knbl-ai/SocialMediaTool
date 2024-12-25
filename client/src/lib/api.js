@@ -96,6 +96,11 @@ class ApiClient {
     return this.client.delete(`/posts/${postId}`);
   }
 
+  // Image generation endpoint
+  async generateImage(data) {
+    return this.client.post('/posts/generate-image', data);
+  }
+
   // Generic request method for custom endpoints
   async request(method, endpoint, data = null, config = {}) {
     const options = {

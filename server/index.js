@@ -49,7 +49,7 @@ app.use(limiter);
 app.use(errorHandler);
 
 // Start server
-const PORT = process.env.PORT || 5001; // Change 5000 to 5001 or another port
+const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

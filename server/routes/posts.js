@@ -7,7 +7,8 @@ import {
   updatePost,
   getPost,
   searchPosts,
-  deletePost
+  deletePost,
+  generateImage
 } from '../controllers/postsController.js';
 
 const router = express.Router();
@@ -53,6 +54,19 @@ router.put('/:id',
 router.delete('/:id',
   validateRequest(schemas.id),
   deletePost
+);
+
+// Generate image
+router.post('/generate-image',
+  validateRequest(Joi.object({
+    body: Joi.object({
+      prompt: Joi.string().required(),
+      model: Joi.string().required(),
+      width: Joi.number().required(),
+      height: Joi.number().required()
+    })
+  })),
+  generateImage
 );
 
 export default router;
