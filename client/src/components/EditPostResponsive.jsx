@@ -44,6 +44,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
   const initializationRef = useRef(false);
   const isDeletingRef = useRef(false);
   const saveTimeoutRef = useRef(null);
+  const isSelectingTemplateRef = useRef(false);
 
   // Content states
   const [postText, setPostText] = useState(DEFAULT_STATE.postText);
@@ -129,20 +130,20 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
 
   // Save changes when form values change
   useEffect(() => {
-    if (!postId || !show || isDeletingRef.current) return; // Don't run if modal is closed, post is deleted, or deletion is in progress
+    if (!postId || !show || isDeletingRef.current || isSelectingTemplateRef.current) return; // Don't run if modal is closed, post is deleted, template selection in progress, or deletion is in progress
 
     const saveChanges = async () => {
       try {
+        console.log('Auto-save running with:', {
+          template: currentPost?.image?.template,
+          url: currentPost?.image?.url
+        });
+        
         const postData = {
           platforms: selectedPlatforms,
           datePost: selectedDate,
           timePost: selectedTime,
-          image: {
-            ...(currentPost?.image || {}),
-            size: imageSize,
-            template: imageTemplate,
-            dimensions: dimensions
-          },
+          image: currentPost?.image || {}, // Keep image properties unchanged during auto-save
           text: {
             post: postText,
             title: postTitle,
@@ -160,7 +161,12 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
           }
         };
 
+        console.log('Saving post data:', postData);
         const updatedPost = await updatePost(postId, postData);
+        console.log('Post updated:', {
+          template: updatedPost.image?.template,
+          url: updatedPost.image?.url
+        });
         setCurrentPost(updatedPost);
         setLocalError(null);
       } catch (error) {
@@ -181,7 +187,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
     };
   }, [
     postId, selectedPlatforms, selectedDate, selectedTime,
-    imageSize, imageTemplate, dimensions, postText, postTitle, postSubtitle,
+    imageSize, dimensions, postText, postTitle, postSubtitle, // Removed imageTemplate from dependencies
     imagePrompt, videoPrompt, textPrompt,
     selectedImageModel, selectedVideoModel, selectedLLMModel,
     currentPost, updatePost, show
@@ -207,6 +213,75 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                 subtitle={postSubtitle}
                 onTitleChange={setPostTitle}
                 onSubtitleChange={setPostSubtitle}
+                currentTemplate={currentPost?.image?.template}
+                onTemplateSelect={async (templateUrl) => {
+                  // Prevent auto-save during template selection
+                  isSelectingTemplateRef.current = true;
+
+                  console.log('Selecting template:', {
+                    currentTemplate: currentPost?.image?.template,
+                    newTemplate: templateUrl,
+                    currentUrl: currentPost?.image?.url
+                  });
+
+                  // Prepare updated post data
+                  const updatedPostData = {
+                    ...currentPost,
+                    platforms: selectedPlatforms,
+                    datePost: selectedDate,
+                    timePost: selectedTime,
+                    image: {
+                      ...(currentPost?.image || {}),
+                      url: currentPost?.image?.url,
+                      template: templateUrl === currentPost?.image?.url ? null : templateUrl,
+                      size: imageSize,
+                      dimensions: dimensions,
+                      templatesUrls: currentPost?.templatesUrls || []
+                    },
+                    text: {
+                      post: postText,
+                      title: postTitle,
+                      subtitle: postSubtitle
+                    },
+                    prompts: {
+                      image: imagePrompt,
+                      video: videoPrompt,
+                      text: textPrompt
+                    },
+                    models: {
+                      image: selectedImageModel,
+                      video: selectedVideoModel,
+                      text: selectedLLMModel
+                    }
+                  };
+                  setCurrentPost(updatedPostData);
+
+                  try {
+                    // Save to server immediately
+                    const savedPost = await updatePost(postId, updatedPostData);
+                    console.log('Template updated:', {
+                      template: savedPost.image?.template,
+                      url: savedPost.image?.url,
+                      templatesUrls: savedPost.templatesUrls
+                    });
+
+                    // Update local state with saved data
+                    setCurrentPost(savedPost);
+
+                    // Update imageTemplate state to match
+                    setImageTemplate(savedPost.image?.template || '');
+                  } catch (error) {
+                    console.error('Error updating template:', error);
+                    setLocalError('Failed to update template');
+                    // Revert on error
+                    setCurrentPost(currentPost);
+                    setImageTemplate(currentPost?.image?.template || '');
+                  } finally {
+                    // Re-enable auto-save after template selection
+                    isSelectingTemplateRef.current = false;
+                  }
+                }}
+                originalImageUrl={currentPost?.image?.url}
               />
             </div>
           </div>
@@ -234,10 +309,10 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
             {/* Middle Section - Image Preview */}
             <div className="flex-[4] bg-gray-100 rounded-lg min-h-0 relative">
               <div className="absolute inset-0 flex items-center justify-center">
-                {currentPost?.image?.url ? (
+                {currentPost?.image?.template || currentPost?.image?.url ? (
                   <div className="w-full h-full flex items-center justify-center">
                     <img
-                      src={currentPost.image.url}
+                      src={currentPost.image.template || currentPost.image.url}
                       alt="Post preview"
                       className="max-w-full max-h-full object-contain"
                     />
@@ -325,6 +400,8 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                         image: {
                           ...currentPost?.image,
                           url: result.url,
+                          template: result.url, // Set both URL and template to the new image
+                          templatesUrls: [], // Clear existing templates
                           size: imageSize,
                           dimensions: dimensions
                         }

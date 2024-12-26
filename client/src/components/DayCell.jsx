@@ -195,7 +195,7 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
                     <div className="absolute inset-0">
                       {currentPost.image?.url ? (
                         <img
-                          src={currentPost.image.url}
+                          src={currentPost.image.template}
                           alt="Post preview"
                           className="w-full h-full object-cover rounded-xl"
                         />
