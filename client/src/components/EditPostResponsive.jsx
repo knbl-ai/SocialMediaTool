@@ -202,7 +202,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
           <div className="col-span-2 h-full">
             <div className="rounded-lg overflow-hidden h-full">
               <SelectTemplate 
-                accountId={accountId}
+                templatesUrls={currentPost?.templatesUrls || []}
                 title={postTitle}
                 subtitle={postSubtitle}
                 onTitleChange={setPostTitle}
@@ -319,8 +319,8 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                         height: imageSize.height
                       });
                       
-                      // Update the current post with the new image URL
-                      const updatedPost = await updatePost(postId, {
+                      // First update post with new image URL
+                      let updatedPost = await updatePost(postId, {
                         ...currentPost,
                         image: {
                           ...currentPost?.image,
@@ -329,7 +329,19 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                           dimensions: dimensions
                         }
                       });
+
+                      // Set current post to show new image immediately
                       setCurrentPost(updatedPost);
+
+                      // Then generate templates
+                      try {
+                        const templatesResult = await api.generateTemplates(postId);
+                        // Update UI with the post containing both new image and templates
+                        setCurrentPost(templatesResult);
+                      } catch (error) {
+                        console.error('Error generating templates:', error);
+                        setLocalError('Image saved but template generation failed');
+                      }
                       setLocalError(null);
                     } catch (error) {
                       console.error('Error generating image:', error);
@@ -382,7 +394,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                       }
                       
                       // Update all text fields with the generated content
-                      const updatedPost = await updatePost(postId, {
+                      let updatedPost = await updatePost(postId, {
                         ...currentPost,
                         text: {
                           ...currentPost?.text,
@@ -395,10 +407,19 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                           text: textPrompt
                         }
                       });
-                      setCurrentPost(updatedPost);
-                      setPostText(result.post);
-                      setPostTitle(result.title);
-                      setPostSubtitle(result.subtitle);
+
+                      // Generate templates after text generation
+                      try {
+                        const templatesResult = await api.generateTemplates(postId);
+                        // Update UI with text content and templates
+                        setCurrentPost(templatesResult);
+                        setPostText(result.post);
+                        setPostTitle(result.title);
+                        setPostSubtitle(result.subtitle);
+                      } catch (error) {
+                        console.error('Error generating templates:', error);
+                        setLocalError('Text saved but template generation failed');
+                      }
                       setLocalError(null);
                     } catch (error) {
                       console.error('Error generating text:', error);

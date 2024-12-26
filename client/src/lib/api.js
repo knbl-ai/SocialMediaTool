@@ -106,6 +106,11 @@ class ApiClient {
     return this.client.post('/posts/generate-text', data);
   }
 
+  // Template generation endpoint
+  async generateTemplates(postId) {
+    return this.client.post(`/posts/${postId}/generate-templates`);
+  }
+
   // Generic request method for custom endpoints
   async request(method, endpoint, data = null, config = {}) {
     const options = {

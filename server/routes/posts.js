@@ -9,7 +9,8 @@ import {
   searchPosts,
   deletePost,
   generateImage,
-  generateText
+  generateText,
+  generateTemplates
 } from '../controllers/postsController.js';
 
 const router = express.Router();
@@ -79,6 +80,12 @@ router.post('/generate-text',
     })
   })),
   generateText
+);
+
+// Generate templates for a post
+router.post('/:id/generate-templates',
+  validateRequest(schemas.id),
+  generateTemplates
 );
 
 export default router;

@@ -2,6 +2,7 @@ import Post from '../models/Post.js';
 import { ApiError } from '../utils/ApiError.js';
 import { generateImage as generateImageService } from '../services/imageService.js';
 import { generateText as generateTextService } from '../services/llmService.js';
+import { generateTemplates as generateTemplatesService } from '../services/templateService.js';
 
 export const createPost = async (req, res) => {
   const post = new Post({
@@ -32,6 +33,7 @@ export const updatePost = async (req, res) => {
         image: req.body.image,
         prompts: req.body.prompts,
         models: req.body.models,
+        templatesUrls: req.body.templatesUrls,
         updatedAt: new Date()
       }
     },
@@ -131,5 +133,40 @@ export const generateText = async (req, res) => {
       throw error;
     }
     throw new ApiError(500, `Failed to generate text: ${error.message}`);
+  }
+};
+
+export const generateTemplates = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const post = await Post.findById(id);
+    
+    if (!post) {
+      throw ApiError.notFound('Post not found');
+    }
+
+    const templates = await generateTemplatesService({
+      post,
+      accountId: post.accountId
+    });
+
+    // Update post with template URLs
+    const updatedPost = await Post.findByIdAndUpdate(
+      id,
+      {
+        $set: {
+          templatesUrls: templates.results.map(template => template.imageUrl)
+        }
+      },
+      { new: true }
+    );
+
+    res.json(updatedPost);
+  } catch (error) {
+    console.error('Error generating templates:', error);
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    throw new ApiError(500, `Failed to generate templates: ${error.message}`);
   }
 };

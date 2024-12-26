@@ -46,7 +46,7 @@ export const generateTemplates = async ({ post, accountId }) => {
 
     // Make request to templates API
     const response = await axios.post(
-      `${TEMPLATES_IMAGES_API}/template/generate-all`,
+      `${TEMPLATES_IMAGES_API}/api/template/generate-all`,
       requestData
     );
 
