@@ -120,11 +120,11 @@ export const generateText = async (req, res) => {
     }
     
     const generatedText = await generateTextService({
-      prompt,
+      topic: prompt,
       model
     });
 
-    res.json({ text: generatedText });
+    res.json(generatedText);
   } catch (error) {
     console.error('Error generating text:', error);
     if (error instanceof ApiError) {

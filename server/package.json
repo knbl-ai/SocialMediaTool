@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.17.1",
+    "@fal-ai/client": "^1.2.1",
     "@fal-ai/serverless-client": "^0.8.5",
     "@google-cloud/storage": "^7.14.0",
     "axios": "^1.7.9",

@@ -370,21 +370,35 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                     }
                     try {
                       setIsGeneratingText(true);
+                      // Generate text with the prompt
                       const result = await api.generateText({
                         prompt: textPrompt,
                         model: selectedLLMModel
                       });
+
+                      // Ensure we have valid data
+                      if (!result.post && !result.title && !result.subtitle) {
+                        throw new Error('Invalid response from text generation service');
+                      }
                       
-                      // Update the current post with the generated text
+                      // Update all text fields with the generated content
                       const updatedPost = await updatePost(postId, {
                         ...currentPost,
                         text: {
                           ...currentPost?.text,
-                          post: result.text
+                          post: result.post || '',
+                          title: result.title || '',
+                          subtitle: result.subtitle || ''
+                        },
+                        prompts: {
+                          ...currentPost?.prompts,
+                          text: textPrompt
                         }
                       });
                       setCurrentPost(updatedPost);
-                      setPostText(result.text);
+                      setPostText(result.post);
+                      setPostTitle(result.title);
+                      setPostSubtitle(result.subtitle);
                       setLocalError(null);
                     } catch (error) {
                       console.error('Error generating text:', error);
