@@ -333,14 +333,18 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                       // Set current post to show new image immediately
                       setCurrentPost(updatedPost);
 
-                      // Then generate templates
-                      try {
-                        const templatesResult = await api.generateTemplates(postId);
-                        // Update UI with the post containing both new image and templates
-                        setCurrentPost(templatesResult);
-                      } catch (error) {
-                        console.error('Error generating templates:', error);
-                        setLocalError('Image saved but template generation failed');
+                      // Only generate templates if we have all required fields
+                      if (updatedPost.image?.url && updatedPost.text?.title && updatedPost.text?.subtitle) {
+                        try {
+                          const templatesResult = await api.generateTemplates(postId);
+                          // Update UI with the post containing both new image and templates
+                          setCurrentPost(templatesResult);
+                        } catch (error) {
+                          console.error('Error generating templates:', error);
+                          setLocalError('Image saved but template generation failed');
+                        }
+                      } else {
+                        console.log('Skipping template generation - missing required fields');
                       }
                       setLocalError(null);
                     } catch (error) {
@@ -408,17 +412,25 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                         }
                       });
 
-                      // Generate templates after text generation
-                      try {
-                        const templatesResult = await api.generateTemplates(postId);
-                        // Update UI with text content and templates
-                        setCurrentPost(templatesResult);
+                      // Only generate templates if we have all required fields
+                      if (updatedPost.image?.url && updatedPost.text?.title && updatedPost.text?.subtitle) {
+                        try {
+                          const templatesResult = await api.generateTemplates(postId);
+                          // Update UI with text content and templates
+                          setCurrentPost(templatesResult);
+                          setPostText(result.post);
+                          setPostTitle(result.title);
+                          setPostSubtitle(result.subtitle);
+                        } catch (error) {
+                          console.error('Error generating templates:', error);
+                          setLocalError('Text saved but template generation failed');
+                        }
+                      } else {
+                        console.log('Skipping template generation - missing required fields');
+                        // Still update the UI with text content
                         setPostText(result.post);
                         setPostTitle(result.title);
                         setPostSubtitle(result.subtitle);
-                      } catch (error) {
-                        console.error('Error generating templates:', error);
-                        setLocalError('Text saved but template generation failed');
                       }
                       setLocalError(null);
                     } catch (error) {

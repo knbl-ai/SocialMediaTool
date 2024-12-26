@@ -17,11 +17,13 @@ export const generateTemplates = async ({ post, accountId }) => {
     }
 
     // Validate required fields
-    if (!post.image?.url) {
-      throw new ApiError(400, 'Post must have an image URL');
-    }
-    if (!post.text?.title || !post.text?.subtitle) {
-      throw new ApiError(400, 'Post must have title and subtitle');
+    const missingFields = [];
+    if (!post.image?.url) missingFields.push('image');
+    if (!post.text?.title) missingFields.push('title');
+    if (!post.text?.subtitle) missingFields.push('subtitle');
+
+    if (missingFields.length > 0) {
+      throw new ApiError(400, `Cannot generate templates - missing required fields: ${missingFields.join(', ')}`);
     }
 
     // Prepare request data with all required fields
