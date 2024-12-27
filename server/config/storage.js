@@ -47,11 +47,16 @@ export const deleteFile = async (fileUrl) => {
   try {
     // Extract filename from URL
     const url = new URL(fileUrl);
-    const fileName = url.pathname.split('/').pop();
+    // Remove leading slash and get full path after bucket name
+    const filePath = url.pathname.split(`/${bucketName}/`)[1];
+    if (!filePath) {
+      console.error(`Invalid file URL format: ${fileUrl}`);
+      return false;
+    }
     
     // Delete the file
-    await bucket.file(fileName).delete();
-    console.log(`Successfully deleted file: ${fileName}`);
+    await bucket.file(filePath).delete();
+    console.log(`Successfully deleted file: ${filePath}`);
     return true;
   } catch (error) {
     console.error(`Error deleting file ${fileUrl}:`, error);

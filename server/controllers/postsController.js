@@ -1,5 +1,6 @@
 import Post from '../models/Post.js';
 import { ApiError } from '../utils/ApiError.js';
+import { deleteFiles } from '../config/storage.js';
 import { generateImage as generateImageService } from '../services/imageService.js';
 import { generateText as generateTextService } from '../services/llmService.js';
 import { generateTemplates as generateTemplatesService } from '../services/templateService.js';
@@ -22,6 +23,14 @@ export const createPost = async (req, res) => {
 
 export const updatePost = async (req, res) => {
   const { id } = req.params;
+  
+  // Get the old post
+  const oldPost = await Post.findById(id);
+  if (!oldPost) {
+    throw ApiError.notFound('Post not found');
+  }
+
+  // Update the post
   const updatedPost = await Post.findByIdAndUpdate(
     id,
     {
@@ -43,6 +52,7 @@ export const updatePost = async (req, res) => {
   if (!updatedPost) {
     throw ApiError.notFound('Post not found');
   }
+
 
   res.json(updatedPost);
 };
@@ -79,11 +89,21 @@ export const searchPosts = async (req, res) => {
 
 export const deletePost = async (req, res) => {
   const { id } = req.params;
-  const post = await Post.findByIdAndDelete(id);
+  const post = await Post.findById(id);
   
   if (!post) {
     throw ApiError.notFound('Post not found');
   }
+
+  // Delete template files if they exist
+  if (post.templatesUrls?.length > 0) {
+    await deleteFiles(post.templatesUrls).catch(error => {
+      console.error('Error deleting template files:', error);
+    });
+  }
+
+  // Delete the post
+  await Post.findByIdAndDelete(id);
 
   res.status(204).send();
 };
@@ -145,17 +165,27 @@ export const generateTemplates = async (req, res) => {
       throw ApiError.notFound('Post not found');
     }
 
+    // Delete old templates if they exist
+    if (post.templatesUrls?.length > 0) {
+      await deleteFiles(post.templatesUrls).catch(error => {
+        console.error('Error deleting old templates:', error);
+      });
+    }
+
     const templates = await generateTemplatesService({
       post,
       accountId: post.accountId
     });
 
-    // Update post with template URLs
+    // Get template URLs from results
+    const newTemplateUrls = templates.results.map(template => template.imageUrl);
+
+    // Update post with new template URLs
     const updatedPost = await Post.findByIdAndUpdate(
       id,
       {
         $set: {
-          templatesUrls: templates.results.map(template => template.imageUrl)
+          templatesUrls: newTemplateUrls
         }
       },
       { new: true }

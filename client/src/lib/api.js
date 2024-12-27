@@ -111,6 +111,11 @@ class ApiClient {
     return this.client.post(`/posts/${postId}/generate-templates`);
   }
 
+  // Delete files endpoint
+  async deleteFiles(urls) {
+    return this.client.post('/storage/delete', { urls });
+  }
+
   // Generic request method for custom endpoints
   async request(method, endpoint, data = null, config = {}) {
     const options = {

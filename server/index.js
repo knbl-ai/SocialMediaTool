@@ -7,6 +7,7 @@ import { rateLimit } from 'express-rate-limit';
 import authRoutes from './routes/auth.js';
 import accountRoutes from './routes/accounts.js';
 import postsRoutes from './routes/posts.js';
+import storageRoutes from './routes/storage.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -30,6 +31,7 @@ app.get('/test', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/accounts', accountRoutes);
 app.use('/api/posts', postsRoutes);
+app.use('/api/storage', storageRoutes);
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI)

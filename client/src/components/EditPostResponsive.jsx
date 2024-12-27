@@ -394,17 +394,22 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                         height: imageSize.height
                       });
                       
-                      // First update post with new image URL
+                      // Delete old templates if they exist
+                      if (currentPost?.templatesUrls?.length > 0) {
+                        await api.deleteFiles(currentPost.templatesUrls);
+                      }
+
+                      // Update post with new image URL
                       let updatedPost = await updatePost(postId, {
                         ...currentPost,
                         image: {
                           ...currentPost?.image,
                           url: result.url,
-                          template: result.url, // Set both URL and template to the new image
-                          templatesUrls: [], // Clear existing templates
+                          template: result.url,
                           size: imageSize,
                           dimensions: dimensions
-                        }
+                        },
+                        templatesUrls: [] // Clear existing templates
                       });
 
                       // Set current post to show new image immediately
