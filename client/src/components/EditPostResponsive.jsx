@@ -9,6 +9,7 @@ import { PostTimeSelector } from "./editPost/PostTimeSelector";
 import PostPlatformSelector from "./editPost/PostPlatformSelector";
 import PostSelectItems from "./editPost/PostSelectItems";
 import DimensionsSelector from "./editPost/DimensionsSelector";
+import DisplayImage from "./editPost/DisplayImage";
 import { usePosts } from '../hooks/usePosts';
 import api from '../lib/api';
 import MODELS from '../config/models';
@@ -130,20 +131,43 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
 
   // Save changes when form values change
   useEffect(() => {
-    if (!postId || !show || isDeletingRef.current || isSelectingTemplateRef.current) return; // Don't run if modal is closed, post is deleted, template selection in progress, or deletion is in progress
+    if (!postId || !show || isDeletingRef.current || isSelectingTemplateRef.current || !initializationRef.current) return;
+
+    const hasChanges = () => {
+      if (!currentPost) return false;
+      
+      return (
+        !arraysEqual(currentPost.platforms, selectedPlatforms) ||
+        currentPost.datePost !== selectedDate ||
+        currentPost.timePost !== selectedTime ||
+        currentPost.text?.post !== postText ||
+        currentPost.text?.title !== postTitle ||
+        currentPost.text?.subtitle !== postSubtitle ||
+        currentPost.prompts?.image !== imagePrompt ||
+        currentPost.prompts?.video !== videoPrompt ||
+        currentPost.prompts?.text !== textPrompt ||
+        currentPost.models?.image !== selectedImageModel ||
+        currentPost.models?.video !== selectedVideoModel ||
+        currentPost.models?.text !== selectedLLMModel
+      );
+    };
+
+    const arraysEqual = (a, b) => {
+      if (a === b) return true;
+      if (!a || !b) return false;
+      if (a.length !== b.length) return false;
+      return a.every((val, index) => val === b[index]);
+    };
+
+    if (!hasChanges()) return;
 
     const saveChanges = async () => {
       try {
-        console.log('Auto-save running with:', {
-          template: currentPost?.image?.template,
-          url: currentPost?.image?.url
-        });
-        
         const postData = {
           platforms: selectedPlatforms,
           datePost: selectedDate,
           timePost: selectedTime,
-          image: currentPost?.image || {}, // Keep image properties unchanged during auto-save
+          image: currentPost?.image || {},
           text: {
             post: postText,
             title: postTitle,
@@ -161,12 +185,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
           }
         };
 
-        console.log('Saving post data:', postData);
         const updatedPost = await updatePost(postId, postData);
-        console.log('Post updated:', {
-          template: updatedPost.image?.template,
-          url: updatedPost.image?.url
-        });
         setCurrentPost(updatedPost);
         setLocalError(null);
       } catch (error) {
@@ -186,11 +205,22 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
       }
     };
   }, [
-    postId, selectedPlatforms, selectedDate, selectedTime,
-    imageSize, dimensions, postText, postTitle, postSubtitle, // Removed imageTemplate from dependencies
-    imagePrompt, videoPrompt, textPrompt,
-    selectedImageModel, selectedVideoModel, selectedLLMModel,
-    currentPost, updatePost, show
+    postId,
+    show,
+    selectedPlatforms,
+    selectedDate,
+    selectedTime,
+    postText,
+    postTitle,
+    postSubtitle,
+    imagePrompt,
+    videoPrompt,
+    textPrompt,
+    selectedImageModel,
+    selectedVideoModel,
+    selectedLLMModel,
+    updatePost,
+    currentPost
   ]);
 
   return (
@@ -308,19 +338,75 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
 
             {/* Middle Section - Image Preview */}
             <div className="flex-[4] bg-gray-100 rounded-lg min-h-0 relative">
-              <div className="absolute inset-0 flex items-center justify-center">
-                {currentPost?.image?.template || currentPost?.image?.url ? (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <img
-                      src={currentPost.image.template || currentPost.image.url}
-                      alt="Post preview"
-                      className="max-w-full max-h-full object-contain"
-                    />
-                  </div>
-                ) : (
-                  <ImagePlus className="h-12 w-12 text-gray-400" />
-                )}
-              </div>
+              <DisplayImage 
+                imageUrl={currentPost?.image?.url}
+                templateUrl={currentPost?.image?.template}
+                templatesUrls={currentPost?.templatesUrls || []}
+                onTemplateSelect={async (templateUrl) => {
+                  try {
+                    // Update post with new template selection
+                    const updatedPostData = {
+                      ...currentPost,
+                      image: {
+                        ...currentPost?.image,
+                        template: templateUrl === currentPost?.image?.template ? null : templateUrl
+                      }
+                    };
+                    
+                    // Save to server
+                    const savedPost = await updatePost(postId, updatedPostData);
+                    setCurrentPost(savedPost);
+                    setImageTemplate(savedPost.image?.template || '');
+                  } catch (error) {
+                    console.error('Error updating template:', error);
+                    setLocalError('Failed to update template');
+                  }
+                }}
+                onImageUpload={async (imageUrl, templateUrl) => {
+                  try {
+                    // Delete old templates if they exist
+                    if (currentPost?.templatesUrls?.length > 0) {
+                      await api.deleteFiles(currentPost.templatesUrls);
+                    }
+
+                    // Delete old image if it exists
+                    if (currentPost?.image?.url) {
+                      await api.deleteFiles([currentPost.image.url]);
+                    }
+
+                    // Update post with new image URL and template
+                    const updatedPost = await updatePost(postId, {
+                      ...currentPost,
+                      image: {
+                        ...currentPost?.image,
+                        url: imageUrl,
+                        template: templateUrl, // Set template to the same URL initially
+                        size: imageSize,
+                        dimensions: dimensions
+                      },
+                      templatesUrls: [] // Clear existing templates
+                    });
+                    
+                    setCurrentPost(updatedPost);
+                    setImageTemplate(templateUrl); // Update template state
+
+                    // Generate new templates if we have all required fields
+                    if (updatedPost.image?.url && postTitle && postSubtitle) {
+                      try {
+                        const templatesResult = await api.generateTemplates(postId);
+                        setCurrentPost(templatesResult);
+                      } catch (error) {
+                        console.error('Error generating templates:', error);
+                        setLocalError('Image saved but template generation failed');
+                      }
+                    }
+                    setLocalError(null);
+                  } catch (error) {
+                    console.error('Error updating image:', error);
+                    setLocalError(error.message || 'Failed to update image');
+                  }
+                }}
+              />
             </div>
 
             {/* Bottom Section - Post Text */}
@@ -390,6 +476,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                     }
                     try {
                       setIsGeneratingImage(true);
+                      // Generate the main image first
                       const result = await api.generateImage({
                         prompt: imagePrompt,
                         model: selectedImageModel,
@@ -402,34 +489,36 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                         await api.deleteFiles(currentPost.templatesUrls);
                       }
 
-                      // Update post with new image URL
-                      let updatedPost = await updatePost(postId, {
+                      // Delete old image if it exists
+                      if (currentPost?.image?.url) {
+                        await api.deleteFiles([currentPost.image.url]);
+                      }
+
+                      // Update post with new image URL and set it as template initially
+                      const updatedPost = await updatePost(postId, {
                         ...currentPost,
                         image: {
                           ...currentPost?.image,
                           url: result.url,
-                          template: result.url,
+                          template: result.url, // Set template to the same URL initially
                           size: imageSize,
                           dimensions: dimensions
                         },
                         templatesUrls: [] // Clear existing templates
                       });
-
-                      // Set current post to show new image immediately
+                      
                       setCurrentPost(updatedPost);
+                      setImageTemplate(result.url); // Update template state
 
-                      // Only generate templates if we have all required fields
-                      if (updatedPost.image?.url && updatedPost.text?.title && updatedPost.text?.subtitle) {
+                      // Generate new templates if we have all required fields
+                      if (updatedPost.image?.url && postTitle && postSubtitle) {
                         try {
                           const templatesResult = await api.generateTemplates(postId);
-                          // Update UI with the post containing both new image and templates
                           setCurrentPost(templatesResult);
                         } catch (error) {
                           console.error('Error generating templates:', error);
                           setLocalError('Image saved but template generation failed');
                         }
-                      } else {
-                        console.log('Skipping template generation - missing required fields');
                       }
                       setLocalError(null);
                     } catch (error) {

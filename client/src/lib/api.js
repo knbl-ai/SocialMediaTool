@@ -116,6 +116,17 @@ class ApiClient {
     return this.client.post('/storage/delete', { urls });
   }
 
+  // Upload image endpoint
+  async uploadImage(formData) {
+    // Create a custom config to handle FormData
+    const config = {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    };
+    return this.client.post('/storage/upload', formData, config);
+  }
+
   // Generic request method for custom endpoints
   async request(method, endpoint, data = null, config = {}) {
     const options = {

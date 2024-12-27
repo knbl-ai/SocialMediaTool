@@ -285,11 +285,45 @@ const MODELS = {
 
 ### Backend (.env)
 ```env
+# Server Configuration
+PORT=5000                           # Server port (optional, defaults to 5000)
+CLIENT_URL=http://localhost:5173    # Frontend URL for CORS
+
+# Database Configuration
 MONGODB_URI=mongodb://localhost/social-media-tool
-JWT_SECRET=your-secret-key
-GOOGLE_CLIENT_ID=your-client-id
+
+# Authentication
+JWT_SECRET=your-secret-key          # Secret for JWT token generation
+GOOGLE_CLIENT_ID=your-client-id     # OAuth client ID
 GOOGLE_CLIENT_SECRET=your-client-secret
+
+# Google Cloud Storage Configuration
+GOOGLE_CLOUD_PROJECT_ID=your-project-id
+GOOGLE_CLOUD_BUCKET_NAME=your-bucket-name
+GOOGLE_CLOUD_CLIENT_EMAIL=your-service-account-email
+GOOGLE_CLOUD_PRIVATE_KEY="your-private-key"  # Include quotes to preserve newlines
+
+# AI Services Configuration
+FAL_KEY=your-fal-api-key           # For image generation (flux, ideogram models)
+ANTHROPIC_API_KEY=your-claude-key   # For text generation (Claude models)
 ```
+
+Notes:
+1. Google Cloud Storage configuration:
+   - Requires setting up a service account with Storage Admin permissions
+   - The private key should be the full key string with newlines preserved
+   - Bucket should be configured with proper CORS settings for file uploads
+
+2. AI Services setup:
+   - FAL API key: Get from https://fal.ai/dashboard/keys
+   - Anthropic API key: Get from https://console.anthropic.com/
+   - Both services require active subscriptions for production use
+
+3. Security considerations:
+   - Never commit .env file to version control
+   - Use strong, unique values for JWT_SECRET
+   - Keep API keys secure and rotate them periodically
+   - Set appropriate CORS origins in production
 
 ## Component Relationships and Data Flow
 
@@ -402,7 +436,49 @@ GOOGLE_CLIENT_SECRET=your-client-secret
    - Use composition over inheritance
    - Keep components pure
 
-4. **Error Handling**
+4. **File Management System**
+   - **Storage Integration**
+     - Uses Google Cloud Storage for file storage
+     - Handles template images through dedicated storage routes
+     - Maintains clean storage through automated cleanup
+
+   - **Template Management**
+     ```
+     Template Lifecycle:
+     1. Generation
+        ├── Delete old templates if they exist
+        ├── Generate new templates
+        └── Update post with new template URLs
+
+     2. Image Updates
+        ├── Delete existing templates
+        ├── Generate new image
+        └── Regenerate templates if needed
+
+     3. Post Deletion
+        ├── Server retrieves template URLs
+        ├── Deletes template files from storage
+        └── Removes post from database
+     ```
+
+   - **File Cleanup Strategy**
+     - Centralized cleanup in server controllers
+     - Proper URL path extraction for Google Storage
+     - Handles template deletion in specific scenarios:
+       * When generating new templates
+       * When generating new images
+       * When deleting posts
+
+   - **Storage Routes** (`/api/storage`):
+     ```
+     POST /delete
+     ├── Body: { urls: string[] }
+     ├── Validates URL format
+     ├── Extracts file paths
+     └── Returns deletion results
+     ```
+
+5. **Error Handling**
    - Use ApiError for backend errors
    - Implement proper validation
    - Show user-friendly messages

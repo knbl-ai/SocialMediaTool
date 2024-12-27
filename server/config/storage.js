@@ -45,10 +45,17 @@ export const uploadImage = async (file) => {
 
 export const deleteFile = async (fileUrl) => {
   try {
+    // Only handle Google Cloud Storage URLs
+    if (!fileUrl?.startsWith(`https://storage.googleapis.com/${bucketName}/`)) {
+      console.log(`Skipping deletion of non-GCS file: ${fileUrl}`);
+      return true;
+    }
+
     // Extract filename from URL
     const url = new URL(fileUrl);
     // Remove leading slash and get full path after bucket name
-    const filePath = url.pathname.split(`/${bucketName}/`)[1];
+    const filePath = decodeURIComponent(url.pathname.split(`/${bucketName}/`)[1]);
+    
     if (!filePath) {
       console.error(`Invalid file URL format: ${fileUrl}`);
       return false;
@@ -60,6 +67,10 @@ export const deleteFile = async (fileUrl) => {
     return true;
   } catch (error) {
     console.error(`Error deleting file ${fileUrl}:`, error);
+    // Don't throw error if file doesn't exist, just return false
+    if (error.code === 404) {
+      return false;
+    }
     return false;
   }
 };
@@ -67,8 +78,16 @@ export const deleteFile = async (fileUrl) => {
 export const deleteFiles = async (fileUrls) => {
   if (!Array.isArray(fileUrls) || fileUrls.length === 0) return;
 
+  // Filter out non-GCS URLs
+  const gcsUrls = fileUrls.filter(url => url?.startsWith(`https://storage.googleapis.com/${bucketName}/`));
+  
+  if (gcsUrls.length === 0) {
+    console.log('No GCS files to delete');
+    return [];
+  }
+
   const results = await Promise.all(
-    fileUrls.map(async (url) => {
+    gcsUrls.map(async (url) => {
       try {
         await deleteFile(url);
         return { url, success: true };

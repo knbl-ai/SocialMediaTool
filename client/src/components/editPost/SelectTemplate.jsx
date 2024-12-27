@@ -13,17 +13,10 @@ export function SelectTemplate({
   currentTemplate
 }) {
   // Track the currently selected template
-  const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [selectedTemplate, setSelectedTemplate] = useState(currentTemplate);
 
   // Update selected template when current template or templates change
   useEffect(() => {
-    console.log('Template state update:', {
-      currentTemplate,
-      originalImageUrl,
-      templatesUrls,
-      selectedTemplate
-    });
-
     if (currentTemplate === originalImageUrl) {
       // If current template is original image, show as "No Template"
       setSelectedTemplate(null);
@@ -36,13 +29,8 @@ export function SelectTemplate({
     }
   }, [currentTemplate, originalImageUrl, templatesUrls]);
 
-  // Log template selection
+  // Handle template selection
   const handleTemplateSelect = (templateUrl) => {
-    console.log('Selecting template:', {
-      current: selectedTemplate,
-      new: templateUrl,
-      original: originalImageUrl
-    });
     setSelectedTemplate(templateUrl);
     onTemplateSelect?.(templateUrl);
   };
