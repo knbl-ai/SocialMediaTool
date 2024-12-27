@@ -66,10 +66,8 @@ const DisplayImage = ({ imageUrl, templateUrl, templatesUrls = [], onTemplateSel
         accept="image/*"
         onChange={handleFileChange}
       />
-
-      {/* Main Image Display */}
       <div 
-        className="flex-1 flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity"
+        className="flex-1 flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity bg-gray-50 relative"
         onClick={handleImageClick}
       >
         {isUploading ? (
@@ -77,12 +75,15 @@ const DisplayImage = ({ imageUrl, templateUrl, templatesUrls = [], onTemplateSel
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
           </div>
         ) : displayUrl ? (
-          <div className="w-full h-full flex items-center justify-center">
-            <img
-              src={displayUrl}
-              alt="Post preview"
-              className="max-w-full max-h-full object-contain"
-            />
+          <div className="absolute inset-0 flex items-center justify-center p-4">
+            <div className="relative w-full h-full">
+              <img
+                src={displayUrl}
+                alt="Post preview"
+                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 max-w-full max-h-full object-contain"
+                style={{ maxWidth: '100%', maxHeight: '100%' }}
+              />
+            </div>
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center gap-2">

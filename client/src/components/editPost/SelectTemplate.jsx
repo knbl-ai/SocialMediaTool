@@ -45,7 +45,19 @@ export function SelectTemplate({
       }`}
     >
       <div className="aspect-square relative bg-gray-50 flex items-center justify-center">
-        <span className="text-gray-500 font-medium">No Template</span>
+        {originalImageUrl ? (
+          <div className="absolute inset-0 flex items-center justify-center p-2">
+            <div className="relative w-full h-full">
+              <img
+                src={originalImageUrl}
+                alt="Original image"
+                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 max-w-full max-h-full object-contain"
+              />
+            </div>
+          </div>
+        ) : (
+          <span className="text-gray-500 font-medium">No Template</span>
+        )}
       </div>
     </div>
   );
@@ -67,12 +79,16 @@ export function SelectTemplate({
                 : 'hover:scale-[1.02]'
             }`}
           >
-            <div className="aspect-square relative">
-              <img
-                src={templateUrl}
-                alt={`Template ${index + 1}`}
-                className="object-cover w-full h-full"
-              />
+            <div className="aspect-square relative bg-gray-50">
+              <div className="absolute inset-0 flex items-center justify-center p-2">
+                <div className="relative w-full h-full">
+                  <img
+                    src={templateUrl}
+                    alt={`Template ${index + 1}`}
+                    className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 max-w-full max-h-full object-contain"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         ))}
