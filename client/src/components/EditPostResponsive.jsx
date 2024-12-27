@@ -349,17 +349,20 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                       if (saveTimeoutRef.current) {
                         clearTimeout(saveTimeoutRef.current);
                       }
+
+                      // Delete the post (server will handle template cleanup)
                       await deletePost(postId);
                       setPostId(null);
                       setCurrentPost(null);
                       if (onUpdate) await onUpdate();
                       handleClose();
                     } catch (error) {
+                      console.error('Error deleting post:', error);
                       setLocalError(error.message || 'Failed to delete post');
                       isDeletingRef.current = false;
                     }
                   }
-                }} 
+                }}
                 className="text-red-400 hover:text-red-500 ml-4"
               >
                 <X className="h-4 w-4" />
