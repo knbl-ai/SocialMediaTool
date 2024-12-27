@@ -27,6 +27,21 @@ const PostSelectItems = ({
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />
+       <Select 
+        value={selectedModel}
+        onValueChange={onModelChange}
+      >
+        <SelectTrigger className="w-full mt-2">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {models.map(model => (
+            <SelectItem key={model.value} value={model.value}>
+              {model.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       <Button 
         className="w-full mt-2"
         onClick={onGenerate}
@@ -44,21 +59,7 @@ const PostSelectItems = ({
           </>
         )}
       </Button>
-      <Select 
-        value={selectedModel}
-        onValueChange={onModelChange}
-      >
-        <SelectTrigger className="w-full mt-2">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {models.map(model => (
-            <SelectItem key={model.value} value={model.value}>
-              {model.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+     
     </div>
   )
 }

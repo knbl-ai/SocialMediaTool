@@ -46,6 +46,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
   const isDeletingRef = useRef(false);
   const saveTimeoutRef = useRef(null);
   const isSelectingTemplateRef = useRef(false);
+  const templateSelectionTimeoutRef = useRef(null);
 
   // Content states
   const [postText, setPostText] = useState(DEFAULT_STATE.postText);
@@ -74,10 +75,33 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
   const [textPrompt, setTextPrompt] = useState(DEFAULT_STATE.textPrompt);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [isGeneratingText, setIsGeneratingText] = useState(false);
+  const [isGeneratingTemplates, setIsGeneratingTemplates] = useState(false);
 
-  const handleDimensionsChange = (dimensionName, dimensionSize) => {
-    setDimensions(dimensionName);
-    setImageSize(dimensionSize);
+  const handleDimensionsChange = async (dimensionName, dimensionSize) => {
+    try {
+      // Update local state
+      setDimensions(dimensionName);
+      setImageSize(dimensionSize);
+
+      // Update post in database
+      const updatedPost = await updatePost(postId, {
+        ...currentPost,
+        image: {
+          ...currentPost?.image,
+          dimensions: dimensionName,
+          size: dimensionSize
+        }
+      });
+
+      setCurrentPost(updatedPost);
+      setLocalError(null);
+    } catch (error) {
+      console.error('Error updating dimensions:', error);
+      setLocalError('Failed to update dimensions');
+      // Revert local state on error
+      setDimensions(currentPost?.image?.dimensions || 'Square');
+      setImageSize(currentPost?.image?.size || DEFAULT_STATE.imageSize);
+    }
   };
 
   const handleClose = useCallback(async () => {
@@ -223,6 +247,103 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
     currentPost
   ]);
 
+  const handleTemplateSelect = async (templateUrl) => {
+    try {
+      // Clear any pending template selection
+      if (templateSelectionTimeoutRef.current) {
+        clearTimeout(templateSelectionTimeoutRef.current);
+      }
+
+      // Set selecting template flag to prevent auto-save
+      isSelectingTemplateRef.current = true;
+
+      // Update post with new template selection
+      const updatedPostData = {
+        ...currentPost,
+        image: {
+          ...currentPost?.image,
+          url: currentPost?.image?.url || templateUrl,
+          template: templateUrl
+        }
+      };
+      
+      // Update UI immediately
+      setCurrentPost(prev => ({
+        ...prev,
+        image: {
+          ...prev.image,
+          template: templateUrl
+        }
+      }));
+      setImageTemplate(templateUrl);
+
+      // Debounce the server update
+      templateSelectionTimeoutRef.current = setTimeout(async () => {
+        try {
+          const savedPost = await updatePost(postId, updatedPostData);
+          setCurrentPost(savedPost);
+          setImageTemplate(savedPost.image?.template || '');
+        } catch (error) {
+          console.error('Error updating template:', error);
+          setLocalError('Failed to update template');
+        } finally {
+          isSelectingTemplateRef.current = false;
+        }
+      }, 300); // 300ms debounce
+    } catch (error) {
+      console.error('Error updating template:', error);
+      setLocalError('Failed to update template');
+      isSelectingTemplateRef.current = false;
+    }
+  };
+
+  // Cleanup template selection timeout
+  useEffect(() => {
+    return () => {
+      if (templateSelectionTimeoutRef.current) {
+        clearTimeout(templateSelectionTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleUpdateTemplates = async () => {
+    if (!currentPost?.image?.url || !postTitle || !postSubtitle) {
+      setLocalError('Title, subtitle and image are required to generate templates');
+      return;
+    }
+
+    try {
+      setIsGeneratingTemplates(true);
+      setLocalError(null);
+
+      // Delete old templates if they exist
+      if (currentPost?.templatesUrls?.length > 0) {
+        await api.deleteFiles(currentPost.templatesUrls);
+      }
+
+      // Generate new templates
+      const templatesResult = await api.generateTemplates(postId);
+
+      // Update post with new templates and reset template to original image
+      const updatedPost = await updatePost(postId, {
+        ...currentPost,
+        image: {
+          ...currentPost.image,
+          template: currentPost.image.url // Reset template to original image
+        },
+        templatesUrls: templatesResult.templatesUrls || []
+      });
+
+      setCurrentPost(updatedPost);
+      setImageTemplate(updatedPost.image.url);
+    } catch (error) {
+      console.error('Error generating templates:', error);
+      setLocalError('Failed to generate templates');
+    } finally {
+      setIsGeneratingTemplates(false);
+    }
+  };
+
   return (
     <Modal show={show} onClose={handleClose}>
       <div className="flex flex-col h-[90vh] w-full">
@@ -244,74 +365,10 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                 onTitleChange={setPostTitle}
                 onSubtitleChange={setPostSubtitle}
                 currentTemplate={currentPost?.image?.template}
-                onTemplateSelect={async (templateUrl) => {
-                  // Prevent auto-save during template selection
-                  isSelectingTemplateRef.current = true;
-
-                  console.log('Selecting template:', {
-                    currentTemplate: currentPost?.image?.template,
-                    newTemplate: templateUrl,
-                    currentUrl: currentPost?.image?.url
-                  });
-
-                  // Prepare updated post data
-                  const updatedPostData = {
-                    ...currentPost,
-                    platforms: selectedPlatforms,
-                    datePost: selectedDate,
-                    timePost: selectedTime,
-                    image: {
-                      ...(currentPost?.image || {}),
-                      url: currentPost?.image?.url,
-                      template: templateUrl === currentPost?.image?.url ? null : templateUrl,
-                      size: imageSize,
-                      dimensions: dimensions,
-                      templatesUrls: currentPost?.templatesUrls || []
-                    },
-                    text: {
-                      post: postText,
-                      title: postTitle,
-                      subtitle: postSubtitle
-                    },
-                    prompts: {
-                      image: imagePrompt,
-                      video: videoPrompt,
-                      text: textPrompt
-                    },
-                    models: {
-                      image: selectedImageModel,
-                      video: selectedVideoModel,
-                      text: selectedLLMModel
-                    }
-                  };
-                  setCurrentPost(updatedPostData);
-
-                  try {
-                    // Save to server immediately
-                    const savedPost = await updatePost(postId, updatedPostData);
-                    console.log('Template updated:', {
-                      template: savedPost.image?.template,
-                      url: savedPost.image?.url,
-                      templatesUrls: savedPost.templatesUrls
-                    });
-
-                    // Update local state with saved data
-                    setCurrentPost(savedPost);
-
-                    // Update imageTemplate state to match
-                    setImageTemplate(savedPost.image?.template || '');
-                  } catch (error) {
-                    console.error('Error updating template:', error);
-                    setLocalError('Failed to update template');
-                    // Revert on error
-                    setCurrentPost(currentPost);
-                    setImageTemplate(currentPost?.image?.template || '');
-                  } finally {
-                    // Re-enable auto-save after template selection
-                    isSelectingTemplateRef.current = false;
-                  }
-                }}
+                onTemplateSelect={handleTemplateSelect}
                 originalImageUrl={currentPost?.image?.url}
+                onUpdateTemplates={handleUpdateTemplates}
+                isGeneratingTemplates={isGeneratingTemplates}
               />
             </div>
           </div>
@@ -342,26 +399,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                 imageUrl={currentPost?.image?.url}
                 templateUrl={currentPost?.image?.template}
                 templatesUrls={currentPost?.templatesUrls || []}
-                onTemplateSelect={async (templateUrl) => {
-                  try {
-                    // Update post with new template selection
-                    const updatedPostData = {
-                      ...currentPost,
-                      image: {
-                        ...currentPost?.image,
-                        template: templateUrl === currentPost?.image?.template ? null : templateUrl
-                      }
-                    };
-                    
-                    // Save to server
-                    const savedPost = await updatePost(postId, updatedPostData);
-                    setCurrentPost(savedPost);
-                    setImageTemplate(savedPost.image?.template || '');
-                  } catch (error) {
-                    console.error('Error updating template:', error);
-                    setLocalError('Failed to update template');
-                  }
-                }}
+                onTemplateSelect={handleTemplateSelect}
                 onImageUpload={async (imageUrl, templateUrl) => {
                   try {
                     // Delete old templates if they exist

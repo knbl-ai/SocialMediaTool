@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Input } from "../ui/input";
 import { Textarea } from '../ui/textarea';
+import { Button } from '../ui/button';
 
 export function SelectTemplate({ 
   templatesUrls = [],
@@ -10,7 +11,9 @@ export function SelectTemplate({
   onSubtitleChange,
   onTemplateSelect,
   originalImageUrl,
-  currentTemplate
+  currentTemplate,
+  onUpdateTemplates,
+  isGeneratingTemplates
 }) {
   // Track the currently selected template
   const [selectedTemplate, setSelectedTemplate] = useState(currentTemplate);
@@ -31,8 +34,10 @@ export function SelectTemplate({
 
   // Handle template selection
   const handleTemplateSelect = (templateUrl) => {
-    setSelectedTemplate(templateUrl);
-    onTemplateSelect?.(templateUrl);
+    // When selecting "No Template", we set the template to the original image URL
+    const newTemplate = templateUrl === originalImageUrl ? originalImageUrl : templateUrl;
+    setSelectedTemplate(templateUrl === originalImageUrl ? null : templateUrl);
+    onTemplateSelect?.(newTemplate);
   };
 
   const NoTemplateBlock = () => (
@@ -66,7 +71,7 @@ export function SelectTemplate({
 
   return (
     <div className="h-full flex flex-col">
-      <div className="space-y-4 overflow-y-auto px-3 py-3 h-[70vh]">
+      <div className="space-y-4 overflow-y-auto px-3 py-3 h-[60vh]">
         <NoTemplateBlock />
 
         {hasTemplates && templatesUrls.map((templateUrl, index) => (
@@ -108,6 +113,13 @@ export function SelectTemplate({
             value={subtitle}
             onChange={(e) => onSubtitleChange?.(e.target.value)}
           />
+          <Button 
+            className='w-full'
+            onClick={onUpdateTemplates}
+            disabled={isGeneratingTemplates || !title || !subtitle || !originalImageUrl}
+          >
+            {isGeneratingTemplates ? 'Generating Templates...' : 'Update Templates'}
+          </Button>
         </div>
       )}
     </div>
