@@ -8,6 +8,7 @@ import authRoutes from './routes/auth.js';
 import accountRoutes from './routes/accounts.js';
 import postsRoutes from './routes/posts.js';
 import storageRoutes from './routes/storage.js';
+import contentPlannerRoutes from './routes/contentPlannerRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -32,6 +33,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/accounts', accountRoutes);
 app.use('/api/posts', postsRoutes);
 app.use('/api/storage', storageRoutes);
+app.use('/api/content-planner', contentPlannerRoutes);
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI)

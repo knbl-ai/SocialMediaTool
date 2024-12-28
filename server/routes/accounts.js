@@ -2,6 +2,7 @@ import express from 'express';
 import auth from '../middleware/auth.js';
 import { validateObjectId } from '../middleware/validateObjectId.js';
 import Account from '../models/Account.js';
+import { createContentPlanner } from '../services/contentPlannerService.js';
 import multer from 'multer';
 import { uploadImage, deleteFiles } from '../config/storage.js';
 import axios from 'axios';
@@ -56,6 +57,10 @@ router.post('/', auth, async (req, res) => {
       position: (await Account.countDocuments({ userId: req.user.id }))
     });
     const newAccount = await account.save();
+
+    // Create associated content planner
+    await createContentPlanner(newAccount._id);
+
     res.status(201).json(newAccount);
   } catch (error) {
     console.error('Error creating account:', error);
