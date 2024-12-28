@@ -45,6 +45,23 @@ class ApiClient {
     );
   }
 
+  // Generic HTTP methods
+  async get(endpoint, params = {}) {
+    return this.client.get(endpoint, { params });
+  }
+
+  async put(endpoint, data = {}) {
+    return this.client.put(endpoint, data);
+  }
+
+  async post(endpoint, data = {}, config = {}) {
+    return this.client.post(endpoint, data, config);
+  }
+
+  async delete(endpoint) {
+    return this.client.delete(endpoint);
+  }
+
   // Auth endpoints
   async login(credentials) {
     return this.client.post('/auth/login', credentials);
