@@ -8,11 +8,18 @@ import {
 } from "../ui/select";
 import { Label } from "../ui/label";
 
-export default function SelectField({ label, options, placeholder = "Select option", labelClass="text-orange-500" }) {
+export default function SelectField({ 
+  label, 
+  options, 
+  placeholder = "Select option", 
+  labelClass = "text-violet-500",
+  value,
+  onChange
+}) {
   return (
     <div className="space-y-1">
       <Label htmlFor={label} className={labelClass}>{label}</Label>
-      <Select>
+      <Select value={value} onValueChange={onChange}>
         <SelectTrigger>
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>

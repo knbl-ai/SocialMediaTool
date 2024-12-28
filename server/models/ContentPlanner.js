@@ -8,11 +8,11 @@ const contentPlannerSchema = new mongoose.Schema({
   },
   voice: {
     type: String,
-    default: ''
+    default: 'professional'
   },
   template: {
     type: String,
-    default: ''
+    default: 'no'
   },
   audience: {
     type: String,
@@ -20,7 +20,7 @@ const contentPlannerSchema = new mongoose.Schema({
   },
   creativity: {
     type: Number,
-    default: 0.7,
+    default: 0.3,
     min: 0,
     max: 1
   },
@@ -30,7 +30,7 @@ const contentPlannerSchema = new mongoose.Schema({
   },
   llm: {
     type: String,
-    default: ''
+    default: 'claude-3-5-haiku-20241022'
   },
   imageGuidelines: {
     type: String,
@@ -38,7 +38,7 @@ const contentPlannerSchema = new mongoose.Schema({
   },
   imageModel: {
     type: String,
-    default: ''
+    default: 'fal-ai/flux/schnell'
   },
   date: {
     type: Date,
@@ -46,7 +46,7 @@ const contentPlannerSchema = new mongoose.Schema({
   },
   duration: {
     type: String,
-    default: ''
+    default: 'month'
   },
   frequency: {
     type: Number,

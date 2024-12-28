@@ -9,7 +9,7 @@ const TargetAudience = memo(({ value, onChange }) => {
 
   return (
     <div className="space-y-2">
-      <Label className="text-yellow-500">Target Audience</Label>
+      <Label className="text-violet-500">Target Audience</Label>
       <Textarea
         placeholder="Describe your target audience..."
         className=""
