@@ -88,9 +88,10 @@ export default function Duration() {
         </div>
       </div>
 
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-2 justify-end">
+        
+        <Label htmlFor="autoRenewal" className="cursor-pointer text-gray-500">Auto Renewal</Label>
         <Switch id="autoRenewal" />
-        <Label htmlFor="autoRenewal" className="cursor-pointer">Auto Renewal</Label>
       </div>
     </div>
   );

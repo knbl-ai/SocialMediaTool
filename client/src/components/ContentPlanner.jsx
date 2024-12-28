@@ -1,11 +1,11 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import SelectField from './accountSettings/SelectField';
-import CreativitySlider from './accountSettings/CreativitySlider';
-import Guidelines from './accountSettings/Guidelines';
-import Duration from './accountSettings/Duration';
-import TargetAudience from './accountSettings/TargetAudience';
-import { toneOptions, frequencyOptions, templateOptions } from './accountSettings/options';
+import SelectField from './contentPlanner/SelectField';
+import CreativitySlider from './contentPlanner/CreativitySlider';
+import Guidelines from './contentPlanner/Guidelines';
+import Duration from './contentPlanner/Duration';
+import TargetAudience from './contentPlanner/TargetAudience';
+import { toneOptions, frequencyOptions, templateOptions } from './contentPlanner/options';
 import MODELS from '../config/models';
 import HyperText from './ui/hyper-text';
 import PulsatingButton from "./ui/pulsating-button";
@@ -19,7 +19,7 @@ export default function AccountSettings() {
       <CardContent className="space-y-6">
         {/* Grid layout for selects and inputs */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <SelectField label="Brand Voice" options={toneOptions} placeholder="Select tone" labelClass="text-yellow-500" />
+          <SelectField label="Voice" options={toneOptions} placeholder="Select tone" labelClass="text-yellow-500" />
           <SelectField label="Template" options={templateOptions} placeholder="Select template option" labelClass="text-yellow-500" />
           <TargetAudience />
           <CreativitySlider />

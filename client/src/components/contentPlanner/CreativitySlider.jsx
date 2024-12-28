@@ -15,7 +15,6 @@ export default function CreativitySlider() {
     [&_[role=slider]]:bg-orange-500 
     [&_[role=slider]]:border-orange-500 
     [&_[role=slider]]:hover:bg-orange-600
-    [&>span]:bg-blue-500
     [&>span>span]:bg-orange-500
     [&_[role=slider]]:shadow-none
     [&_[role=slider]]:ring-0
@@ -23,7 +22,7 @@ export default function CreativitySlider() {
   "
         />
         <div className="flex justify-between text-sm text-gray-500 mt-1">
-          <span className="text-blue-500">Stick to Guidelines</span>
+          <span className="text-gray-500">Stick to Guidelines</span>
           <span className="text-orange-500">Creative</span>
         </div>
       </div>
