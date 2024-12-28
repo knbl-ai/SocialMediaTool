@@ -653,13 +653,14 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                     }
                   }}
                 />
-                 <PulsatingButton 
-                   onClick={handleClose}
-                   className="w-full mt-5 text-white bg-[#5CB338]" 
-                   pulseColor="#ECE852"
-                 >
-                   Save Changes
-                 </PulsatingButton>
+                <PulsatingButton 
+                  onClick={handleClose}
+                  className="w-full mt-5 bg-[#5CB338] hover:bg-[#4a9c2d] text-white rounded-lg" 
+                  pulseColor="92 179 56"
+                  duration="2s"
+                >
+                  Save Changes
+                </PulsatingButton>
               </div>
              
             </div>

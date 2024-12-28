@@ -1,12 +1,12 @@
 /** @type {import('tailwindcss').Config} */
-export default {
+module.exports = {
   darkMode: ["class"],
   content: [
-    "./index.html",
-    "./src/**/*.{js,jsx}",
-    "./components/**/*.{js,jsx}",
+    './pages/**/*.{js,jsx}',
+    './components/**/*.{js,jsx}',
+    './app/**/*.{js,jsx}',
+    './src/**/*.{js,jsx}',
   ],
-  prefix: "",
   theme: {
   	container: {
   		center: true,
@@ -49,13 +49,6 @@ export default {
   			card: {
   				DEFAULT: 'hsl(var(--card))',
   				foreground: 'hsl(var(--card-foreground))'
-  			},
-  			chart: {
-  				'1': 'hsl(var(--chart-1))',
-  				'2': 'hsl(var(--chart-2))',
-  				'3': 'hsl(var(--chart-3))',
-  				'4': 'hsl(var(--chart-4))',
-  				'5': 'hsl(var(--chart-5))'
   			}
   		},
   		borderRadius: {
@@ -66,7 +59,7 @@ export default {
   		keyframes: {
   			'accordion-down': {
   				from: {
-  					height: '0'
+  					height: 0
   				},
   				to: {
   					height: 'var(--radix-accordion-content-height)'
@@ -77,22 +70,18 @@ export default {
   					height: 'var(--radix-accordion-content-height)'
   				},
   				to: {
-  					height: '0'
+  					height: 0
   				}
   			},
-  			pulse: {
-  				'0%, 100%': {
-  					boxShadow: '0 0 0 0 var(--pulse-color)'
-  				},
-  				'50%': {
-  					boxShadow: '0 0 0 8px var(--pulse-color)'
-  				}
+  			'pulse-scale': {
+  				'0%, 100%': { transform: 'scale(1)', opacity: '0.5' },
+  				'50%': { transform: 'scale(1.2)', opacity: '0' },
   			}
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
   			'accordion-up': 'accordion-up 0.2s ease-out',
-  			pulse: 'pulse var(--duration) ease-out infinite'
+  			'pulse-scale': 'pulse-scale 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
   		}
   	}
   },

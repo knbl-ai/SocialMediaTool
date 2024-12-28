@@ -26,67 +26,132 @@ client/
 │   └── services/         # API service layers
 ```
 
-### Key Components
+### Image and Template Management
 
-1. **State Management**
-   - `AuthContext`: Manages authentication state and user sessions
-     - Handles Google OAuth login/logout
-     - Maintains user session state
-     - Provides user information to components
+1. **Image Upload and Display**
+   - Component: `DisplayImage.jsx`
+   - Features:
+     - Direct image upload through click/drag-n-drop
+     - Maintains original image proportions
+     - Supports image preview
+     - Handles both uploaded and generated images
+     - Maximum file size: 5MB
+     - Supported formats: All image types
 
-   - `PlatformContext`: Manages selected social media platforms
-     - Stores platform selection per account
-     - Provides platform switching functionality
-     - Maintains platform state across components
+2. **Template Management**
+   - Component: `SelectTemplate.jsx`
+   - Features:
+     - Displays original image and generated templates
+     - Maintains aspect ratio for all images
+     - Supports template selection/deselection
+     - Provides template regeneration
+     - Title and subtitle input for templates
+     - Visual feedback for selected template
 
-   - Custom hooks:
-     - `useAccounts`: Account management operations
-       ```javascript
-       const { 
-         accounts,        // List of user accounts
-         loading,        // Loading state
-         error,         // Error state
-         createAccount,  // Create new account
-         updateAccount,  // Update existing account
-         deleteAccount   // Delete account
-       } = useAccounts();
-       ```
-       Used in:
-       - Main.jsx: Account listing and management
-       - AccountDashboard.jsx: Account details and settings
+3. **Image Dimensions**
+   - Component: `DimensionsSelector.jsx`
+   - Supported Formats:
+     ```javascript
+     const dimensions = [
+       { name: 'Square', size: { width: 1280, height: 1280} },
+       { name: 'Horizontal', size: { width: 1280, height: 960} },
+       { name: 'Horizontal Wide', size: { width: 1280, height: 720} },
+       { name: 'Story', size: { width: 720, height: 1280} }
+     ]
+     ```
+   - Features:
+     - Immediate database updates on selection
+     - Maintains consistency with image generation
+     - Error handling with state reversion
 
-     - `usePosts`: Post management and calendar operations
-       ```javascript
-       const {
-         loading,        // Loading state
-         error,         // Error state
-         fetchPosts,    // Fetch posts for date range
-         getPostsByDate, // Get posts for specific date
-         clearError     // Clear error state
-       } = usePosts(accountId);
-       ```
-       Used in:
-       - PostsDashboard.jsx: Calendar view and post management
-       - DayCell.jsx: Individual day post management
+4. **Template Generation Flow**
+   - Requirements:
+     - Original image URL
+     - Post title
+     - Post subtitle
+     - Image dimensions
+   - Process:
+     1. Deletes existing templates
+     2. Generates new templates
+     3. Updates post with new template URLs
+     4. Resets template to original image
+     5. Updates UI with new templates
 
-2. **API Integration**
-   - `lib/api.js`: Centralized API client with:
-     - Axios instance configuration
-     - Error handling interceptors
-     - Authentication handling
-     - Endpoint methods for all API operations
+5. **State Management**
+   - Debounced template selection (300ms)
+   - Immediate dimension updates
+   - Automatic template generation on image upload
+   - Error handling with user feedback
+   - Cleanup of old images and templates
 
-3. **Main Features**
-   - `PostsDashboard`: Calendar view for post management
-   - `EditPostResponsive`: Post editor with platform-specific settings
-   - `AccountDashboard`: Account management interface
+### Post Model Image Structure
+```javascript
+image: {
+  url: String,          // Original image URL
+  template: String,     // Currently selected template URL
+  size: {              // Image dimensions
+    width: Number,
+    height: Number
+  },
+  dimensions: String    // Dimension preset name
+},
+templatesUrls: [String] // Array of generated template URLs
+```
 
-4. **Data Flow**
+### API Integration
+
+1. **Image Operations**
+   ```javascript
+   // Upload image
+   api.uploadImage(formData)
+   
+   // Generate templates
+   api.generateTemplates(postId)
+   
+   // Delete files
+   api.deleteFiles(urls)
    ```
-   User Action → Component → Custom Hook → API Client → Backend
-        ↑          ↓            ↓            ↑
-   UI Update ← State Update ← Response ← API Response
-   ```
+
+2. **Storage Management**
+   - Google Cloud Storage integration
+   - Automatic cleanup of old files
+   - URL validation for deletion
+   - Error handling for missing files
+
+### Error Handling
+1. **Upload Validation**
+   - File type checking
+   - Size limitations
+   - Missing file handling
+
+2. **Template Generation**
+   - Missing fields validation
+   - Generation failure recovery
+   - Partial success handling
+
+3. **Dimension Updates**
+   - State reversion on failure
+   - Database sync validation
+   - User feedback on errors
+
+### Best Practices
+1. **Image Handling**
+   - Maintain aspect ratios
+   - Prevent image stretching
+   - Center images in containers
+   - Provide loading states
+
+2. **State Management**
+   - Debounce frequent updates
+   - Immediate UI feedback
+   - Delayed server sync
+   - Error state recovery
+
+3. **Resource Cleanup**
+   - Delete unused images
+   - Clear old templates
+   - Handle missing resources
+   - Prevent orphaned files
 
 ## Backend Architecture
 

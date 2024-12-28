@@ -8,6 +8,7 @@ import AccountOverview from '../components/AccountOverview';
 import ConnectedPlatforms from '../components/ConnectedPlatforms';
 import AccountTemplates from '../components/AccountTemplates';
 import PostsDashboard from '../components/PostsDashboard';
+import AccountSettings from '../components/AccountSettings';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -84,12 +85,14 @@ const AccountDashboard = () => {
           <ArrowLeft className="h-6 w-6" />
         </Button>
       </div>
-
+    
       {/* Posts Dashboard */}
       <div className="mt-8">
         <PostsDashboard accountId={accountId} />
       </div>
-
+      <div className="pb-10">
+        <AccountSettings />
+      </div>
       {error && (
         <div className="text-red-500 mt-2">
           {error}
