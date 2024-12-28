@@ -4,26 +4,13 @@ const client = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-const SYSTEM_PROMPT = `You are a skilled social media content creator. Generate engaging posts that follow the given style and structure guidelines while maintaining brand voice. Always output valid JSON in the format: {post, title, subtitle}. Omit preamble and postamble.`;
 
-const generatePromptService = ({ topic, targetAudience = "adults", style = "casual", maxLength = 280, platform = "instagram" }) => {
-    return `
-    Generate a social media post for ${platform} about ${topic}.
-        Style: ${style}
-        Target Audience: ${targetAudience}
-        Maximum Length: ${maxLength} characters
-        
-        The post should be engaging and follow ${platform}'s best practices.
-        Return only the JSON object with post, title, and subtitle.`
-}
-
-export const generateText = async ({ topic, model = 'claude-3-5-haiku-20241022', targetAudience = "adults", style = "casual", maxLength = 280, platform = "instagram"  }) => {
+export const generateText = async ({ topic, model = 'claude-3-5-haiku-20241022',  maxTokens = 1024, system  }) => {
     try {
-
         const response = await client.messages.create({
-            system: SYSTEM_PROMPT,
-            max_tokens: 1024,
-            messages: [{ role: 'user', content: generatePromptService({ topic, targetAudience, style, maxLength, platform }) }],
+            system: system,
+            max_tokens: maxTokens,
+            messages: [{ role: 'user', content: topic }],
             model,
         });
 

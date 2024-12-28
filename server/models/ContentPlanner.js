@@ -50,7 +50,7 @@ const contentPlannerSchema = new mongoose.Schema({
   },
   frequency: {
     type: Number,
-    default: 1
+    default: 2
   },
   autoRenew: {
     type: Boolean,

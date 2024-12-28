@@ -9,7 +9,7 @@ const CreativitySlider = memo(({ value, onChange }) => {
 
   return (
     <div className="space-y-2">
-      <Label >Creativity Level</Label>
+      <Label className="text-lime-500">Creativity Level</Label>
       <div className="pt-4">
         <Slider
           value={[value]}

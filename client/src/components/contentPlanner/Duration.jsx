@@ -30,7 +30,7 @@ const Duration = memo(({
   return (
     <div className="grid grid-cols-2 gap-4 items-start">
       <div className="w-full ">
-        <Label className="text-green-500">Start Date</Label>
+        <Label className="text-lime-500">Start Date</Label>
         <Popover>
           <PopoverTrigger asChild>
             <Button
@@ -60,7 +60,7 @@ const Duration = memo(({
             label="Duration"
             options={durationOptions}
             placeholder="Select duration"
-            labelClass="text-green-500"
+            labelClass="text-lime-500"
             value={duration}
             onChange={onDurationChange}
           />

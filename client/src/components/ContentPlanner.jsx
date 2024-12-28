@@ -56,43 +56,6 @@ export default function ContentPlanner() {
           </div>
         ) : (
           <>
-            {/* First Row: Selectors */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <SelectField
-                label="Voice"
-                options={toneOptions}
-                placeholder="Select tone"
-                labelClass=""
-                value={contentPlanner.voice}
-                onChange={(value) => handleFieldChange('voice', value)}
-              />
-              <SelectField
-                label="LLM"
-                options={MODELS.llm}
-                placeholder="Select LLM model"
-                labelClass=""
-                value={contentPlanner.llm}
-                onChange={(value) => handleFieldChange('llm', value)}
-              />
-              <SelectField
-                label="Image Model"
-                options={imageModelOptions}
-                placeholder="Select image model"
-                labelClass=""
-                value={contentPlanner.imageModel}
-                onChange={(value) => handleFieldChange('imageModel', value)}
-              />
-              <SelectField
-                label="Template"
-                options={templateOptions}
-                placeholder="Select template option"
-                labelClass=""
-                value={contentPlanner.template}
-                onChange={(value) => handleFieldChange('template', value)}
-              />
-            </div>
-
-            {/* Second Row: Guidelines and Creativity */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="w-full">
                 <TargetAudience
@@ -101,16 +64,16 @@ export default function ContentPlanner() {
                 />
               </div>
               <div className="w-full">
-                <Label className="text-violet-500">Text Guidelines</Label>
+                <Label className="text-lime-500">Content Guidelines</Label>
                 <Textarea
-                  placeholder="Enter text generation guidelines..."
+                  placeholder="Enter posts generation guidelines..."
                   className="min-h-[38px] mt-2"
                   value={contentPlanner.textGuidelines}
                   onChange={(e) => handleFieldChange('textGuidelines', e.target.value)}
                 />
               </div>
               <div className="w-full">
-                <Label className="text-violet-500">Image Guidelines</Label>
+                <Label className="text-lime-500">Image Guidelines</Label>
                 <Textarea
                   placeholder="Enter image generation guidelines..."
                   className="min-h-[38px] mt-2"
@@ -125,8 +88,41 @@ export default function ContentPlanner() {
                 />
               </div>
             </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <SelectField
+                label="Voice"
+                options={toneOptions}
+                placeholder="Select tone"
+                labelClass="text-lime-500"
+                value={contentPlanner.voice}
+                onChange={(value) => handleFieldChange('voice', value)}
+              />
+              <SelectField
+                label="LLM"
+                options={MODELS.llm}
+                placeholder="Select LLM model"
+                labelClass="text-lime-500"
+                value={contentPlanner.llm}
+                onChange={(value) => handleFieldChange('llm', value)}
+              />
+              <SelectField
+                label="Image Model"
+                options={imageModelOptions}
+                placeholder="Select image model"
+                labelClass="text-lime-500"
+                value={contentPlanner.imageModel}
+                onChange={(value) => handleFieldChange('imageModel', value)}
+              />
+              <SelectField
+                label="Template"
+                options={templateOptions}
+                placeholder="Select template option"
+                labelClass="text-lime-500"
+                value={contentPlanner.template}
+                onChange={(value) => handleFieldChange('template', value)}
+              />
+            </div>
 
-            {/* Third Row: Duration, Frequency, and Generate Button */}
             <div className="grid grid-cols-12 gap-4 items-start">
               <div className="col-span-6">
                 <Duration
@@ -143,7 +139,7 @@ export default function ContentPlanner() {
                   label="Post Frequency"
                   options={frequencyOptions}
                   placeholder="Select frequency"
-                  labelClass="text-green-500"
+                  labelClass="text-lime-500"
                   value={contentPlanner.frequency.toString()}
                   onChange={(value) => handleFieldChange('frequency', parseInt(value, 10))}
                 />

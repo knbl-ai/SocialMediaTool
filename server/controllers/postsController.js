@@ -4,6 +4,7 @@ import { deleteFiles } from '../config/storage.js';
 import { generateImage as generateImageService } from '../services/imageService.js';
 import { generateText as generateTextService } from '../services/llmService.js';
 import { generateTemplates as generateTemplatesService } from '../services/templateService.js';
+import { singlePostPrompt } from '../services/promptsService.js';
 
 export const createPost = async (req, res) => {
   const post = new Post({
@@ -135,7 +136,17 @@ export const generateImage = async (req, res) => {
 
 export const generateText = async (req, res) => {
   try {
-    const { prompt, model } = req.body;
+    let { prompt, model } = req.body;
+
+    const { system } = singlePostPrompt({
+      topic: prompt,
+  
+    });
+
+    prompt = singlePostPrompt({
+      topic: prompt,
+      model
+    }).prompt
     
     if (!process.env.ANTHROPIC_API_KEY) {
       throw new ApiError(500, 'ANTHROPIC_API_KEY is not configured');
@@ -143,7 +154,8 @@ export const generateText = async (req, res) => {
     
     const generatedText = await generateTextService({
       topic: prompt,
-      model
+      model,
+      system
     });
 
     res.json(generatedText);

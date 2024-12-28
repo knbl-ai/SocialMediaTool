@@ -21,10 +21,99 @@ client/
 │   │   └── editPost/     # Post editing components
 │   ├── context/          # React Context providers
 │   ├── hooks/            # Custom React hooks
+│   │   └── useContentPlanner.js  # Content planner state management
 │   ├── lib/              # Utilities and API client
 │   ├── pages/            # Route components
 │   └── services/         # API service layers
 ```
+
+### Content Planner System
+
+1. **Content Planner Model**
+   ```javascript
+   contentPlanner: {
+     accountId: ObjectId,      // Reference to Account
+     voice: String,            // Professional, Funny, Engaging, etc.
+     template: String,         // Template selection
+     audience: String,         // Target audience description
+     creativity: Number,       // 0-1 scale for content generation
+     textGuidelines: String,   // Guidelines for text generation
+     llm: String,             // Selected LLM model
+     imageGuidelines: String,  // Guidelines for image generation
+     imageModel: String,       // Selected image model
+     date: Date,              // Start date
+     duration: String,         // Week/Month
+     frequency: Number,        // Posts per period
+     autoRenew: Boolean       // Auto-renewal setting
+   }
+   ```
+
+2. **State Management**
+   - Uses `useContentPlanner` hook for state management
+   - Implements optimistic updates with error rollback
+   - Debounced API calls (500ms) for better performance
+   - Automatic state synchronization with backend
+
+3. **Component Structure**
+   ```
+   ContentPlanner/
+   ├── SelectField          # Reusable select component
+   ├── CreativitySlider     # Creativity level control
+   ├── TargetAudience      # Audience input component
+   └── Duration            # Date and duration settings
+   ```
+
+4. **API Integration**
+   ```javascript
+   // Content Planner Endpoints
+   GET    /api/content-planner/:accountId  // Get planner
+   PUT    /api/content-planner/:accountId  // Update planner
+   ```
+
+5. **Default Values**
+   ```javascript
+   {
+     voice: 'professional',
+     template: 'no',
+     creativity: 0.3,
+     llm: 'claude-3-5-haiku-20241022',
+     imageModel: 'fal-ai/flux/schnell',
+     duration: 'month',
+     frequency: 2,
+     autoRenew: false
+   }
+   ```
+
+6. **Prompt Generation System**
+   - Text Generation:
+     ```javascript
+     {
+       prompt: "Write a social media post...",
+       system: "You are a skilled social media content creator..."
+     }
+     ```
+   - Content Plan Generation:
+     ```javascript
+     {
+       prompt: "Generate a social media content plan...",
+       system: "You are a skilled social media strategist..."
+     }
+     ```
+
+7. **Features**
+   - Automatic content planner creation with new accounts
+   - Real-time updates with debouncing
+   - Integrated LLM and image model selection
+   - Customizable content guidelines
+   - Flexible scheduling options
+   - Template management
+
+8. **Best Practices**
+   - Memoized components for performance
+   - Debounced API calls
+   - Error handling with rollback
+   - Type validation
+   - Default values for all fields
 
 ### Image and Template Management
 
