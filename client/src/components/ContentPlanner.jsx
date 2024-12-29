@@ -17,6 +17,8 @@ import { Label } from './ui/label';
 import { Progress } from "@/components/ui/progress"
 import api from '../lib/api';
 import { toast } from 'sonner';
+import { usePosts as usePostsHook } from '../hooks/usePosts';
+import { usePosts as usePostsContext } from '../context/PostsContext';
 
 
 export default function ContentPlanner() {
@@ -30,15 +32,37 @@ export default function ContentPlanner() {
     updateField
   } = useContentPlanner(accountId);
 
+  const { fetchPosts } = usePostsHook(accountId);
+  const { triggerRefresh } = usePostsContext();
+
   const handleGenerateContent = async () => {
     try {
       setIsLoading(true);
       setProgress(30);
-      
+      console.log('Generating content...');
       const response = await api.post(`/content-planner/${accountId}/generate`);
-      
+      console.log('Content generation response:', response);
       setProgress(100);
       toast.success('Content plan generated successfully');
+      
+      // Fetch updated posts after generation
+      const firstDay = new Date(contentPlanner.date);
+      const lastDay = new Date(firstDay);
+      lastDay.setMonth(lastDay.getMonth() + (contentPlanner.duration === 'month' ? 1 : 0));
+      lastDay.setDate(lastDay.getDate() + (contentPlanner.duration === 'week' ? 7 : 0));
+      
+      // Force a complete refresh of posts
+      await fetchPosts({
+        startDate: firstDay.toISOString().split('T')[0],
+        endDate: lastDay.toISOString().split('T')[0],
+        platform: contentPlanner.platforms[0],
+        forceRefresh: true
+      });
+
+      // Trigger refresh in PostsDashboard
+      triggerRefresh();
+      
+      console.log('Posts fetched successfully');
     } catch (err) {
       toast.error('Failed to generate content plan');
       console.error('Error generating content:', err);
@@ -206,8 +230,7 @@ export default function ContentPlanner() {
       </CardContent>
     </Card>
     {isLoading && <div className="w-full mt-10">
-      <Progress value={progress} className="bg-gray-200"
-        indicatorColor="bg-blue-300"/>
+      <Progress value={progress} className="bg-gray-200" />
     </div>}
     </>
   );

@@ -5,13 +5,15 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import DayCell from './DayCell';
 import PlatformSelector from './PlatformSelector';
 import { usePlatform } from '../context/PlatformContext';
-import { usePosts } from '../hooks/usePosts';
+import { usePosts as usePostsHook } from '../hooks/usePosts';
+import { usePosts as usePostsContext } from '../context/PostsContext';
 import { Alert, AlertDescription } from '../components/ui/alert';
 
 const PostsDashboard = ({ accountId }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const { getAccountPlatform, setAccountPlatform } = usePlatform();
   const currentPlatform = getAccountPlatform(accountId);
+  const { refreshTrigger } = usePostsContext();
   const { 
     loading, 
     error, 
@@ -19,7 +21,7 @@ const PostsDashboard = ({ accountId }) => {
     getPostsByDate,
     updatePost,
     clearError 
-  } = usePosts(accountId);
+  } = usePostsHook(accountId);
 
   const fetchMonthPosts = useCallback(async () => {
     const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
@@ -28,7 +30,8 @@ const PostsDashboard = ({ accountId }) => {
     await fetchPosts({
       startDate: firstDay.toISOString().split('T')[0],
       endDate: lastDay.toISOString().split('T')[0],
-      platform: currentPlatform
+      platform: currentPlatform,
+      forceRefresh: true
     });
   }, [currentDate, currentPlatform, fetchPosts]);
 
@@ -36,7 +39,11 @@ const PostsDashboard = ({ accountId }) => {
     if (accountId) {
       fetchMonthPosts();
     }
-  }, [accountId, fetchMonthPosts]);
+  }, [accountId, fetchMonthPosts, refreshTrigger]);
+
+  const refreshPosts = useCallback(() => {
+    setLastRefreshTime(Date.now());
+  }, []);
 
   const handlePlatformSelect = (platformName) => {
     setAccountPlatform(accountId, platformName);

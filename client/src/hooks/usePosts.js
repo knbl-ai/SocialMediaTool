@@ -6,11 +6,15 @@ export const usePosts = (accountId) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const fetchPosts = useCallback(async ({ startDate, endDate, platform }) => {
+  const fetchPosts = useCallback(async ({ startDate, endDate, platform, forceRefresh }) => {
     if (!accountId) return;
 
     setLoading(true);
     try {
+      if (forceRefresh) {
+        setPosts([]);
+      }
+      
       const fetchedPosts = await api.getPosts({
         accountId,
         startDate,
