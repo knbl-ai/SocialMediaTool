@@ -14,6 +14,8 @@ import { Skeleton } from './ui/skeleton';
 import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
 import { Progress } from "@/components/ui/progress"
+import api from '../lib/api';
+import { toast } from 'sonner';
 
 
 export default function ContentPlanner() {
@@ -26,6 +28,24 @@ export default function ContentPlanner() {
     error,
     updateField
   } = useContentPlanner(accountId);
+
+  const handleGenerateContent = async () => {
+    try {
+      setIsLoading(true);
+      setProgress(30);
+      
+      const response = await api.post(`/content-planner/${accountId}/generate`);
+      
+      setProgress(100);
+      toast.success('Content plan generated successfully');
+    } catch (err) {
+      toast.error('Failed to generate content plan');
+      console.error('Error generating content:', err);
+    } finally {
+      setIsLoading(false);
+      setProgress(0);
+    }
+  };
 
   if (error) {
     return <div className="text-red-500">Error loading content planner: {error}</div>;
@@ -154,6 +174,8 @@ export default function ContentPlanner() {
                   className="bg-[#5CB338] hover:bg-[#4a9c2d] text-white w-[22vw] mt-7" 
                   pulseColor="92 179 56"
                   duration="2s"
+                  onClick={handleGenerateContent}
+                  disabled={isLoading}
                 >
                   Generate Content
                 </PulsatingButton>
@@ -164,11 +186,9 @@ export default function ContentPlanner() {
       </CardContent>
     </Card>
     {isLoading && <div className="w-full mt-10">
-    <Progress value={progress}  className="bg-gray-200"
-      indicatorColor="bg-blue-300"/>
+      <Progress value={progress} className="bg-gray-200"
+        indicatorColor="bg-blue-300"/>
     </div>}
-  
-
     </>
   );
 }

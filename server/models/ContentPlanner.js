@@ -55,6 +55,10 @@ const contentPlannerSchema = new mongoose.Schema({
   autoRenew: {
     type: Boolean,
     default: false
+  },
+  contentPlanJSON: {
+    type: String,
+    default: ''
   }
 }, { timestamps: true });
 

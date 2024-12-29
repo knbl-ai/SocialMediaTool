@@ -33,4 +33,14 @@ router.put('/:accountId', auth, async (req, res) => {
   }
 });
 
+// Generate content plan
+router.post('/:accountId/generate', auth, async (req, res) => {
+  try {
+    const result = await contentPlannerService.generateContentPlan(req.params.accountId);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ message: 'Error generating content plan', error: error.message });
+  }
+});
+
 export default router; 

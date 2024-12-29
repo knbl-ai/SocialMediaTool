@@ -42,7 +42,7 @@ Guidelines: "Post about team building event on 2024-01-05, include AWS certifica
 Target Audience: "IT managers and CTOs in mid-sized companies"
 Start Date: "2024-01-01"
 End Date: "2024-01-14"
-Frequency: "2" // Post every 2 days
+Frequency: "1" // Post every day, if frequency is 2, post every 2 days
 Style: "professional"
 
 Example Output:
