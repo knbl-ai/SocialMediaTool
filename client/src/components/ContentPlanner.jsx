@@ -14,7 +14,6 @@ import { useParams } from 'react-router-dom';
 import { Skeleton } from './ui/skeleton';
 import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
-import { Progress } from "@/components/ui/progress"
 import api from '../lib/api';
 import { toast } from 'sonner';
 import { usePosts as usePostsHook } from '../hooks/usePosts';

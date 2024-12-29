@@ -99,7 +99,7 @@ const createPost = async (date, topic, contentPlanner, generatedContent) => {
     image: {
       url: generatedContent.imageUrl,
       template: generatedContent.imageUrl,
-      dimensions: 'square_hd',
+      dimensions: 'Square',
       size: {
         width: 1280,
         height: 1280
