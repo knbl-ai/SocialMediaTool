@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader } from "./ui/card";
 import SelectField from './contentPlanner/SelectField';
 import CreativitySlider from './contentPlanner/CreativitySlider';
@@ -13,9 +13,13 @@ import { useParams } from 'react-router-dom';
 import { Skeleton } from './ui/skeleton';
 import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
+import { Progress } from "@/components/ui/progress"
+
 
 export default function ContentPlanner() {
   const { accountId } = useParams();
+  const [progress, setProgress] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
   const {
     contentPlanner,
     loading,
@@ -43,6 +47,7 @@ export default function ContentPlanner() {
   ];
 
   return (
+    <>
     <Card className="w-full mt-10">
       <CardHeader className="flex justify-center items-center">
         <HyperText className="text-2xl font-bold" startOnView={true}>Content Planner</HyperText>
@@ -158,5 +163,12 @@ export default function ContentPlanner() {
         )}
       </CardContent>
     </Card>
+    {isLoading && <div className="w-full mt-10">
+    <Progress value={progress}  className="bg-gray-200"
+      indicatorColor="bg-blue-300"/>
+    </div>}
+  
+
+    </>
   );
 }

@@ -12,26 +12,26 @@ export const singlePostPrompt = ({ topic, targetAudience = "adults", style = "ca
 };
 
 export const contentPlanPrompt = ({
-    companyName,
-    companyDescription,
+    accountName,
+    accountReview,
     audience,
     guidelines,
     startDate,
     endDate,
     frequency,
-    style,
+    voice,
 }) => {
     return {
         prompt: `You are a social media content strategist. Generate a social media content plan based on the following inputs:
 
-Company Name: ${companyName}
-Company Description: ${companyDescription}
+Company Name: ${accountName}
+Company Description: ${accountReview}
 Guidelines: ${guidelines} // Include any specific date-bound content requirements here
 Target Audience: ${audience}
 Start Date: ${startDate}
 End Date: ${endDate}
 Frequency: ${frequency} // Number representing "post every X days"
-Style: ${style} // e.g., business, funny, engaging, professional, casual, etc.
+Style: ${voice} // e.g., business, funny, engaging, professional, casual, etc.
 
 Create a content plan with post ideas that align with the company's identity and target audience. Generate brief, concise post ideas rather than complete posts. Respect any date-specific content requirements mentioned in the guidelines. Maintain the specified posting frequency and style throughout the plan.
 
