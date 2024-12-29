@@ -52,6 +52,16 @@ const contentPlannerSchema = new mongoose.Schema({
     type: Number,
     default: 2
   },
+  platforms: {
+    type: [String],
+    default: ['Instagram', 'Facebook']
+  },
+  postingTime: {
+    type: Number,
+    default: 10,
+    min: 0,
+    max: 23
+  },
   autoRenew: {
     type: Boolean,
     default: false

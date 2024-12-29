@@ -44,7 +44,10 @@ client/
      date: Date,              // Start date
      duration: String,         // Week/Month
      frequency: Number,        // Posts per period
-     autoRenew: Boolean       // Auto-renewal setting
+     postingTime: Number,      // Hour of the day (0-23)
+     platforms: [String],      // Selected platforms ['Instagram', 'Facebook', etc.]
+     autoRenew: Boolean,      // Auto-renewal setting
+     contentPlanJSON: String   // Generated content plan in JSON format
    }
    ```
 
@@ -60,7 +63,8 @@ client/
    ├── SelectField          # Reusable select component
    ├── CreativitySlider     # Creativity level control
    ├── TargetAudience      # Audience input component
-   └── Duration            # Date and duration settings
+   ├── Duration            # Date and duration settings
+   └── PlatformSelector    # Social media platform selection
    ```
 
 4. **API Integration**
@@ -68,6 +72,7 @@ client/
    // Content Planner Endpoints
    GET    /api/content-planner/:accountId  // Get planner
    PUT    /api/content-planner/:accountId  // Update planner
+   POST   /api/content-planner/:accountId/generate  // Generate content plan
    ```
 
 5. **Default Values**
@@ -80,23 +85,38 @@ client/
      imageModel: 'fal-ai/flux/schnell',
      duration: 'month',
      frequency: 2,
+     postingTime: 10,
+     platforms: ['Instagram', 'Facebook'],
      autoRenew: false
    }
    ```
 
-6. **Prompt Generation System**
-   - Text Generation:
+6. **Content Plan Generation System**
+   - Step 1: Initial Content Plan Generation
      ```javascript
+     // Input Parameters
      {
-       prompt: "Write a social media post...",
-       system: "You are a skilled social media content creator..."
+       accountName: String,     // From Account model
+       accountReview: String,   // From Account model
+       audience: String,        // From ContentPlanner
+       guidelines: String,      // From ContentPlanner.textGuidelines
+       startDate: Date,         // From ContentPlanner.date
+       endDate: Date,          // Calculated based on duration
+       frequency: Number,       // From ContentPlanner
+       voice: String           // From ContentPlanner
      }
-     ```
-   - Content Plan Generation:
-     ```javascript
+
+     // Process
+     1. Calculate end date based on duration (week/month)
+     2. Generate content plan using LLM
+     3. Save plan as JSON string in contentPlanJSON field
+     4. Return success response
+
+     // Response Format
      {
-       prompt: "Generate a social media content plan...",
-       system: "You are a skilled social media strategist..."
+       "2024-01-01": "Cloud migration success metrics overview",
+       "2024-01-03": "Common IT infrastructure challenges",
+       ...
      }
      ```
 
@@ -107,6 +127,9 @@ client/
    - Customizable content guidelines
    - Flexible scheduling options
    - Template management
+   - Platform-specific content generation
+   - Configurable posting time
+   - Multi-platform support
 
 8. **Best Practices**
    - Memoized components for performance
@@ -114,6 +137,8 @@ client/
    - Error handling with rollback
    - Type validation
    - Default values for all fields
+   - Progress indication for long operations
+   - User feedback through toast notifications
 
 ### Image and Template Management
 

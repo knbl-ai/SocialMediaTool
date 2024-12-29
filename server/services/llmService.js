@@ -4,8 +4,7 @@ const client = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-
-export const generateText = async ({ topic, model = 'claude-3-5-haiku-20241022',  maxTokens = 1024, system, temperature = 0.3  }) => {
+export const generateText = async ({ topic, model = 'claude-3-5-haiku-20241022', maxTokens = 1024, system, temperature = 0.3, responseFormat = 'json' }) => {
     try {
         const response = await client.messages.create({
             system: system,
@@ -17,32 +16,33 @@ export const generateText = async ({ topic, model = 'claude-3-5-haiku-20241022',
 
         const text = response.content[0].text;
         
-        // Ensure we have valid JSON
-        let parsedResponse;
-        try {
-            parsedResponse = JSON.parse(text);
-        } catch (parseError) {
-            console.error('Failed to parse LLM response as JSON:', text);
-            // If parsing fails, create a default structure with the entire text as post
-            parsedResponse = {
-                post: text,
-                title: '',
-                subtitle: ''
-            };
-        }
+        if (responseFormat === 'json') {
+            // Ensure we have valid JSON
+            try {
+                const parsedResponse = JSON.parse(text);
+                
+                // Validate the structure for post content
+                if (parsedResponse.post !== undefined) {
+                    if (!parsedResponse.post || typeof parsedResponse.post !== 'string') {
+                        parsedResponse.post = '';
+                    }
+                    if (!parsedResponse.title || typeof parsedResponse.title !== 'string') {
+                        parsedResponse.title = '';
+                    }
+                    if (!parsedResponse.subtitle || typeof parsedResponse.subtitle !== 'string') {
+                        parsedResponse.subtitle = '';
+                    }
+                }
 
-        // Validate the structure
-        if (!parsedResponse.post || typeof parsedResponse.post !== 'string') {
-            parsedResponse.post = '';
+                return parsedResponse;
+            } catch (parseError) {
+                console.error('Failed to parse LLM response as JSON:', text);
+                throw new Error('Invalid JSON response from LLM');
+            }
+        } else {
+            // Return text as is for non-JSON responses (like image prompts)
+            return text.trim();
         }
-        if (!parsedResponse.title || typeof parsedResponse.title !== 'string') {
-            parsedResponse.title = '';
-        }
-        if (!parsedResponse.subtitle || typeof parsedResponse.subtitle !== 'string') {
-            parsedResponse.subtitle = '';
-        }
-
-        return parsedResponse;
     } catch (error) {
         console.error('LLM generation error:', error);
         throw new Error('Failed to generate text content. Please try again.');

@@ -1,6 +1,5 @@
 import { fal } from "@fal-ai/client";
 import dotenv from 'dotenv';
-import { response } from "express";
 
 dotenv.config();
 

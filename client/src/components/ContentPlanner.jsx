@@ -4,7 +4,8 @@ import SelectField from './contentPlanner/SelectField';
 import CreativitySlider from './contentPlanner/CreativitySlider';
 import Duration from './contentPlanner/Duration';
 import TargetAudience from './contentPlanner/TargetAudience';
-import { toneOptions, frequencyOptions, templateOptions } from './contentPlanner/options';
+import PlatformSelector from './contentPlanner/PlatformSelector';
+import { toneOptions, frequencyOptions, templateOptions, postingTimeOptions } from './contentPlanner/options';
 import MODELS from '../config/models';
 import HyperText from './ui/hyper-text';
 import PulsatingButton from "./ui/pulsating-button";
@@ -148,8 +149,8 @@ export default function ContentPlanner() {
               />
             </div>
 
-            <div className="grid grid-cols-12 gap-4 items-start">
-              <div className="col-span-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="w-full col-span-2">
                 <Duration
                   date={contentPlanner.date}
                   duration={contentPlanner.duration}
@@ -159,7 +160,7 @@ export default function ContentPlanner() {
                   onAutoRenewChange={(value) => handleFieldChange('autoRenew', value)}
                 />
               </div>
-              <div className="col-span-3">
+              <div className="w-full">
                 <SelectField
                   label="Post Frequency"
                   options={frequencyOptions}
@@ -169,9 +170,28 @@ export default function ContentPlanner() {
                   onChange={(value) => handleFieldChange('frequency', parseInt(value, 10))}
                 />
               </div>
-              <div className="col-span-3">
+              <div className="w-full">
+                <SelectField
+                  label="Posting Time"
+                  options={postingTimeOptions}
+                  placeholder="Select time"
+                  labelClass="text-lime-500"
+                  value={contentPlanner.postingTime.toString()}
+                  onChange={(value) => handleFieldChange('postingTime', parseInt(value, 10))}
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-center items-end gap-8">
+              <div className="flex-shrink-0">
+                <PlatformSelector
+                  value={contentPlanner.platforms}
+                  onChange={(value) => handleFieldChange('platforms', value)}
+                />
+              </div>
+              <div className="flex-shrink-0 pb-2">
                 <PulsatingButton 
-                  className="bg-[#5CB338] hover:bg-[#4a9c2d] text-white w-[22vw] mt-7" 
+                  className="bg-[#5CB338] hover:bg-[#4a9c2d] text-white w-[200px]" 
                   pulseColor="92 179 56"
                   duration="2s"
                   onClick={handleGenerateContent}

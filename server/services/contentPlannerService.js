@@ -1,7 +1,9 @@
 import ContentPlanner from '../models/ContentPlanner.js';
 import Account from '../models/Account.js';
-import { contentPlanPrompt } from './promptsService.js';
+import Post from '../models/Post.js';
+import { contentPlanPrompt, singlePostPrompt, imagePrompt } from './promptsService.js';
 import { generateText } from './llmService.js';
+import { generateImage } from './imageService.js';
 
 const getEndDate = (startDate, duration) => {
   const start = new Date(startDate);
@@ -41,6 +43,86 @@ export const updateContentPlanner = async (accountId, updates) => {
   );
 };
 
+const generatePostContent = async (topic, contentPlanner) => {
+  // Generate post text
+  const textPromptData = {
+    topic,
+    targetAudience: contentPlanner.audience,
+    style: contentPlanner.voice
+  };
+  const { prompt: textPrompt, system: textSystem } = singlePostPrompt(textPromptData);
+  const textContent = await generateText({
+    topic: textPrompt,
+    system: textSystem,
+    model: contentPlanner.llm,
+    responseFormat: 'json'
+  });
+
+  // Generate image prompt
+  const imagePromptData = {
+    topic,
+    imageGuidelines: contentPlanner.imageGuidelines
+  };
+  const { prompt: imgPrompt, system: imgSystem } = imagePrompt(imagePromptData);
+  const imagePromptResult = await generateText({
+    topic: imgPrompt,
+    system: imgSystem,
+    model: contentPlanner.llm,
+    responseFormat: 'text'
+  });
+
+  // Generate image if image model is specified
+  let imageUrl = '';
+  if (contentPlanner.imageModel !== 'no_images') {
+    imageUrl = await generateImage({
+      prompt: imagePromptResult,
+      model: contentPlanner.imageModel
+    });
+  }
+
+  return {
+    textContent,
+    imagePromptResult,
+    imageUrl
+  };
+};
+
+const createPost = async (date, topic, contentPlanner, generatedContent) => {
+  const post = new Post({
+    accountId: contentPlanner.accountId,
+    platforms: contentPlanner.platforms,
+    templatesUrls: [],
+    datePost: date,
+    timePost: `${contentPlanner.postingTime.toString().padStart(2, '0')}:00`,
+    image: {
+      url: generatedContent.imageUrl,
+      template: generatedContent.imageUrl,
+      dimensions: 'square_hd',
+      size: {
+        width: 1280,
+        height: 1280
+      }
+    },
+    text: {
+      post: generatedContent.textContent.post,
+      title: generatedContent.textContent.title,
+      subtitle: generatedContent.textContent.subtitle
+    },
+    prompts: {
+      image: generatedContent.imagePromptResult,
+      video: '',
+      text: topic
+    },
+    models: {
+      image: contentPlanner.imageModel,
+      text: contentPlanner.llm,
+      video: ''
+    }
+  });
+
+  return await post.save();
+};
+
 export const generateContentPlan = async (accountId) => {
   try {
     // Get account and content planner data
@@ -66,15 +148,16 @@ export const generateContentPlan = async (accountId) => {
       frequency: contentPlanner.frequency,
       voice: contentPlanner.voice
     };
-    console.log("promptData", promptData);
+
     // Generate content plan using LLM
     const { prompt, system } = contentPlanPrompt(promptData);
     const contentPlan = await generateText({
       topic: prompt,
       system,
-      model: contentPlanner.llm
+      model: contentPlanner.llm,
+      responseFormat: 'json'
     });
-    console.log("contentPlan", contentPlan);
+
     // Save content plan to database
     await ContentPlanner.findOneAndUpdate(
       { accountId },
@@ -82,7 +165,24 @@ export const generateContentPlan = async (accountId) => {
       { new: true }
     );
 
-    return { message: 'ContentPlanSaved:ok' };
+    // Generate posts for each date in the content plan
+    const generatedPosts = [];
+    for (const [dateStr, topic] of Object.entries(contentPlan)) {
+      try {
+        const date = new Date(dateStr);
+        const generatedContent = await generatePostContent(topic, contentPlanner);
+        const post = await createPost(date, topic, contentPlanner, generatedContent);
+        generatedPosts.push(post);
+      } catch (error) {
+        console.error(`Error generating post for ${dateStr}:`, error);
+        // Continue with next post even if one fails
+      }
+    }
+
+    return { 
+      message: 'ContentPlanSaved:ok',
+      posts: generatedPosts 
+    };
   } catch (error) {
     console.error('Error generating content plan:', error);
     throw error;
