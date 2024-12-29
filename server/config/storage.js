@@ -66,11 +66,13 @@ export const deleteFile = async (fileUrl) => {
     console.log(`Successfully deleted file: ${filePath}`);
     return true;
   } catch (error) {
-    console.error(`Error deleting file ${fileUrl}:`, error);
-    // Don't throw error if file doesn't exist, just return false
+    // If file doesn't exist, consider it a success case
     if (error.code === 404) {
-      return false;
+      console.log(`File already deleted or doesn't exist: ${fileUrl}`);
+      return true;
     }
+    // For other errors, log and return false
+    console.error(`Error deleting file ${fileUrl}:`, error);
     return false;
   }
 };
@@ -88,12 +90,8 @@ export const deleteFiles = async (fileUrls) => {
 
   const results = await Promise.all(
     gcsUrls.map(async (url) => {
-      try {
-        await deleteFile(url);
-        return { url, success: true };
-      } catch (error) {
-        return { url, success: false, error };
-      }
+      const success = await deleteFile(url);
+      return { url, success };
     })
   );
 

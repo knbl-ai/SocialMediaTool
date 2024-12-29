@@ -1,20 +1,23 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
 
 export const useAccounts = () => {
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { user } = useAuth();
 
   const fetchAccounts = async () => {
     try {
       setLoading(true);
+      setError(null);
       const fetchedAccounts = await api.getAccounts();
       setAccounts(fetchedAccounts);
-      setError(null);
     } catch (error) {
       console.error('Error fetching accounts:', error);
       setError(error.message);
+      setAccounts([]);
     } finally {
       setLoading(false);
     }
@@ -57,8 +60,14 @@ export const useAccounts = () => {
   };
 
   useEffect(() => {
-    fetchAccounts();
-  }, []);
+    // Only fetch accounts if user is logged in
+    if (user) {
+      fetchAccounts();
+    } else {
+      setLoading(false);
+      setAccounts([]);
+    }
+  }, [user]); // Re-fetch when user changes
 
   return {
     accounts,

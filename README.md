@@ -120,6 +120,30 @@ client/
      }
      ```
 
+   - Step 2: Post Generation Process
+     ```javascript
+     // For each date in content plan:
+     1. Generate Post Content
+        - Generate post text using LLM with context
+        - Generate image prompt based on topic
+        - Generate image if model selected (skip if 'no_images')
+     
+     2. Create Post
+        - Save post with generated content
+        - Set default image dimensions (Square, 1280x1280)
+        - Associate with platforms from content planner
+     
+     3. Generate Templates
+        - If post has image, generate templates
+        - Save template URLs to post
+        - Continue if template generation fails
+     
+     // Error Handling
+     - Individual post generation failures don't stop the process
+     - Template generation failures are logged but don't block post creation
+     - Each step has independent error handling
+     ```
+
 7. **Features**
    - Automatic content planner creation with new accounts
    - Real-time updates with debouncing

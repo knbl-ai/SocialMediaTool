@@ -23,19 +23,15 @@ class ApiClient {
         };
 
         if (error.response) {
-          // The request was made and the server responded with a status code
-          // that falls out of the range of 2xx
           errorResponse.message = error.response.data.error?.message || error.response.data.message;
           errorResponse.code = error.response.data.error?.code;
           errorResponse.status = error.response.status;
 
-          // Handle authentication errors
-          if (error.response.status === 401) {
-            // Redirect to login page
+          // Handle authentication errors only if not already on auth page
+          if (error.response.status === 401 && !window.location.pathname.includes('/auth')) {
             window.location.href = '/auth';
           }
         } else if (error.request) {
-          // The request was made but no response was received
           errorResponse.message = 'No response from server';
           errorResponse.code = 'NETWORK_ERROR';
         }
@@ -43,23 +39,6 @@ class ApiClient {
         return Promise.reject(errorResponse);
       }
     );
-  }
-
-  // Generic HTTP methods
-  async get(endpoint, params = {}) {
-    return this.client.get(endpoint, { params });
-  }
-
-  async put(endpoint, data = {}) {
-    return this.client.put(endpoint, data);
-  }
-
-  async post(endpoint, data = {}, config = {}) {
-    return this.client.post(endpoint, data, config);
-  }
-
-  async delete(endpoint) {
-    return this.client.delete(endpoint);
   }
 
   // Auth endpoints
@@ -73,6 +52,37 @@ class ApiClient {
 
   async logout() {
     return this.client.post('/auth/logout');
+  }
+
+  async checkAuth() {
+    return this.client.get('/auth/check');
+  }
+
+  // Image generation endpoints
+  async generateImage(params) {
+    const response = await this.client.post('/posts/generate-image', params);
+    return response;
+  }
+
+  async generateText(params) {
+    return this.client.post('/posts/generate-text', params);
+  }
+
+  async generateTemplates(postId) {
+    return this.client.post(`/posts/${postId}/generate-templates`);
+  }
+
+  // File operations
+  async deleteFiles(urls) {
+    return this.client.post('/storage/delete', { urls });
+  }
+
+  async uploadImage(formData) {
+    return this.client.post('/storage/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
   }
 
   // Account endpoints
@@ -113,38 +123,23 @@ class ApiClient {
     return this.client.delete(`/posts/${postId}`);
   }
 
-  // Image generation endpoint
-  async generateImage(data) {
-    return this.client.post('/posts/generate-image', data);
+  // Generic HTTP methods
+  async get(endpoint, params = {}) {
+    return this.client.get(endpoint, { params });
   }
 
-  // Text generation endpoint
-  async generateText(data) {
-    return this.client.post('/posts/generate-text', data);
+  async post(endpoint, data = {}, config = {}) {
+    return this.client.post(endpoint, data, config);
   }
 
-  // Template generation endpoint
-  async generateTemplates(postId) {
-    return this.client.post(`/posts/${postId}/generate-templates`);
+  async put(endpoint, data = {}) {
+    return this.client.put(endpoint, data);
   }
 
-  // Delete files endpoint
-  async deleteFiles(urls) {
-    return this.client.post('/storage/delete', { urls });
+  async delete(endpoint) {
+    return this.client.delete(endpoint);
   }
 
-  // Upload image endpoint
-  async uploadImage(formData) {
-    // Create a custom config to handle FormData
-    const config = {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    };
-    return this.client.post('/storage/upload', formData, config);
-  }
-
-  // Generic request method for custom endpoints
   async request(method, endpoint, data = null, config = {}) {
     const options = {
       method,

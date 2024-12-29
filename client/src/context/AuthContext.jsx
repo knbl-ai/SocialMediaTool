@@ -9,20 +9,22 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    verifyToken();
+    // Only verify token if we're not on the auth page
+    if (!window.location.pathname.includes('/auth')) {
+      verifyToken();
+    } else {
+      setLoading(false);
+    }
   }, []);
 
   const verifyToken = async () => {
     try {
-      const response = await api.request('get', '/auth/verify');
+      const response = await api.verifyToken();
       setUser(response);
       setError(null);
     } catch (error) {
-      if (error.status === 401) {
-        setUser(null);
-      } else {
-        console.error('Verification error:', error);
-      }
+      setUser(null);
+      console.error('Verification error:', error);
     } finally {
       setLoading(false);
     }
@@ -67,6 +69,7 @@ export const AuthProvider = ({ children }) => {
       await api.logout();
       setUser(null);
       setError(null);
+      window.location.href = '/auth';
     } catch (error) {
       console.error('Logout error:', error);
       const message = error.message || 'Logout failed';

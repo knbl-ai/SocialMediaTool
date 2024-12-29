@@ -526,7 +526,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                     try {
                       setIsGeneratingImage(true);
                       // Generate the main image first
-                      const result = await api.generateImage({
+                      const { url } = await api.generateImage({
                         prompt: imagePrompt,
                         model: selectedImageModel,
                         width: imageSize.width,
@@ -548,8 +548,8 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                         ...currentPost,
                         image: {
                           ...currentPost?.image,
-                          url: result.url,
-                          template: result.url, // Set template to the same URL initially
+                          url: url,
+                          template: url, // Set template to the same URL initially
                           size: imageSize,
                           dimensions: dimensions
                         },
@@ -557,7 +557,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                       });
                       
                       setCurrentPost(updatedPost);
-                      setImageTemplate(result.url); // Update template state
+                      setImageTemplate(url); // Update template state
 
                       // Generate new templates if we have all required fields
                       if (updatedPost.image?.url && postTitle && postSubtitle) {
