@@ -34,9 +34,10 @@ const DEFAULT_STATE = {
 
 
 const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, postId: initialPostId, initialPost, onUpdate }) => {
+  const [contentPlan, setContentPlan] = useState(null);
   // Basic post states
-  const [selectedTime, setSelectedTime] = useState(DEFAULT_STATE.selectedTime)
-  const [selectedDate, setSelectedDate] = useState(date)
+  const [selectedTime, setSelectedTime] = useState(DEFAULT_STATE.selectedTime);
+  const [selectedDate, setSelectedDate] = useState(date);
   const [currentPost, setCurrentPost] = useState(initialPost || null);
   const [postId, setPostId] = useState(initialPost?._id || initialPostId);
   const { updatePost, deletePost, error: postsError, clearError } = usePosts(accountId);
@@ -47,6 +48,22 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
   const saveTimeoutRef = useRef(null);
   const isSelectingTemplateRef = useRef(false);
   const templateSelectionTimeoutRef = useRef(null);
+  const currentPostRef = useRef(currentPost);
+
+  console.log('EditPostResponsive', initialPost);
+
+  // Update ref when currentPost changes
+  useEffect(() => {
+    currentPostRef.current = currentPost;
+  }, [currentPost]);
+
+  // Helper function for array comparison
+  const arraysEqual = (a, b) => {
+    if (a === b) return true;
+    if (!a || !b) return false;
+    if (a.length !== b.length) return false;
+    return a.every((val, index) => val === b[index]);
+  };
 
   // Content states
   const [postText, setPostText] = useState(DEFAULT_STATE.postText);
@@ -56,19 +73,6 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
   const [imageTemplate, setImageTemplate] = useState(DEFAULT_STATE.imageTemplate);
   const [dimensions, setDimensions] = useState(initialPost?.image?.dimensions || 'Square');
 
-  // Platform and model states
-  const [selectedPlatforms, setSelectedPlatforms] = useState(() => {
-    return initialPlatform ? [initialPlatform] : [];
-  });
-
-  const [selectedImageModel, setSelectedImageModel] = useState(DEFAULT_STATE.selectedImageModel)
-  const [selectedVideoModel, setSelectedVideoModel] = useState(DEFAULT_STATE.selectedVideoModel)
-  const [selectedLLMModel, setSelectedLLMModel] = useState(() => {
-    console.log('Initial LLM Models:', MODELS.llm);
-    console.log('Default LLM Model:', DEFAULT_STATE.selectedLLMModel);
-    return DEFAULT_STATE.selectedLLMModel;
-  })
-
   // Prompt states
   const [imagePrompt, setImagePrompt] = useState(DEFAULT_STATE.imagePrompt);
   const [videoPrompt, setVideoPrompt] = useState(DEFAULT_STATE.videoPrompt);
@@ -76,6 +80,123 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [isGeneratingText, setIsGeneratingText] = useState(false);
   const [isGeneratingTemplates, setIsGeneratingTemplates] = useState(false);
+
+  // Platform and model states
+  const [selectedPlatforms, setSelectedPlatforms] = useState(() => 
+    initialPlatform ? [initialPlatform] : []
+  );
+
+  const [selectedImageModel, setSelectedImageModel] = useState(DEFAULT_STATE.selectedImageModel);
+  const [selectedVideoModel, setSelectedVideoModel] = useState(DEFAULT_STATE.selectedVideoModel);
+  const [selectedLLMModel, setSelectedLLMModel] = useState(DEFAULT_STATE.selectedLLMModel);
+
+  // Initialize state from initialPost only once
+  useEffect(() => {
+    if (initialPost && !initializationRef.current) {
+      initializationRef.current = true;
+      
+      setSelectedPlatforms(initialPost.platforms || []);
+      setSelectedTime(initialPost.timePost || DEFAULT_STATE.selectedTime);
+      setPostText(initialPost.text?.post || '');
+      setPostTitle(initialPost.text?.title || '');
+      setPostSubtitle(initialPost.text?.subtitle || '');
+      setImagePrompt(initialPost.prompts?.image || '');
+      setVideoPrompt(initialPost.prompts?.video || '');
+      setTextPrompt(initialPost.prompts?.text || '');
+      setSelectedImageModel(initialPost.models?.image || DEFAULT_STATE.selectedImageModel);
+      setSelectedVideoModel(initialPost.models?.video || DEFAULT_STATE.selectedVideoModel);
+      setSelectedLLMModel(initialPost.models?.text || DEFAULT_STATE.selectedLLMModel);
+      setImageSize(initialPost.image?.size || DEFAULT_STATE.imageSize);
+      setImageTemplate(initialPost.image?.template || '');
+      setDimensions(initialPost.image?.dimensions || 'Square');
+    }
+  }, []); // Empty dependency array as we only want this to run once
+
+  // Debounced save effect
+  useEffect(() => {
+    if (!postId || !show || isDeletingRef.current || isSelectingTemplateRef.current || !initializationRef.current) return;
+
+    const hasChanges = () => {
+      const current = currentPostRef.current;
+      if (!current) return false;
+      
+      return (
+        !arraysEqual(current.platforms, selectedPlatforms) ||
+        current.datePost !== selectedDate ||
+        current.timePost !== selectedTime ||
+        current.text?.post !== postText ||
+        current.text?.title !== postTitle ||
+        current.text?.subtitle !== postSubtitle ||
+        current.prompts?.image !== imagePrompt ||
+        current.prompts?.video !== videoPrompt ||
+        current.prompts?.text !== textPrompt ||
+        current.models?.image !== selectedImageModel ||
+        current.models?.video !== selectedVideoModel ||
+        current.models?.text !== selectedLLMModel
+      );
+    };
+
+    if (!hasChanges()) return;
+
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    saveTimeoutRef.current = setTimeout(async () => {
+      try {
+        const postData = {
+          platforms: selectedPlatforms,
+          datePost: selectedDate,
+          timePost: selectedTime,
+          image: currentPostRef.current?.image || {},
+          text: {
+            post: postText,
+            title: postTitle,
+            subtitle: postSubtitle
+          },
+          prompts: {
+            image: imagePrompt,
+            video: videoPrompt,
+            text: textPrompt
+          },
+          models: {
+            image: selectedImageModel,
+            video: selectedVideoModel,
+            text: selectedLLMModel
+          }
+        };
+
+        const updatedPost = await updatePost(postId, postData);
+        setCurrentPost(updatedPost);
+        setLocalError(null);
+      } catch (error) {
+        console.error('Error saving changes:', error);
+        setLocalError(error.message || 'Failed to save changes');
+      }
+    }, 1000);
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [
+    postId,
+    show,
+    selectedPlatforms,
+    selectedDate,
+    selectedTime,
+    postText,
+    postTitle,
+    postSubtitle,
+    imagePrompt,
+    videoPrompt,
+    textPrompt,
+    selectedImageModel,
+    selectedVideoModel,
+    selectedLLMModel,
+    updatePost
+  ]); // Removed currentPost from dependencies
 
   const handleDimensionsChange = async (dimensionName, dimensionSize) => {
     try {
@@ -128,124 +249,6 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
       clearError();
     }
   }, [show, clearError]);
-
-  // Initialize state from initialPost if available
-  useEffect(() => {
-    if (initialPost) {
-      setSelectedPlatforms(initialPost.platforms || []);
-      setSelectedTime(initialPost.timePost || DEFAULT_STATE.selectedTime);
-      setPostText(initialPost.text?.post || '');
-      setPostTitle(initialPost.text?.title || '');
-      setPostSubtitle(initialPost.text?.subtitle || '');
-      setImagePrompt(initialPost.prompts?.image || '');
-      setVideoPrompt(initialPost.prompts?.video || '');
-      setTextPrompt(initialPost.prompts?.text || '');
-      setSelectedImageModel(initialPost.models?.image || DEFAULT_STATE.selectedImageModel);
-      setSelectedVideoModel(initialPost.models?.video || DEFAULT_STATE.selectedVideoModel);
-      const modelToSet = initialPost.models?.text || DEFAULT_STATE.selectedLLMModel;
-      console.log('Setting LLM Model:', modelToSet);
-      setSelectedLLMModel(modelToSet);
-      setImageSize(initialPost.image?.size || DEFAULT_STATE.imageSize);
-      setImageTemplate(initialPost.image?.template || '');
-      setDimensions(initialPost.image?.dimensions || 'Square');
-      setCurrentPost(initialPost);
-      initializationRef.current = true;
-    }
-  }, [initialPost]);
-
-  // Save changes when form values change
-  useEffect(() => {
-    if (!postId || !show || isDeletingRef.current || isSelectingTemplateRef.current || !initializationRef.current) return;
-
-    const hasChanges = () => {
-      if (!currentPost) return false;
-      
-      return (
-        !arraysEqual(currentPost.platforms, selectedPlatforms) ||
-        currentPost.datePost !== selectedDate ||
-        currentPost.timePost !== selectedTime ||
-        currentPost.text?.post !== postText ||
-        currentPost.text?.title !== postTitle ||
-        currentPost.text?.subtitle !== postSubtitle ||
-        currentPost.prompts?.image !== imagePrompt ||
-        currentPost.prompts?.video !== videoPrompt ||
-        currentPost.prompts?.text !== textPrompt ||
-        currentPost.models?.image !== selectedImageModel ||
-        currentPost.models?.video !== selectedVideoModel ||
-        currentPost.models?.text !== selectedLLMModel
-      );
-    };
-
-    const arraysEqual = (a, b) => {
-      if (a === b) return true;
-      if (!a || !b) return false;
-      if (a.length !== b.length) return false;
-      return a.every((val, index) => val === b[index]);
-    };
-
-    if (!hasChanges()) return;
-
-    const saveChanges = async () => {
-      try {
-        const postData = {
-          platforms: selectedPlatforms,
-          datePost: selectedDate,
-          timePost: selectedTime,
-          image: currentPost?.image || {},
-          text: {
-            post: postText,
-            title: postTitle,
-            subtitle: postSubtitle
-          },
-          prompts: {
-            image: imagePrompt,
-            video: videoPrompt,
-            text: textPrompt
-          },
-          models: {
-            image: selectedImageModel,
-            video: selectedVideoModel,
-            text: selectedLLMModel
-          }
-        };
-
-        const updatedPost = await updatePost(postId, postData);
-        setCurrentPost(updatedPost);
-        setLocalError(null);
-      } catch (error) {
-        console.error('Error saving changes:', error);
-        setLocalError(error.message || 'Failed to save changes');
-      }
-    };
-
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-
-    saveTimeoutRef.current = setTimeout(saveChanges, 1000);
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-    };
-  }, [
-    postId,
-    show,
-    selectedPlatforms,
-    selectedDate,
-    selectedTime,
-    postText,
-    postTitle,
-    postSubtitle,
-    imagePrompt,
-    videoPrompt,
-    textPrompt,
-    selectedImageModel,
-    selectedVideoModel,
-    selectedLLMModel,
-    updatePost,
-    currentPost
-  ]);
 
   const handleTemplateSelect = async (templateUrl) => {
     try {
@@ -341,6 +344,14 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
       setLocalError('Failed to generate templates');
     } finally {
       setIsGeneratingTemplates(false);
+    }
+  };
+
+  const handleFieldChange = async (field, value) => {
+    try {
+      await updateField(field, value);
+    } catch (err) {
+      // Error is already logged in the hook
     }
   };
 

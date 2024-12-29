@@ -42,7 +42,7 @@ const PostSchema = new mongoose.Schema({
     },
     dimensions: {
       type: String,
-      default: 'square_hd'
+      default: 'Square'
     }
   },
   text: {

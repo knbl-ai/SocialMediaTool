@@ -4,6 +4,7 @@ import Post from '../models/Post.js';
 import { contentPlanPrompt, singlePostPrompt, imagePrompt } from './promptsService.js';
 import { generateText } from './llmService.js';
 import { generateImage } from './imageService.js';
+import { generateTemplates } from './templateService.js';
 
 const getEndDate = (startDate, duration) => {
   const start = new Date(startDate);
@@ -88,6 +89,7 @@ const generatePostContent = async (topic, contentPlanner) => {
 };
 
 const createPost = async (date, topic, contentPlanner, generatedContent) => {
+  // Create the post
   const post = new Post({
     accountId: contentPlanner.accountId,
     platforms: contentPlanner.platforms,
@@ -120,7 +122,29 @@ const createPost = async (date, topic, contentPlanner, generatedContent) => {
     }
   });
 
-  return await post.save();
+  const savedPost = await post.save();
+
+  // Generate templates if we have an image
+  if (savedPost.image?.url) {
+    try {
+      const templates = await generateTemplates({
+        post: savedPost,
+        accountId: contentPlanner.accountId
+      });
+
+      // Update post with template URLs
+      if (templates?.results) {
+        const templateUrls = templates.results.map(template => template.imageUrl);
+        savedPost.templatesUrls = templateUrls;
+        await savedPost.save();
+      }
+    } catch (error) {
+      console.error('Error generating templates for post:', error);
+      // Continue with post creation even if template generation fails
+    }
+  }
+
+  return savedPost;
 };
 
 export const generateContentPlan = async (accountId) => {
