@@ -19,11 +19,11 @@ import api from '../lib/api';
 import { toast } from 'sonner';
 import { usePosts as usePostsHook } from '../hooks/usePosts';
 import { usePosts as usePostsContext } from '../context/PostsContext';
+import { cn } from "@/lib/utils";
 
 
 export default function ContentPlanner() {
   const { accountId } = useParams();
-  const [progress, setProgress] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const {
     contentPlanner,
@@ -38,11 +38,7 @@ export default function ContentPlanner() {
   const handleGenerateContent = async () => {
     try {
       setIsLoading(true);
-      setProgress(30);
-      console.log('Generating content...');
       const response = await api.post(`/content-planner/${accountId}/generate`);
-      console.log('Content generation response:', response);
-      setProgress(100);
       toast.success('Content plan generated successfully');
       
       // Fetch updated posts after generation
@@ -61,14 +57,11 @@ export default function ContentPlanner() {
 
       // Trigger refresh in PostsDashboard
       triggerRefresh();
-      
-      console.log('Posts fetched successfully');
     } catch (err) {
       toast.error('Failed to generate content plan');
       console.error('Error generating content:', err);
     } finally {
       setIsLoading(false);
-      setProgress(0);
     }
   };
 
@@ -229,9 +222,13 @@ export default function ContentPlanner() {
         )}
       </CardContent>
     </Card>
-    {isLoading && <div className="w-full mt-10">
-      <Progress value={progress} className="bg-gray-200" />
-    </div>}
+    {isLoading && (
+      <div className="w-full mt-10">
+        <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+          <div className="h-full w-full animate-progress" />
+        </div>
+      </div>
+    )}
     </>
   );
 }

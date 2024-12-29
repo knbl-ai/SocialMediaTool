@@ -2,6 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  .animate-progress {
+    animation: indeterminate 1.5s infinite linear;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgb(132 204 22 / 0.8) 50%,
+      transparent 100%
+    );
+    background-size: 50% 100%;
+    background-repeat: no-repeat;
+  }
+}
+
+@keyframes indeterminate {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
