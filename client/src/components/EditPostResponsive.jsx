@@ -369,7 +369,9 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
         <div className="flex-1 grid grid-cols-12 gap-4 p-4 min-h-0">
           {/* Left Column - Templates */}
           <div className="col-span-2 h-full">
-            <PostNow />
+          <div className="flex items-center justify-end w-full">
+              <PostNow accountId={accountId} post={currentPost} />
+            </div>
             <div className="rounded-lg overflow-hidden h-full">
               <SelectTemplate 
                 templatesUrls={currentPost?.templatesUrls || []}
@@ -405,6 +407,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                 </div>
               </div>
             </div>
+            
 
             {/* Middle Section - Image Preview */}
             <div className="flex-[4] bg-gray-100 rounded-lg min-h-0 relative">
