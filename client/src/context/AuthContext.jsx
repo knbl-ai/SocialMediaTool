@@ -9,22 +9,27 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Only verify token if we're not on the auth page
+    // Only check auth if we're not on the auth page
     if (!window.location.pathname.includes('/auth')) {
-      verifyToken();
+      checkAuthStatus();
     } else {
       setLoading(false);
     }
   }, []);
 
-  const verifyToken = async () => {
+  const checkAuthStatus = async () => {
     try {
-      const response = await api.verifyToken();
+      const response = await api.checkAuth();
       setUser(response);
       setError(null);
     } catch (error) {
       setUser(null);
-      console.error('Verification error:', error);
+      console.error('Auth check error:', error);
+      
+      // Don't redirect on network errors or other non-auth errors
+      if (error.status === 401 || error.status === 403) {
+        window.location.href = '/auth';
+      }
     } finally {
       setLoading(false);
     }
@@ -56,7 +61,9 @@ export const AuthProvider = ({ children }) => {
       return response;
     } catch (error) {
       console.error('Google login error:', error);
-      const message = error.message || 'Google login failed';
+      const message = error.response?.data?.message 
+        || error.message 
+        || 'Google login failed';
       setError(message);
       throw new Error(message);
     } finally {
@@ -84,7 +91,7 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     googleLogin,
-    verifyToken
+    checkAuthStatus
   };
 
   return (

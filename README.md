@@ -688,3 +688,150 @@ Notes:
    - Log errors properly
 
 This documentation serves as a reference for understanding the application's architecture and implementing new features. It provides context about data flow, component relationships, and best practices for maintaining and extending the codebase.
+
+### Authentication Flow
+
+1. **Token Management**
+   ```javascript
+   // Token Generation (authController.js)
+   const generateToken = (userId) => {
+     return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
+   };
+
+   // Cookie Configuration
+   const cookieOptions = {
+     httpOnly: true,
+     secure: process.env.NODE_ENV === 'production',
+     sameSite: 'lax',
+     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+     path: '/'
+   };
+   ```
+
+2. **Authentication Endpoints** (`/api/auth`):
+   ```javascript
+   POST /login
+   ├── Body: { email, password }
+   ├── Response: { user: { id, email, name } }
+   ├── Sets HTTP-only cookie with JWT
+   └── Validation: email format, password verification
+
+   POST /google
+   ├── Body: { credential }
+   ├── Response: { user: { id, email, name } }
+   ├── Sets HTTP-only cookie with JWT
+   └── Creates new user if not exists
+
+   POST /logout
+   ├── Clears HTTP-only cookie
+   └── Response: { message: 'Logged out successfully' }
+
+   GET /check
+   ├── Requires valid JWT in cookie
+   ├── Response: user object if authenticated
+   └── Used for session verification
+   ```
+
+3. **Auth Middleware**
+   ```javascript
+   // Middleware Flow
+   auth = async (req, res, next) => {
+     1. Extract token from:
+        - HTTP-only cookie
+        - Authorization header (Bearer token)
+     
+     2. Verify token:
+        - Check token existence
+        - Validate JWT signature
+        - Extract userId
+     
+     3. Load user:
+        - Find user by ID
+        - Exclude password field
+        - Attach to request
+     
+     4. Error responses:
+        401 - No token: AUTH_NO_TOKEN
+        401 - Invalid token: AUTH_INVALID_TOKEN
+        401 - User not found: AUTH_USER_NOT_FOUND
+   }
+   ```
+
+4. **CORS Configuration**
+   ```javascript
+   // Development
+   cors({
+     origin: 'http://localhost:5173',
+     credentials: true,
+     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+     allowedHeaders: ['Content-Type', 'Authorization']
+   });
+
+   // Production
+   cors({
+     origin: process.env.CLIENT_URL,
+     credentials: true,
+     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+     allowedHeaders: ['Content-Type', 'Authorization']
+   });
+   ```
+
+5. **Client-Side Integration**
+   ```javascript
+   // API Client Configuration
+   const client = axios.create({
+     baseURL: `${API_URL}/api`,
+     withCredentials: true,
+     headers: {
+       'Content-Type': 'application/json'
+     }
+   });
+
+   // Auth Context Flow
+   AuthContext = {
+     1. Initial Load:
+        - Check if not on auth page
+        - Call checkAuthStatus()
+        - Set user if authenticated
+     
+     2. Login/Google Login:
+        - Send credentials
+        - Receive user data
+        - Cookie set by server
+        - Update context state
+     
+     3. Logout:
+        - Call logout endpoint
+        - Clear cookie on server
+        - Clear local state
+        - Redirect to auth page
+   }
+   ```
+
+6. **Error Handling**
+   ```javascript
+   // Standardized Error Format
+   {
+     error: {
+       message: String,  // User-friendly message
+       code: String      // Error code for client handling
+     }
+   }
+
+   // Error Codes
+   AUTH_NO_TOKEN        // No token provided
+   AUTH_INVALID_TOKEN   // Token validation failed
+   AUTH_USER_NOT_FOUND  // User not found
+   LOGIN_FAILED         // Login attempt failed
+   GOOGLE_AUTH_FAILED   // Google authentication failed
+   LOGOUT_FAILED        // Logout operation failed
+   ```
+
+7. **Security Considerations**
+   - JWT stored in HTTP-only cookies
+   - CORS configured for specific origins
+   - Credentials required for cross-origin requests
+   - Token expiration set to 7 days
+   - Password never returned to client
+   - Secure cookie in production
+   - SameSite cookie policy

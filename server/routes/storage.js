@@ -2,6 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import { deleteFiles, uploadImage } from '../config/storage.js';
 import { ApiError } from '../utils/ApiError.js';
+import { auth } from '../middleware/auth.js';
 
 const router = express.Router();
 

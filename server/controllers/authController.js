@@ -21,8 +21,17 @@ export const login = async (req, res) => {
     }
 
     const token = generateToken(user._id);
+    
+    // Set the token cookie
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/'
+    });
+
     res.json({
-      token,
       user: {
         id: user._id,
         email: user.email,
@@ -30,7 +39,12 @@ export const login = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(401).json({
+      error: {
+        message: error.message || 'Login failed',
+        code: 'LOGIN_FAILED'
+      }
+    });
   }
 };
 
@@ -58,8 +72,17 @@ export const googleLogin = async (req, res) => {
     }
 
     const token = generateToken(user._id);
+    
+    // Set the token cookie
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/'
+    });
+
     res.json({
-      token,
       user: {
         id: user._id,
         email: user.email,
@@ -68,7 +91,12 @@ export const googleLogin = async (req, res) => {
     });
   } catch (error) {
     console.error('Google authentication error:', error);
-    res.status(500).json({ message: 'Google authentication failed' });
+    res.status(500).json({ 
+      error: {
+        message: 'Google authentication failed',
+        code: 'GOOGLE_AUTH_FAILED'
+      }
+    });
   }
 };
 
@@ -98,5 +126,41 @@ export const register = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export const checkAuth = async (req, res) => {
+  try {
+    res.json(req.user);
+  } catch (error) {
+    res.status(401).json({
+      error: {
+        message: 'Authentication failed',
+        code: 'AUTH_FAILED'
+      }
+    });
+  }
+};
+
+export const logout = async (req, res) => {
+  try {
+    // Clear the token cookie
+    res.clearCookie('token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/'
+    });
+    
+    res.json({
+      message: 'Logged out successfully'
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: {
+        message: 'Logout failed',
+        code: 'LOGOUT_FAILED'
+      }
+    });
   }
 };

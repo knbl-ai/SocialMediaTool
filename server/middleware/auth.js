@@ -1,23 +1,43 @@
 import jwt from 'jsonwebtoken';
-import { ApiError } from '../utils/ApiError.js';
+import User from '../models/User.js';
 
-const auth = (req, res, next) => {
+export const auth = async (req, res, next) => {
   try {
-    const token = req.cookies.token;
+    // Get token from header or cookies
+    const token = req.cookies.token || req.header('Authorization')?.replace('Bearer ', '');
+
     if (!token) {
-      throw ApiError.unauthorized('Authentication required');
+      return res.status(401).json({
+        error: {
+          message: 'No token provided',
+          code: 'AUTH_NO_TOKEN'
+        }
+      });
     }
 
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = decoded;
-      next();
-    } catch (jwtError) {
-      throw ApiError.unauthorized('Invalid token');
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Get user from database
+    const user = await User.findById(decoded.userId).select('-password');
+    if (!user) {
+      return res.status(401).json({
+        error: {
+          message: 'User not found',
+          code: 'AUTH_USER_NOT_FOUND'
+        }
+      });
     }
+
+    // Add user to request
+    req.user = user;
+    next();
   } catch (error) {
-    next(error);
+    res.status(401).json({
+      error: {
+        message: 'Invalid token',
+        code: 'AUTH_INVALID_TOKEN'
+      }
+    });
   }
 };
-
-export default auth;

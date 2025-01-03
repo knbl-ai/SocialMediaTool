@@ -1,5 +1,5 @@
 import express from 'express';
-import auth from '../middleware/auth.js';
+import { auth } from '../middleware/auth.js';
 import * as contentPlannerService from '../services/contentPlannerService.js';
 
 const router = express.Router();

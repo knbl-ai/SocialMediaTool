@@ -1,7 +1,7 @@
 import express from 'express';
 import Joi from 'joi';
 import { validateRequest, schemas } from '../middleware/validateRequest.js';
-import auth from '../middleware/auth.js';
+import { auth } from '../middleware/auth.js';
 import {
   createPost,
   updatePost,

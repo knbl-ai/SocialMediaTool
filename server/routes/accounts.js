@@ -1,5 +1,5 @@
 import express from 'express';
-import auth from '../middleware/auth.js';
+import { auth } from '../middleware/auth.js';
 import { validateObjectId } from '../middleware/validateObjectId.js';
 import Account from '../models/Account.js';
 import { createContentPlanner } from '../services/contentPlannerService.js';
