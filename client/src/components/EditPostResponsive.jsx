@@ -368,10 +368,10 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
         {/* Main Content */}
         <div className="flex-1 grid grid-cols-12 gap-4 p-4 min-h-0">
           {/* Left Column - Templates */}
-          <div className="col-span-2 h-full">
-          <div className="flex items-center justify-end w-full">
-              <PostNow accountId={accountId} post={currentPost} />
-            </div>
+          <div className="col-span-2 h-full ">
+          <div className="mt-3.5">
+          <DimensionsSelector value={dimensions} onChange={handleDimensionsChange}/>
+          </div>
             <div className="rounded-lg overflow-hidden h-full">
               <SelectTemplate 
                 templatesUrls={currentPost?.templatesUrls || []}
@@ -478,7 +478,9 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
           <div className="col-span-3 flex flex-col ">
             {/* Top Box - Close Button */}
             <div className="h-16 rounded-lg flex justify-end items-center pr-2">
-              <DimensionsSelector value={dimensions} onChange={handleDimensionsChange}/>
+            <div className="flex items-center justify-end w-full">
+              <PostNow accountId={accountId} post={currentPost} />
+            </div>
               <Button 
                 variant="ghost" 
                 size="icon" 

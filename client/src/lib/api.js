@@ -172,6 +172,11 @@ class ApiClient {
   async disconnectPlatform(accountId, platform) {
     return this.client.delete(`/connections/${accountId}/${platform}`);
   }
+
+  // Post publishing
+  async publishPost(accountId, post) {
+    return this.client.post(`/posting/${accountId}/publish`, { post });
+  }
 }
 
 // Create a singleton instance

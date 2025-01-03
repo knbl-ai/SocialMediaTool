@@ -24,7 +24,7 @@ export const DimensionsSelector = ({ value, onChange }) => {
 
   return (
     <Select value={value} onValueChange={handleChange}>
-      <SelectTrigger className="w-[180px] bg-white">
+      <SelectTrigger className="w-[160px] bg-white">
         <SelectValue placeholder="Select format" />
       </SelectTrigger>
       <SelectContent>

@@ -13,6 +13,7 @@ import storageRoutes from './routes/storage.js';
 import contentPlannerRoutes from './routes/contentPlannerRoutes.js';
 import connectionRoutes from './routes/connectionRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import postingRoutes from './routes/postingRoutes.js';
 
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
@@ -60,6 +61,7 @@ app.use('/api/posts', postsRoutes);
 app.use('/api/storage', storageRoutes);
 app.use('/api/content-planner', contentPlannerRoutes);
 app.use('/api/connections', connectionRoutes);
+app.use('/api/posting', postingRoutes);
 
 // Rate limiting
 const limiter = rateLimit({

@@ -109,7 +109,7 @@ export function SelectTemplate({
           />
           <Textarea
             placeholder="Subtitle"
-            className="w-full h-[13vh] outline-none"
+            className="w-full h-[11vh] outline-none"
             value={subtitle}
             onChange={(e) => onSubtitleChange?.(e.target.value)}
           />

@@ -30,6 +30,7 @@ export default function PostNow({ accountId, post }) {
 
   const isButtonEnabled = () => {
     if (!post?.platforms || post.platforms.length === 0) return false;
+    if (!post.image?.template || !post.text?.post) return false;
     
     // Check if all selected platforms are connected
     return post.platforms.every(platform => connections[platform]);
@@ -38,16 +39,27 @@ export default function PostNow({ accountId, post }) {
   const handlePostNow = async () => {
     setIsLoading(true);
     try {
-      // TODO: Implement post now functionality
-      toast({
-        title: "Success",
-        description: "Post scheduled for immediate publishing",
-      });
+      const result = await api.publishPost(accountId, post);
+      
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: "Post published successfully to all platforms",
+        });
+      } else {
+        // Some platforms failed
+        const failedPlatforms = result.errors.map(e => e.platform).join(', ');
+        toast({
+          title: "Partial Success",
+          description: `Failed to publish to: ${failedPlatforms}`,
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error('Error posting:', error);
       toast({
         title: "Error",
-        description: "Failed to publish post",
+        description: error.message || "Failed to publish post",
         variant: "destructive",
       });
     } finally {
@@ -59,7 +71,7 @@ export default function PostNow({ accountId, post }) {
     <div className='w-full'>
       <Button
         variant="outline"
-        className='w-full bg-violet-300'
+        className='w-full bg-yellow-300'
         onClick={handlePostNow}
         disabled={!isButtonEnabled() || isLoading}
       >
