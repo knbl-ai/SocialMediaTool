@@ -62,7 +62,7 @@ const AccountDashboard = () => {
               onNameUpdate={handleNameUpdate}
             />
             <div className="flex justify-center ps-10">
-              <ConnectedPlatforms/>
+              <ConnectedPlatforms accountId={accountId}/>
             </div>
           </div>
           <div className="flex flex-col gap-4 mx-12 mt-5">

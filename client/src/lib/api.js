@@ -23,8 +23,9 @@ class ApiClient {
         };
 
         if (error.response) {
-          errorResponse.message = error.response.data.error?.message || error.response.data.message;
-          errorResponse.code = error.response.data.error?.code;
+          // The server responded with a status code outside the 2xx range
+          errorResponse.message = error.response.data.error || error.response.data.message || 'Server error';
+          errorResponse.code = error.response.data.code;
           errorResponse.status = error.response.status;
 
           // Handle authentication errors only if not already on auth page
@@ -32,6 +33,7 @@ class ApiClient {
             window.location.href = '/auth';
           }
         } else if (error.request) {
+          // The request was made but no response was received
           errorResponse.message = 'No response from server';
           errorResponse.code = 'NETWORK_ERROR';
         }
@@ -156,6 +158,19 @@ class ApiClient {
     }
 
     return this.client.request(options);
+  }
+
+  // Connection endpoints
+  async getConnection(accountId) {
+    return this.client.get(`/connections/${accountId}`);
+  }
+
+  async updateConnection(accountId, data) {
+    return this.client.put(`/connections/${accountId}`, data);
+  }
+
+  async disconnectPlatform(accountId, platform) {
+    return this.client.delete(`/connections/${accountId}/${platform}`);
   }
 }
 

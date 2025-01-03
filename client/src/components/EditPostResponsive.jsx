@@ -14,6 +14,7 @@ import { usePosts } from '../hooks/usePosts';
 import api from '../lib/api';
 import MODELS from '../config/models';
 import PulsatingButton from "@/components/ui/pulsating-button";
+import PostNow from "./editPost/PostNow";
 
 
 const DEFAULT_STATE = {
@@ -368,6 +369,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
         <div className="flex-1 grid grid-cols-12 gap-4 p-4 min-h-0">
           {/* Left Column - Templates */}
           <div className="col-span-2 h-full">
+            <PostNow />
             <div className="rounded-lg overflow-hidden h-full">
               <SelectTemplate 
                 templatesUrls={currentPost?.templatesUrls || []}
