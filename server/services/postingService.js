@@ -1,5 +1,6 @@
 import axios from 'axios';
 import Connection from '../models/Connection.js';
+import Post from '../models/Post.js';
 
 class PostingService {
   async publishPost(accountId, platform, postData) {
@@ -78,6 +79,94 @@ class PostingService {
       results,
       errors
     };
+  }
+
+  async postScheduled() {
+    try {
+      // Get current time rounded to hours
+      const now = new Date();
+      now.setMinutes(0, 0, 0);
+      const time = now.getHours().toString();
+      now.setHours(0, 0, 0, 0);
+
+      console.log(`Running scheduled posts check for: ${now}, time: ${time}`);
+
+      // Find all posts scheduled for current hour
+      const scheduledPosts = await Post.find({
+        datePost: { $eq: now },
+        timePost: time, // timePost is stored as string "0"-"23"
+        status: { $ne: 'published' } // Don't republish already published posts
+      });
+
+      console.log(`Found ${scheduledPosts.length} posts to publish`);
+
+      const results = [];
+      const errors = [];
+
+      // Process each scheduled post
+      for (const post of scheduledPosts) {
+        try {
+          // Get connection data for the account
+          const connection = await Connection.findOne({ accountId: post.accountId });
+          if (!connection) {
+            throw new Error(`No connections found for account ${post.accountId}`);
+          }
+
+          // Prepare post data
+          const postData = {
+            imageUrl: post.image.template,
+            content: post.text.post
+          };
+
+          // Try to publish to each platform
+          for (const platform of post.platforms) {
+            try {
+              if (connection[platform]) {
+                const result = await this.publishPost(post.accountId, platform, postData);
+                results.push({
+                  postId: post._id,
+                  ...result
+                });
+              } else {
+                errors.push({
+                  postId: post._id,
+                  platform,
+                  error: 'No connection available for this platform'
+                });
+              }
+            } catch (error) {
+              errors.push({
+                postId: post._id,
+                platform,
+                error: error.message
+              });
+            }
+          }
+
+          // Update post status to published
+          await Post.findByIdAndUpdate(post._id, {
+            status: 'published',
+            publishedAt: new Date()
+          });
+
+        } catch (error) {
+          errors.push({
+            postId: post._id,
+            error: error.message
+          });
+        }
+      }
+
+      return {
+        success: errors.length === 0,
+        processed: scheduledPosts.length,
+        results,
+        errors
+      };
+    } catch (error) {
+      console.error('Error in postScheduled:', error);
+      throw error;
+    }
   }
 }
 

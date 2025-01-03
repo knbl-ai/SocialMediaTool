@@ -87,6 +87,11 @@ const PostSchema = new mongoose.Schema({
       default: ''
     }
   },
+  status: {
+    type: String,
+    enum: ['scheduled', 'published', 'failed'],
+    default: 'scheduled'
+  },
   createdAt: {
     type: Date,
     default: Date.now

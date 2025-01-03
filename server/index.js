@@ -14,6 +14,7 @@ import contentPlannerRoutes from './routes/contentPlannerRoutes.js';
 import connectionRoutes from './routes/connectionRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import postingRoutes from './routes/postingRoutes.js';
+import initScheduler from './cron/scheduler.js';
 
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
@@ -84,7 +85,11 @@ if (process.env.NODE_ENV === 'production') {
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('Connected to MongoDB'))
+  .then(() => {
+    console.log('Connected to MongoDB');
+    // Initialize scheduler after DB connection
+    initScheduler();
+  })
   .catch(err => console.error('MongoDB connection error:', err));
 
 // Start server
