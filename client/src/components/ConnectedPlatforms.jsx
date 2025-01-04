@@ -73,6 +73,19 @@ const ConnectedPlatforms = ({ accountId }) => {
 
   return (
     <div className='flex flex-col items-center'>
+      <style>
+        {`
+          @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.4; }
+            100% { opacity: 1; }
+          }
+          .connection-indicator {
+            animation: blink 2s infinite;
+            box-shadow: 0 0 8px var(--indicator-color);
+          }
+        `}
+      </style>
       <div className="flex items-center gap-3">
         {platforms.map((platform) => {
           const Icon = platform.icon;
@@ -88,7 +101,13 @@ const ConnectedPlatforms = ({ accountId }) => {
                 color={platform.color}
                 className={`transition-transform hover:scale-110 ${isConnected ? 'opacity-100' : 'opacity-50'}`}
               />
-              {/* <div className={`absolute -top-1 -right-2 w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-gray-300'}`} /> */}
+              <div 
+                className={`
+                  absolute -top-1 -right-2 w-3 h-3 rounded-full 
+                  ${isConnected ? 'connection-indicator bg-green-500' : 'bg-gray-300'}
+                `}
+                style={isConnected ? { '--indicator-color': '#22c55e' } : {}}
+              />
             </div>
           );
         })}

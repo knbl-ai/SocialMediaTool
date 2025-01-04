@@ -1,26 +1,23 @@
 import React from 'react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../ui/select";
-import { Label } from "../ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import TooltipLabel from '@/components/ui/tooltip-label';
 
-export default function SelectField({ 
+const SelectField = ({ 
   label, 
   options, 
-  placeholder = "Select option", 
-  labelClass = "text-violet-500",
-  value,
-  onChange
-}) {
+  value, 
+  onChange, 
+  placeholder, 
+  labelClass,
+  tooltip 
+}) => {
   return (
-    <div className="space-y-1">
-      <Label htmlFor={label} className={labelClass}>{label}</Label>
+    <div className="w-full">
+      <TooltipLabel className={labelClass} tooltip={tooltip}>
+        {label}
+      </TooltipLabel>
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger>
+        <SelectTrigger className="mt-2">
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
@@ -33,4 +30,6 @@ export default function SelectField({
       </Select>
     </div>
   );
-} 
+};
+
+export default SelectField; 

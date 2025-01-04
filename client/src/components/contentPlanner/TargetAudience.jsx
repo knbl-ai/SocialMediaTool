@@ -1,15 +1,20 @@
 import React, { memo, useCallback } from 'react';
-import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
+import TooltipLabel from '../ui/tooltip-label';
 
-const TargetAudience = memo(({ value, onChange }) => {
+const TargetAudience = memo(({ value, onChange, tooltip }) => {
   const handleChange = useCallback((e) => {
     onChange(e.target.value);
   }, [onChange]);
 
   return (
     <div className="space-y-2">
-      <Label className="text-lime-500">Target Audience</Label>
+      <TooltipLabel 
+                  className="text-lime-500" 
+                  tooltip={tooltip}
+      >
+        Target Audience
+      </TooltipLabel>
       <Textarea
         placeholder="Describe your target audience..."
         className=""

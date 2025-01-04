@@ -1,0 +1,15 @@
+@keyframes pulse-subtle {
+  0% {
+    background-color: rgb(132, 204, 22); /* lime-500 */
+  }
+  50% {
+    background-color: rgb(101, 163, 13); /* lime-600 */
+  }
+  100% {
+    background-color: rgb(132, 204, 22); /* lime-500 */
+  }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s ease-in-out infinite;
+} 

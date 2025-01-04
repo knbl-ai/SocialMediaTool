@@ -1,6 +1,7 @@
 import React from 'react';
 import { FaFacebook, FaInstagram, FaLinkedin, FaTiktok, FaXTwitter } from 'react-icons/fa6';
 import { Label } from '../ui/label';
+import TooltipLabel from '@/components/ui/tooltip-label';
 
 const platforms = [
   { icon: FaInstagram, color: '#E4405F', name: 'Instagram' },
@@ -10,7 +11,7 @@ const platforms = [
   { icon: FaXTwitter, color: '#000000', name: 'X' }
 ];
 
-const PlatformSelector = ({ value = [], onChange }) => {
+const PlatformSelector = ({ value = [], onChange, tooltip }) => {
   const handlePlatformClick = (platformName) => {
     const newSelection = value.includes(platformName)
       ? value.filter(name => name !== platformName)
@@ -21,7 +22,7 @@ const PlatformSelector = ({ value = [], onChange }) => {
 
   return (
     <div className="w-full">
-      <Label className="text-lime-500">Platforms</Label>
+      <TooltipLabel className="text-lime-500" tooltip={tooltip}>Platforms</TooltipLabel>
       <div className="flex items-center gap-2 p-2 mt-2">
         {platforms.map((platform) => {
           const Icon = platform.icon;

@@ -1,15 +1,21 @@
 import React, { memo, useCallback } from 'react';
 import { Label } from '../ui/label';
 import { Slider } from '../ui/slider';
+import TooltipLabel from '../ui/tooltip-label';
 
-const CreativitySlider = memo(({ value, onChange }) => {
+const CreativitySlider = memo(({ value, onChange, tooltip }) => {
   const handleChange = useCallback(([newValue]) => {
     onChange(newValue);
   }, [onChange]);
 
   return (
     <div className="space-y-2">
-      <Label className="text-lime-500">Creativity Level</Label>
+        <TooltipLabel 
+                  className="text-lime-500" 
+                  tooltip={tooltip}
+      >
+        Creativity Level
+      </TooltipLabel>
       <div className="pt-4">
         <Slider
           value={[value]}

@@ -7,18 +7,20 @@ import TargetAudience from './contentPlanner/TargetAudience';
 import PlatformSelector from './contentPlanner/PlatformSelector';
 import { toneOptions, frequencyOptions, templateOptions, postingTimeOptions } from './contentPlanner/options';
 import MODELS from '../config/models';
+import { contentPlannerTooltips } from '../config/tooltips';
 import HyperText from './ui/hyper-text';
 import PulsatingButton from "./ui/pulsating-button";
 import { useContentPlanner } from '../hooks/useContentPlanner';
 import { useParams } from 'react-router-dom';
 import { Skeleton } from './ui/skeleton';
 import { Textarea } from './ui/textarea';
-import { Label } from './ui/label';
+import TooltipLabel from './ui/tooltip-label';
 import api from '../lib/api';
 import { toast } from 'sonner';
 import { usePosts as usePostsHook } from '../hooks/usePosts';
 import { usePosts as usePostsContext } from '../context/PostsContext';
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 
 
 export default function ContentPlanner() {
@@ -103,10 +105,16 @@ export default function ContentPlanner() {
                 <TargetAudience
                   value={contentPlanner.audience}
                   onChange={(value) => handleFieldChange('audience', value)}
+                  tooltip={contentPlannerTooltips.audience}
                 />
               </div>
               <div className="w-full">
-                <Label className="text-lime-500">Content Guidelines</Label>
+                <TooltipLabel 
+                  className="text-lime-500" 
+                  tooltip={contentPlannerTooltips.contentGuidelines}
+                >
+                  Content Guidelines
+                </TooltipLabel>
                 <Textarea
                   placeholder="Enter posts generation guidelines..."
                   className="min-h-[38px] mt-2"
@@ -115,7 +123,12 @@ export default function ContentPlanner() {
                 />
               </div>
               <div className="w-full">
-                <Label className="text-lime-500">Image Guidelines</Label>
+                <TooltipLabel 
+                  className="text-lime-500" 
+                  tooltip={contentPlannerTooltips.imageGuidelines}
+                >
+                  Image Guidelines
+                </TooltipLabel>
                 <Textarea
                   placeholder="Enter image generation guidelines..."
                   className="min-h-[38px] mt-2"
@@ -127,6 +140,7 @@ export default function ContentPlanner() {
                 <CreativitySlider
                   value={contentPlanner.creativity}
                   onChange={(value) => handleFieldChange('creativity', value)}
+                  tooltip={contentPlannerTooltips.creativity}
                 />
               </div>
             </div>
@@ -138,6 +152,7 @@ export default function ContentPlanner() {
                 labelClass="text-lime-500"
                 value={contentPlanner.voice}
                 onChange={(value) => handleFieldChange('voice', value)}
+                tooltip={contentPlannerTooltips.voice}
               />
               <SelectField
                 label="LLM"
@@ -146,6 +161,7 @@ export default function ContentPlanner() {
                 labelClass="text-lime-500"
                 value={contentPlanner.llm}
                 onChange={(value) => handleFieldChange('llm', value)}
+                tooltip={contentPlannerTooltips.llm}
               />
               <SelectField
                 label="Image Model"
@@ -154,6 +170,7 @@ export default function ContentPlanner() {
                 labelClass="text-lime-500"
                 value={contentPlanner.imageModel}
                 onChange={(value) => handleFieldChange('imageModel', value)}
+                tooltip={contentPlannerTooltips.imageModel}
               />
               <SelectField
                 label="Template"
@@ -162,6 +179,7 @@ export default function ContentPlanner() {
                 labelClass="text-lime-500"
                 value={contentPlanner.template}
                 onChange={(value) => handleFieldChange('template', value)}
+                tooltip={contentPlannerTooltips.template}
               />
             </div>
 
@@ -170,10 +188,9 @@ export default function ContentPlanner() {
                 <Duration
                   date={contentPlanner.date}
                   duration={contentPlanner.duration}
-                  autoRenew={contentPlanner.autoRenew}
                   onDateChange={(value) => handleFieldChange('date', value)}
                   onDurationChange={(value) => handleFieldChange('duration', value)}
-                  onAutoRenewChange={(value) => handleFieldChange('autoRenew', value)}
+                  tooltip={contentPlannerTooltips}
                 />
               </div>
               <div className="w-full">
@@ -184,6 +201,7 @@ export default function ContentPlanner() {
                   labelClass="text-lime-500"
                   value={contentPlanner.frequency.toString()}
                   onChange={(value) => handleFieldChange('frequency', parseInt(value, 10))}
+                  tooltip={contentPlannerTooltips.frequency}
                 />
               </div>
               <div className="w-full">
@@ -194,27 +212,52 @@ export default function ContentPlanner() {
                   labelClass="text-lime-500"
                   value={contentPlanner.postingTime.toString()}
                   onChange={(value) => handleFieldChange('postingTime', parseInt(value, 10))}
+                  tooltip={contentPlannerTooltips.postingTime}
                 />
               </div>
             </div>
 
-            <div className="flex justify-center items-end gap-8">
-              <div className="flex-shrink-0">
-                <PlatformSelector
-                  value={contentPlanner.platforms}
-                  onChange={(value) => handleFieldChange('platforms', value)}
-                />
+            <div className="relative">
+              <div className="flex items-center gap-4 justify-center">
+                <div>
+                  <PlatformSelector
+                    value={contentPlanner.platforms}
+                    onChange={(value) => handleFieldChange('platforms', value)}
+                    tooltip={contentPlannerTooltips.platforms}
+                  />
+                </div>
+                <div className="pt-8">
+                  <PulsatingButton 
+                    className="bg-[#5CB338] hover:bg-[#4a9c2d] text-white w-[200px]" 
+                    pulseColor="92 179 56"
+                    duration="2s"
+                    onClick={handleGenerateContent}
+                    disabled={isLoading}
+                  >
+                    Generate Content
+                  </PulsatingButton>
+                </div>
               </div>
-              <div className="flex-shrink-0 pb-2">
-                <PulsatingButton 
-                  className="bg-[#5CB338] hover:bg-[#4a9c2d] text-white w-[200px]" 
-                  pulseColor="92 179 56"
-                  duration="2s"
-                  onClick={handleGenerateContent}
-                  disabled={isLoading}
+              <div className="absolute right-0 bottom-0 flex items-center gap-2 ">
+             
+                <div
+                    onClick={() => handleFieldChange('autoRenew', !contentPlanner.autoRenew)}
+                    className={cn(
+                      "px-3 py-1 rounded-full cursor-pointer transition-all duration-500 select-none w-4 h-6",
+                      contentPlanner.autoRenew 
+                        ? "bg-green-500 animate-pulse-subtle text-white" 
+                        : "bg-gray-200 text-gray-600"
+                    )}
+                  >
+
+                  </div>
+                     
+                  <TooltipLabel 
+                  tooltip="Enable automatic content plan renewal"
+                  className="text-sm text-lime-500"
                 >
-                  Generate Content
-                </PulsatingButton>
+                Auto-renew
+                </TooltipLabel>
               </div>
             </div>
           </>

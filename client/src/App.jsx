@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import { PlatformProvider } from './context/PlatformContext';
 import { PostsProvider } from './context/PostsContext';
 import AppRoutes from './AppRoutes';
+import './styles/animations.css';
 
 function App() {
   return (
