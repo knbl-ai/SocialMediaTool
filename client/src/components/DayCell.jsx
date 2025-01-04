@@ -194,11 +194,17 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
                     {/* Image Container - Full size */}
                     <div className="absolute inset-0">
                       {currentPost.image?.url ? (
-                        <img
-                          src={currentPost.image.template}
-                          alt="Post preview"
-                          className="w-full h-full object-cover rounded-xl"
-                        />
+                        <div className="relative w-full h-full">
+                          <img
+                            src={currentPost.image.template}
+                            alt="Post preview"
+                            className="w-full h-full object-cover rounded-xl"
+                          />
+                          {/* Gray overlay for published posts */}
+                          {currentPost.status === 'published' && (
+                            <div className="absolute inset-0 bg-gray-900/40 rounded-xl" />
+                          )}
+                        </div>
                       ) : (
                         <div className="w-full h-full bg-gray-100 rounded-xl flex items-center justify-center">
                           <span className="text-gray-400 text-sm">No image</span>
@@ -210,8 +216,8 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
                     {currentPost.text?.post && (
                       <div className="absolute inset-x-0 bottom-0 z-10">
                         {/* Preview text */}
-                        <div className="p-2 bg-gradient-to-t from-white via-white/95 to-white/80 transition-opacity duration-300 group-hover:opacity-0 group-hover:invisible">
-                          <p className="text-xs text-gray-800 line-clamp-2 font-medium">
+                        <div className={`p-2 bg-gradient-to-t from-white via-white/95 to-white/80 transition-opacity duration-300 group-hover:opacity-0 group-hover:invisible ${currentPost.status === 'published' ? 'from-gray-100 via-gray-100/95 to-gray-100/80' : ''}`}>
+                          <p className={`text-xs line-clamp-2 font-medium ${currentPost.status === 'published' ? 'text-gray-600' : 'text-gray-800'}`}>
                             {currentPost.text.post}
                           </p>
                         </div>
