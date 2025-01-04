@@ -101,7 +101,7 @@ const AccountDashboard = () => {
         />
       </div>
       <div className="mt-8 pb-8">
-        <DownloadContentPlan currentMonth={currentMonth} />
+        <DownloadContentPlan currentMonth={currentMonth} accountId={accountId} />
       </div>
      
       {error && (

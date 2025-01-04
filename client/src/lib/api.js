@@ -190,6 +190,20 @@ class ApiClient {
   async publishPost(accountId, post) {
     return this.client.post(`/posting/${accountId}/publish`, { post });
   }
+
+  // Download content plan PDF
+  async downloadContentPlanPdf(accountId, startDate, endDate, platform = 'all') {
+    return this.client.post(
+      `/posting/${accountId}/download-pdf`,
+      { startDate, endDate, platform },
+      { 
+        responseType: 'blob',
+        headers: {
+          Accept: 'application/pdf'
+        }
+      }
+    );
+  }
 }
 
 // Create a singleton instance
