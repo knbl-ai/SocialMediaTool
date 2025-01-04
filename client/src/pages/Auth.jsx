@@ -36,7 +36,9 @@ const Auth = () => {
       } else {
         await login(formData.email, formData.password);
       }
-      navigate('/');
+      setTimeout(() => {
+        navigate('/');
+      }, 0);
     } catch (error) {
       console.error('Authentication failed:', error);
       setError(error.message || 'Authentication failed. Please check your credentials.');
@@ -50,7 +52,9 @@ const Auth = () => {
     setIsLoading(true);
     try {
       await googleLogin(response.credential);
-      navigate('/');
+      setTimeout(() => {
+        navigate('/');
+      }, 0);
     } catch (error) {
       console.error('Google login failed:', error);
       setError(error.message || 'Google authentication failed');

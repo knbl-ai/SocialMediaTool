@@ -39,7 +39,7 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       const response = await api.login({ email, password });
-      setUser(response);
+      setUser(response.user);
       setError(null);
       return response;
     } catch (error) {
@@ -56,7 +56,7 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       const response = await api.request('post', '/auth/google', { credential });
-      setUser(response);
+      setUser(response.user);
       setError(null);
       return response;
     } catch (error) {

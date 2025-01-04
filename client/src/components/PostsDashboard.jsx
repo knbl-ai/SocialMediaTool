@@ -8,12 +8,14 @@ import { usePlatform } from '../context/PlatformContext';
 import { usePosts as usePostsHook } from '../hooks/usePosts';
 import { usePosts as usePostsContext } from '../context/PostsContext';
 import { Alert, AlertDescription } from '../components/ui/alert';
+import { Calendar } from '../components/ui/calendar';
 
-const PostsDashboard = ({ accountId }) => {
+const PostsDashboard = ({ accountId, onMonthChange }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedPlatform, setSelectedPlatform] = useState(null);
+  const { refreshTrigger } = usePostsContext();
   const { getAccountPlatform, setAccountPlatform } = usePlatform();
   const currentPlatform = getAccountPlatform(accountId);
-  const { refreshTrigger } = usePostsContext();
   const { 
     loading, 
     error, 
@@ -50,11 +52,15 @@ const PostsDashboard = ({ accountId }) => {
   };
 
   const handlePreviousMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
+    const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1);
+    setCurrentDate(newDate);
+    onMonthChange?.(newDate);
   };
 
   const handleNextMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
+    const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1);
+    setCurrentDate(newDate);
+    onMonthChange?.(newDate);
   };
 
   const handlePostDrop = useCallback(async (postId, targetDate) => {
@@ -89,6 +95,11 @@ const PostsDashboard = ({ accountId }) => {
     const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
     return getPostsByDate(date);
   }, [currentDate, getPostsByDate]);
+
+  const handleMonthChange = (date) => {
+    setCurrentDate(date);
+    onMonthChange?.(date);
+  };
 
   return (
     <DndProvider backend={HTML5Backend}>

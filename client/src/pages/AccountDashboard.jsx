@@ -9,7 +9,7 @@ import ConnectedPlatforms from '../components/ConnectedPlatforms';
 import AccountTemplates from '../components/AccountTemplates';
 import PostsDashboard from '../components/PostsDashboard';
 import ContentPlanner from '../components/ContentPlanner';
-
+import DownloadContentPlan from '../components/DownloadContentPlan';
 const API_URL = import.meta.env.VITE_API_URL;
 
 const AccountDashboard = () => {
@@ -17,6 +17,7 @@ const AccountDashboard = () => {
   const navigate = useNavigate();
   const [account, setAccount] = useState(null);
   const [error, setError] = useState(null);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
 
   useEffect(() => {
     fetchAccountDetails();
@@ -50,6 +51,10 @@ const AccountDashboard = () => {
 
   const handleBack = () => {
     navigate('/accounts');
+  };
+
+  const handleMonthChange = (date) => {
+    setCurrentMonth(date);
   };
 
   return (
@@ -90,7 +95,13 @@ const AccountDashboard = () => {
       </div>
       {/* Posts Dashboard */}
       <div className="mt-8">
-        <PostsDashboard accountId={accountId} />
+        <PostsDashboard 
+          accountId={accountId} 
+          onMonthChange={handleMonthChange}
+        />
+      </div>
+      <div className="mt-8 pb-8">
+        <DownloadContentPlan currentMonth={currentMonth} />
       </div>
      
       {error && (

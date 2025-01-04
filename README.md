@@ -63,8 +63,44 @@ client/
    ├── SelectField          # Reusable select component
    ├── CreativitySlider     # Creativity level control
    ├── TargetAudience      # Audience input component
-   ├── Duration            # Date and duration settings
-   └── PlatformSelector    # Social media platform selection
+   ├── Duration            # Date and duration settings with shadcn select
+   ├── PlatformSelector    # Social media platform selection
+   └── TooltipLabel        # Reusable tooltip component for field labels
+   ```
+
+4. **UI Enhancements**
+   ```javascript
+   // Tooltip Configuration
+   const contentPlannerTooltips = {
+     voice: "Select the tone and style for your content",
+     template: "Choose a template for consistent formatting",
+     audience: "Define your target audience demographics",
+     // ... more tooltip texts
+   }
+
+   // Duration Component Layout
+   Duration = {
+     layout: "grid",
+     components: [
+       StartDate: { type: "datepicker", position: "left" },
+       DurationSelect: { type: "shadcn/select", position: "right" }
+     ]
+   }
+
+   // AutoRenew Position
+   ContentPlanner = {
+     layout: "flex",
+     autoRenewSwitch: { position: "bottom-right" }
+   }
+   ```
+
+5. **Best Practices**
+   - Centralized tooltip text management
+   - Consistent UI component spacing
+   - Reusable tooltip components
+   - Responsive grid layouts
+   - Clear visual hierarchy
+   - Informative help text
    ```
 
 4. **API Integration**
@@ -576,11 +612,19 @@ Notes:
    Main (Account List)
    ├── Hook: useAccounts()
    │   ├── State: accounts, loading, error
-   │   └── Actions: createAccount, updateAccount, deleteAccount
+   │   ├── Actions: createAccount, updateAccount, deleteAccount
+   │   └── Position Management:
+   │       ├── updateAccountPosition: Optimistic UI updates
+   │       ├── Background server sync
+   │       └── Error recovery with full refresh
    │
    ├── AccountCard
    │   ├── Props: account, onAccountDeleted
-   │   └── Actions: handleDelete, handleEdit
+   │   ├── Features:
+   │   │   ├── Draggable interface
+   │   │   ├── Circular logo display
+   │   │   └── Scrollable description
+   │   └── Actions: handleDelete, handleEdit, handleDrag
    │
    └── AccountDashboard
        ├── State: account settings, templates
@@ -589,14 +633,54 @@ Notes:
            ├── AccountOverview
            ├── AccountTemplates
            └── ConnectedPlatforms
+               └── Features:
+                   ├── Blinking connection indicators
+                   └── Real-time connection status
 
    Data Flow:
-   1. User initiates account action
-   2. useAccounts hook handles API call
-   3. Backend validates and processes
-   4. Hook updates local state
-   5. Components re-render with new data
-   6. UI reflects changes immediately
+   1. User initiates account action (drag/edit/delete)
+   2. useAccounts hook handles optimistic UI update
+   3. Backend validates and processes in background
+   4. Hook maintains UI consistency
+   5. Error recovery with automatic refresh if needed
+   6. UI reflects changes immediately for smooth UX
+   ```
+
+   **Position Management Implementation**:
+   ```javascript
+   // Client-side optimistic updates
+   updateAccountPosition = async (accountId, newPosition) => {
+     1. Update local state immediately
+        - Splice account from current position
+        - Insert at new position
+        - Update all positions sequentially
+     
+     2. Send update to server in background
+        - PATCH request with new position
+        - No loading state shown
+     
+     3. Error handling
+        - Console error logging
+        - Automatic account refresh on failure
+        - Maintains data consistency
+   }
+
+   // Server-side batch updates
+   router.patch('/:id', async (req, res) => {
+     1. Find all user accounts (sorted by position)
+     2. Locate target account
+     3. Update positions in memory
+     4. Batch update all affected accounts
+     5. Return updated account data
+   })
+   ```
+
+   **UI Enhancements**:
+   - Smooth drag and drop interactions
+   - No loading flicker during position updates
+   - Immediate visual feedback
+   - Graceful error recovery
+   - Consistent position management
    ```
 
 ## Key Features and Implementation
@@ -691,147 +775,89 @@ This documentation serves as a reference for understanding the application's arc
 
 ### Authentication Flow
 
-1. **Token Management**
+1. **Client-Side Auth Flow**
    ```javascript
-   // Token Generation (authController.js)
-   const generateToken = (userId) => {
-     return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
-   };
-
-   // Cookie Configuration
-   const cookieOptions = {
-     httpOnly: true,
-     secure: process.env.NODE_ENV === 'production',
-     sameSite: 'lax',
-     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-     path: '/'
-   };
+   AuthContext
+   ├── State: user, loading, error
+   ├── Initial Load:
+   │   ├── Check if not on auth page
+   │   └── Call checkAuthStatus()
+   │
+   ├── Login/Register:
+   │   ├── Call API endpoint with credentials
+   │   ├── Receive user data in response
+   │   ├── Set user state with response.user
+   │   └── Navigate to main page
+   │
+   ├── Google Login:
+   │   ├── Receive Google credential
+   │   ├── Send to server for verification
+   │   ├── Set user state with response.user
+   │   └── Navigate to main page
+   │
+   └── Logout:
+       ├── Clear cookie on server
+       ├── Clear user state
+       └── Redirect to auth page
    ```
 
-2. **Authentication Endpoints** (`/api/auth`):
+2. **Server-Side Auth Flow**
    ```javascript
-   POST /login
-   ├── Body: { email, password }
-   ├── Response: { user: { id, email, name } }
-   ├── Sets HTTP-only cookie with JWT
-   └── Validation: email format, password verification
-
-   POST /google
-   ├── Body: { credential }
-   ├── Response: { user: { id, email, name } }
-   ├── Sets HTTP-only cookie with JWT
-   └── Creates new user if not exists
-
-   POST /logout
-   ├── Clears HTTP-only cookie
-   └── Response: { message: 'Logged out successfully' }
-
-   GET /check
-   ├── Requires valid JWT in cookie
-   ├── Response: user object if authenticated
-   └── Used for session verification
+   Auth Endpoints (/api/auth)
+   ├── POST /login
+   │   ├── Body: { email, password }
+   │   ├── Response: { user: { id, email, name } }
+   │   └── Sets HTTP-only cookie with JWT
+   │
+   ├── POST /google
+   │   ├── Body: { credential }
+   │   ├── Response: { user: { id, email, name } }
+   │   └── Sets HTTP-only cookie with JWT
+   │
+   ├── POST /logout
+   │   ├── Clears HTTP-only cookie
+   │   └── Response: { message: 'Logged out successfully' }
+   │
+   └── GET /check
+       ├── Validates JWT from cookie
+       ├── Response: user object if authenticated
+       └── Error: 401 if not authenticated
    ```
 
-3. **Auth Middleware**
+3. **Protected Routes**
    ```javascript
-   // Middleware Flow
-   auth = async (req, res, next) => {
-     1. Extract token from:
-        - HTTP-only cookie
-        - Authorization header (Bearer token)
-     
-     2. Verify token:
-        - Check token existence
-        - Validate JWT signature
-        - Extract userId
-     
-     3. Load user:
-        - Find user by ID
-        - Exclude password field
-        - Attach to request
-     
-     4. Error responses:
-        401 - No token: AUTH_NO_TOKEN
-        401 - Invalid token: AUTH_INVALID_TOKEN
-        401 - User not found: AUTH_USER_NOT_FOUND
-   }
+   Main Component
+   ├── On Mount:
+   │   ├── Check auth status if user not present
+   │   └── Redirect to /auth if not authenticated
+   │
+   ├── After Auth:
+   │   ├── Display loading state while checking
+   │   ├── Show user data when authenticated
+   │   └── Fetch accounts and other protected data
+   │
+   └── Error Handling:
+       ├── Network errors: Show error message
+       └── Auth errors: Redirect to login
    ```
 
-4. **CORS Configuration**
-   ```javascript
-   // Development
-   cors({
-     origin: 'http://localhost:5173',
-     credentials: true,
-     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-     allowedHeaders: ['Content-Type', 'Authorization']
-   });
-
-   // Production
-   cors({
-     origin: process.env.CLIENT_URL,
-     credentials: true,
-     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-     allowedHeaders: ['Content-Type', 'Authorization']
-   });
-   ```
-
-5. **Client-Side Integration**
-   ```javascript
-   // API Client Configuration
-   const client = axios.create({
-     baseURL: `${API_URL}/api`,
-     withCredentials: true,
-     headers: {
-       'Content-Type': 'application/json'
-     }
-   });
-
-   // Auth Context Flow
-   AuthContext = {
-     1. Initial Load:
-        - Check if not on auth page
-        - Call checkAuthStatus()
-        - Set user if authenticated
-     
-     2. Login/Google Login:
-        - Send credentials
-        - Receive user data
-        - Cookie set by server
-        - Update context state
-     
-     3. Logout:
-        - Call logout endpoint
-        - Clear cookie on server
-        - Clear local state
-        - Redirect to auth page
-   }
-   ```
-
-6. **Error Handling**
-   ```javascript
-   // Standardized Error Format
-   {
-     error: {
-       message: String,  // User-friendly message
-       code: String      // Error code for client handling
-     }
-   }
-
-   // Error Codes
-   AUTH_NO_TOKEN        // No token provided
-   AUTH_INVALID_TOKEN   // Token validation failed
-   AUTH_USER_NOT_FOUND  // User not found
-   LOGIN_FAILED         // Login attempt failed
-   GOOGLE_AUTH_FAILED   // Google authentication failed
-   LOGOUT_FAILED        // Logout operation failed
-   ```
-
-7. **Security Considerations**
+4. **Security Features**
    - JWT stored in HTTP-only cookies
-   - CORS configured for specific origins
-   - Credentials required for cross-origin requests
-   - Token expiration set to 7 days
-   - Password never returned to client
-   - Secure cookie in production
-   - SameSite cookie policy
+   - Automatic redirection on auth errors
+   - Loading states during auth checks
+   - Error handling for failed requests
+   - Protected route access control
+   - Secure cookie settings in production
+
+5. **State Management**
+   ```javascript
+   AuthProvider
+   ├── Manages global auth state
+   ├── Provides auth methods to components
+   └── Handles auth status persistence
+
+   useAuth Hook
+   ├── Provides access to auth context
+   ├── Exposes auth methods and state
+   └── Throws if used outside AuthProvider
+   ```

@@ -12,17 +12,32 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 
 const Main = () => {
   const navigate = useNavigate();
-  const { user, loading: authLoading, logout } = useAuth();
+  const { user, loading: authLoading, logout, checkAuthStatus } = useAuth();
   const { accounts, loading, error, deleteAccount, updateAccountPosition, fetchAccounts } = useAccounts();
 
+  // Check auth status on mount and when user changes
   useEffect(() => {
-    if (authLoading) return;
-    if (!user) {
-      navigate('/auth');
-    } else {
+    const initializeAuth = async () => {
+      if (!user) {
+        await checkAuthStatus();
+      }
+    };
+    initializeAuth();
+  }, [user, checkAuthStatus]);
+
+  // Fetch accounts only when we have a valid user
+  useEffect(() => {
+    if (!authLoading && user) {
       fetchAccounts();
     }
-  }, [user, authLoading, navigate, fetchAccounts]);
+  }, [user, authLoading, fetchAccounts]);
+
+  // Redirect to auth if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/auth');
+    }
+  }, [user, authLoading, navigate]);
 
   const handleLogout = async () => {
     try {
@@ -69,8 +84,10 @@ const Main = () => {
     );
   }
 
-  // If no user, the useEffect will handle redirect
-  if (!user) return null;
+  // Don't render anything if not authenticated
+  if (!user) {
+    return null;
+  }
 
   return (
     <DndProvider backend={HTML5Backend}>
@@ -87,7 +104,7 @@ const Main = () => {
             <Button 
               variant="outline" 
               onClick={handleLogout}
-              disabled={loading}
+              disabled={loading || authLoading}
             >
               Logout
             </Button>
@@ -116,7 +133,7 @@ const Main = () => {
               </CardContent>
             </Card>
           ) : (
-            <div className="flex flex-col items-center w-full">
+            <div className="flex flex-col items-center w-full ">
               {accounts.map((account, index) => (
                 <AccountCard 
                   key={account._id} 

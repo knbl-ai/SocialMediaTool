@@ -83,7 +83,7 @@ const AccountCard = ({ account, onAccountDeleted, index, onDrop }) => {
   return (
     <Card 
       ref={ref}
-      className={`w-[40vw] mb-8 cursor-move hover:bg-accent transition-colors relative group h-[20vh] ${
+      className={`w-[40vw] mb-8 cursor-grab hover:bg-accent transition-colors relative group h-[20vh] ${
         isDragging ? 'opacity-50' : 'opacity-100'
       }`}
       onClick={() => navigate(`/account/${account._id}`)}

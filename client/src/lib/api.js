@@ -45,11 +45,19 @@ class ApiClient {
 
   // Auth endpoints
   async login(credentials) {
-    return this.client.post('/auth/login', credentials);
+    const response = await this.client.post('/auth/login', credentials);
+    return {
+      user: response.user,
+      ...response
+    };
   }
 
   async register(userData) {
-    return this.client.post('/auth/register', userData);
+    const response = await this.client.post('/auth/register', userData);
+    return {
+      user: response.user,
+      ...response
+    };
   }
 
   async logout() {
@@ -57,7 +65,8 @@ class ApiClient {
   }
 
   async checkAuth() {
-    return this.client.get('/auth/check');
+    const response = await this.client.get('/auth/check');
+    return response.user || response;
   }
 
   async googleLogin(token) {
