@@ -1,81 +1,67 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useState, useCallback } from 'react';
 import api from '../lib/api';
 
 export const useAccounts = () => {
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { user } = useAuth();
 
-  const fetchAccounts = async () => {
+  const fetchAccounts = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
-      setLoading(true);
-      setError(null);
-      const fetchedAccounts = await api.getAccounts();
-      setAccounts(fetchedAccounts);
+      const accountsData = await api.getAccounts();
+      setAccounts(accountsData.sort((a, b) => a.position - b.position));
     } catch (error) {
-      console.error('Error fetching accounts:', error);
       setError(error.message);
-      setAccounts([]);
+      console.error('Error fetching accounts:', error);
     } finally {
       setLoading(false);
     }
-  };
-
-  const createAccount = async (accountData) => {
-    try {
-      const newAccount = await api.createAccount(accountData);
-      setAccounts(prev => [...prev, newAccount]);
-      return newAccount;
-    } catch (error) {
-      console.error('Error creating account:', error);
-      throw error;
-    }
-  };
-
-  const updateAccount = async (accountId, accountData) => {
-    try {
-      const updatedAccount = await api.updateAccount(accountId, accountData);
-      setAccounts(prev => 
-        prev.map(account => 
-          account._id === accountId ? updatedAccount : account
-        )
-      );
-      return updatedAccount;
-    } catch (error) {
-      console.error('Error updating account:', error);
-      throw error;
-    }
-  };
+  }, []);
 
   const deleteAccount = async (accountId) => {
     try {
       await api.deleteAccount(accountId);
-      setAccounts(prev => prev.filter(account => account._id !== accountId));
+      setAccounts(prevAccounts => prevAccounts.filter(account => account._id !== accountId));
     } catch (error) {
       console.error('Error deleting account:', error);
       throw error;
     }
   };
 
-  useEffect(() => {
-    // Only fetch accounts if user is logged in
-    if (user) {
-      fetchAccounts();
-    } else {
-      setLoading(false);
-      setAccounts([]);
+  const updateAccountPosition = async (accountId, newPosition) => {
+    try {
+      // Update local state immediately for smooth UI
+      setAccounts(currentAccounts => {
+        const updatedAccounts = [...currentAccounts];
+        const accountIndex = updatedAccounts.findIndex(acc => acc._id === accountId);
+        if (accountIndex !== -1) {
+          const [movedAccount] = updatedAccounts.splice(accountIndex, 1);
+          updatedAccounts.splice(newPosition, 0, movedAccount);
+          return updatedAccounts.map((acc, index) => ({
+            ...acc,
+            position: index
+          }));
+        }
+        return currentAccounts;
+      });
+
+      // Update server in background
+      await api.updateAccount(accountId, { position: newPosition });
+    } catch (error) {
+      console.error('Error updating account position:', error);
+      // Only fetch accounts if server update fails
+      await fetchAccounts();
     }
-  }, [user]); // Re-fetch when user changes
+  };
 
   return {
     accounts,
     loading,
     error,
     fetchAccounts,
-    createAccount,
-    updateAccount,
-    deleteAccount
+    deleteAccount,
+    updateAccountPosition
   };
 };

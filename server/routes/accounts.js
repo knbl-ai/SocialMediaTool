@@ -71,7 +71,7 @@ router.post('/', auth, async (req, res) => {
 // Update an account
 router.patch('/:id', [auth, validateObjectId], async (req, res) => {
   try {
-    const { colors, ...otherUpdates } = req.body;
+    const { colors, position, ...otherUpdates } = req.body;
     
     // Validate colors if they are being updated
     if (colors) {
@@ -88,6 +88,34 @@ router.patch('/:id', [auth, validateObjectId], async (req, res) => {
       }
     }
 
+    // Handle position update
+    if (typeof position === 'number') {
+      // Get all accounts to update positions
+      const accounts = await Account.find({ userId: req.user.id }).sort({ position: 1 });
+      const account = accounts.find(acc => acc._id.toString() === req.params.id);
+      
+      if (!account) {
+        return res.status(404).json({ message: 'Account not found' });
+      }
+
+      // Remove account from current position
+      accounts.splice(account.position, 1);
+      // Insert at new position
+      accounts.splice(position, 0, account);
+      
+      // Update all positions in one batch
+      await Promise.all(accounts.map((acc, index) => 
+        Account.updateOne(
+          { _id: acc._id },
+          { $set: { position: index } }
+        )
+      ));
+
+      account.position = position;
+      return res.json(account);
+    }
+
+    // Handle non-position updates
     const account = await Account.findOneAndUpdate(
       { _id: req.params.id, userId: req.user.id },
       { $set: { ...otherUpdates, ...(colors && { colors }) } },

@@ -60,6 +60,10 @@ class ApiClient {
     return this.client.get('/auth/check');
   }
 
+  async googleLogin(token) {
+    return this.client.post('/auth/google', { token });
+  }
+
   // Image generation endpoints
   async generateImage(params) {
     const response = await this.client.post('/posts/generate-image', params);
@@ -97,7 +101,7 @@ class ApiClient {
   }
 
   async updateAccount(accountId, accountData) {
-    return this.client.put(`/accounts/${accountId}`, accountData);
+    return this.client.patch(`/accounts/${accountId}`, accountData);
   }
 
   async deleteAccount(accountId) {
