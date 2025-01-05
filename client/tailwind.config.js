@@ -74,19 +74,47 @@ module.exports = {
   				}
   			},
   			'pulse-scale': {
-  				'0%, 100%': { transform: 'scale(1)', opacity: '0.5' },
-  				'50%': { transform: 'scale(1.2)', opacity: '0' },
+  				'0%, 100%': {
+  					transform: 'scale(1)',
+  					opacity: '0.5'
+  				},
+  				'50%': {
+  					transform: 'scale(1.2)',
+  					opacity: '0'
+  				}
   			},
-  			'progress': {
-  				'0%': { transform: 'translateX(-100%)' },
-  				'100%': { transform: 'translateX(100%)' }
+  			progress: {
+  				'0%': {
+  					transform: 'translateX(-100%)'
+  				},
+  				'100%': {
+  					transform: 'translateX(100%)'
+  				}
+  			},
+  			marquee: {
+  				from: {
+  					transform: 'translateX(0)'
+  				},
+  				to: {
+  					transform: 'translateX(calc(-100% - var(--gap)))'
+  				}
+  			},
+  			'marquee-vertical': {
+  				from: {
+  					transform: 'translateY(0)'
+  				},
+  				to: {
+  					transform: 'translateY(calc(-100% - var(--gap)))'
+  				}
   			}
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
   			'accordion-up': 'accordion-up 0.2s ease-out',
   			'pulse-scale': 'pulse-scale 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-  			'progress': 'progress 1s infinite linear'
+  			progress: 'progress 1s infinite linear',
+  			marquee: 'marquee var(--duration) infinite linear',
+  			'marquee-vertical': 'marquee-vertical var(--duration) linear infinite'
   		}
   	}
   },

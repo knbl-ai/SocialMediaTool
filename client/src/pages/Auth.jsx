@@ -7,6 +7,9 @@ import { Input } from '../components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { AlertTriangle } from "lucide-react";
+import HyperText from '@/components/ui/hyper-text';
+import Testimonials from '@/components/Testimonials';
+import WordRotate from '@/components/ui/word-rotate';
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -77,10 +80,17 @@ const Auth = () => {
   };
 
   return (
-    <div className="flex-1 flex items-center justify-center p-4">
-      <Card className="w-full max-w-sm mx-auto">
+    <div className="flex-1 flex items-center justify-center  flex-col">
+      <HyperText className="text-6xl">SMAPP</HyperText>
+      <HyperText className="text-xl text-gray-500">Social Media App</HyperText>
+      <div className='grid grid-cols-3 gap-1'>
+      <WordRotate
+      className="text-4xl font-bold text-black dark:text-white pt-[20vh] pe-[5vw]"
+      words={["One Place","To Manage", "All Social Networks"]}
+    />
+      <Card className="w-[30vw] max-w-sm mx-auto">
         <CardHeader>
-          <CardTitle>{isSignUp ? 'Create Account' : 'Welcome Back'}</CardTitle>
+          <CardTitle>{isSignUp ? 'Create Account' : 'Welcome'}</CardTitle>
           <CardDescription>
             {isSignUp 
               ? 'Enter your details to create a new account' 
@@ -183,6 +193,15 @@ const Auth = () => {
           </div>
         </CardContent>
       </Card>
+      <WordRotate
+      className="text-4xl font-bold text-black dark:text-white pt-[20vh] ps-[10vw]"
+      words={["Instagram","Facebook", "LinkedIn", "TikTok", "X"]}
+    />
+      </div>
+      <HyperText className="text-2xl">KNBL</HyperText>
+      <div className='mt-2'>
+      <Testimonials/>
+      </div>
     </div>
   );
 };

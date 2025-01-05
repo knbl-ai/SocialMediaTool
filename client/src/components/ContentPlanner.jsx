@@ -20,7 +20,6 @@ import { toast } from 'sonner';
 import { usePosts as usePostsHook } from '../hooks/usePosts';
 import { usePosts as usePostsContext } from '../context/PostsContext';
 import { cn } from "@/lib/utils";
-import { Switch } from "@/components/ui/switch";
 
 
 export default function ContentPlanner() {
