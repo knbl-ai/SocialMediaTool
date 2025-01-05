@@ -86,7 +86,7 @@ const Auth = () => {
       <div className='grid grid-cols-3 gap-1'>
       <WordRotate
       className="text-4xl font-bold text-black dark:text-white pt-[20vh] pe-[5vw]"
-      words={["One Place","To Manage", "All Social Networks"]}
+      words={["One Place","To Manage", "All Social Platforms"]}
     />
       <Card className="w-[30vw] max-w-sm mx-auto">
         <CardHeader>
@@ -198,7 +198,7 @@ const Auth = () => {
       words={["Instagram","Facebook", "LinkedIn", "TikTok", "X"]}
     />
       </div>
-      <HyperText className="text-2xl">KNBL</HyperText>
+      <HyperText className="text-2xl text-blue-500">KNBL</HyperText>
       <div className='mt-2'>
       <Testimonials/>
       </div>
