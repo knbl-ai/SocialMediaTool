@@ -22,7 +22,7 @@ const DEFAULT_STATE = {
   postText: '',
   postTitle: '',
   postSubtitle: '',
-  selectedTime: "10:00",
+  selectedTime: "10",
   imagePrompt: '',
   videoPrompt: '',
   textPrompt: '',
@@ -35,8 +35,7 @@ const DEFAULT_STATE = {
 
 
 const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, postId: initialPostId, initialPost, onUpdate }) => {
-  const [contentPlan, setContentPlan] = useState(null);
-  // Basic post states
+ 
   const [selectedTime, setSelectedTime] = useState(DEFAULT_STATE.selectedTime);
   const [selectedDate, setSelectedDate] = useState(date);
   const [currentPost, setCurrentPost] = useState(initialPost || null);
@@ -50,8 +49,6 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
   const isSelectingTemplateRef = useRef(false);
   const templateSelectionTimeoutRef = useRef(null);
   const currentPostRef = useRef(currentPost);
-
-  console.log('EditPostResponsive', initialPost);
 
   // Update ref when currentPost changes
   useEffect(() => {
@@ -97,7 +94,13 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
       initializationRef.current = true;
       
       setSelectedPlatforms(initialPost.platforms || []);
-      setSelectedTime(initialPost.timePost || DEFAULT_STATE.selectedTime);
+      // Handle time initialization more carefully
+      const rawTime = initialPost.timePost || DEFAULT_STATE.selectedTime;
+      // Only format if it's not already in correct format
+      const formattedTime = rawTime.includes(':') ? 
+        rawTime.split(':')[0].padStart(2, '0') : 
+        (rawTime.length === 2 ? rawTime : rawTime.padStart(2, '0'));
+      setSelectedTime(formattedTime);
       setPostText(initialPost.text?.post || '');
       setPostTitle(initialPost.text?.title || '');
       setPostSubtitle(initialPost.text?.subtitle || '');
@@ -197,7 +200,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
     selectedVideoModel,
     selectedLLMModel,
     updatePost
-  ]); // Removed currentPost from dependencies
+  ]);
 
   const handleDimensionsChange = async (dimensionName, dimensionSize) => {
     try {
@@ -559,6 +562,14 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                           template: url, // Set template to the same URL initially
                           size: imageSize,
                           dimensions: dimensions
+                        },
+                        prompts: {
+                          ...currentPost?.prompts,
+                          image: imagePrompt // Save the image prompt
+                        },
+                        models: {
+                          ...currentPost?.models,
+                          image: selectedImageModel // Save the selected model
                         },
                         templatesUrls: [] // Clear existing templates
                       });

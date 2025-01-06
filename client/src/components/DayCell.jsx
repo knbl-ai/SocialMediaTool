@@ -91,7 +91,12 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
       const post = await createPost({
         platforms: [currentPlatform],
         datePost: date.toISOString().split('T')[0],
-        timePost: "10:00"
+        timePost: "10", // Default hour in hh format
+        text: { // Initialize empty text object to match schema
+          post: '',
+          title: '',
+          subtitle: ''
+        }
       });
 
       if (post) {

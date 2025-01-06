@@ -19,7 +19,7 @@ const PostSchema = new mongoose.Schema({
   },
   timePost: {
     type: String,
-    default: "10:00"
+    default: "10"
   },
   image: {
     url: {

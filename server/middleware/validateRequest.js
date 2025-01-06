@@ -44,7 +44,7 @@ export const schemas = {
       accountId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).required(),
       platforms: Joi.array().items(Joi.string()).min(1).required(),
       datePost: Joi.date().iso().required(),
-      timePost: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).required(),
+      timePost: Joi.string().pattern(/^([0-1][0-9]|2[0-3])$/).required(),
       models: Joi.object({
         image: Joi.string().allow(''),
         video: Joi.string().allow(''),

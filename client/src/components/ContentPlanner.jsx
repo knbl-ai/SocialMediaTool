@@ -70,7 +70,6 @@ export default function ContentPlanner() {
   }
 
   const handleFieldChange = async (field, value) => {
-    console.log(field, value);
     try {
       await updateField(field, value);
     } catch (err) {
@@ -100,13 +99,7 @@ export default function ContentPlanner() {
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="w-full">
-                <TargetAudience
-                  value={contentPlanner.audience}
-                  onChange={(value) => handleFieldChange('audience', value)}
-                  tooltip={contentPlannerTooltips.audience}
-                />
-              </div>
+           
               <div className="w-full">
                 <TooltipLabel 
                   className="text-lime-500" 
@@ -136,6 +129,13 @@ export default function ContentPlanner() {
                 />
               </div>
               <div className="w-full">
+                <TargetAudience
+                  value={contentPlanner.audience}
+                  onChange={(value) => handleFieldChange('audience', value)}
+                  tooltip={contentPlannerTooltips.audience}
+                />
+              </div>
+              <div className="w-full">
                 <CreativitySlider
                   value={contentPlanner.creativity}
                   onChange={(value) => handleFieldChange('creativity', value)}
@@ -144,15 +144,7 @@ export default function ContentPlanner() {
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <SelectField
-                label="Voice"
-                options={toneOptions}
-                placeholder="Select tone"
-                labelClass="text-lime-500"
-                value={contentPlanner.voice}
-                onChange={(value) => handleFieldChange('voice', value)}
-                tooltip={contentPlannerTooltips.voice}
-              />
+         
               <SelectField
                 label="LLM"
                 options={MODELS.llm}
@@ -170,6 +162,15 @@ export default function ContentPlanner() {
                 value={contentPlanner.imageModel}
                 onChange={(value) => handleFieldChange('imageModel', value)}
                 tooltip={contentPlannerTooltips.imageModel}
+              />
+              <SelectField
+                label="Voice"
+                options={toneOptions}
+                placeholder="Select tone"
+                labelClass="text-lime-500"
+                value={contentPlanner.voice}
+                onChange={(value) => handleFieldChange('voice', value)}
+                tooltip={contentPlannerTooltips.voice}
               />
               <SelectField
                 label="Template"
