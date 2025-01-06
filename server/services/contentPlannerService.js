@@ -95,7 +95,7 @@ const createPost = async (date, topic, contentPlanner, generatedContent) => {
     platforms: contentPlanner.platforms,
     templatesUrls: [],
     datePost: date,
-    timePost: `${contentPlanner.postingTime.toString().padStart(2, '0')}:00`,
+    timePost: `${contentPlanner.postingTime.toString().padStart(2, '0')}`,
     image: {
       url: generatedContent.imageUrl,
       template: generatedContent.imageUrl,
