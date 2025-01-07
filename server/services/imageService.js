@@ -13,6 +13,14 @@ fal.config({
 });
 
 
+const calculateAspectRatio = (width, height) => {
+    if (width === height) return "1:1"
+    if (width > height && height === 720 ) return "16:9"
+    if (width > height && height === 960 ) return "4:3"
+    if (height > width) return "9:16"
+}
+
+
 export const generateImage = async ({
     prompt,
     width = 1024,
@@ -20,6 +28,7 @@ export const generateImage = async ({
     model
  
 }) => {
+
     try {
         const result = await fal.subscribe(model, {
             input: {
@@ -28,6 +37,7 @@ export const generateImage = async ({
                     width,
                     height
                 },
+                aspect_ratio: calculateAspectRatio(width, height)
             },
             logs: true,
             onQueueUpdate: (update) => {
