@@ -44,12 +44,13 @@ export const updateContentPlanner = async (accountId, updates) => {
   );
 };
 
-const generatePostContent = async (topic, contentPlanner) => {
-  // Generate post text
+const generatePostContent = async (topic, contentPlanner, platform) => {
+  // Generate post text with platform-specific prompt
   const textPromptData = {
     topic,
     targetAudience: contentPlanner.audience,
-    style: contentPlanner.voice
+    style: contentPlanner.voice,
+    platform
   };
   const { prompt: textPrompt, system: textSystem } = singlePostPrompt(textPromptData);
   const textContent = await generateText({
@@ -88,22 +89,18 @@ const generatePostContent = async (topic, contentPlanner) => {
   };
 };
 
-const createPost = async (date, topic, contentPlanner, generatedContent) => {
+const createPost = async (date, topic, contentPlanner, generatedContent, platforms, imageDimensions) => {
   // Create the post
   const post = new Post({
     accountId: contentPlanner.accountId,
-    platforms: contentPlanner.platforms,
+    platforms,
     templatesUrls: [],
     datePost: date,
     timePost: `${contentPlanner.postingTime.toString().padStart(2, '0')}`,
     image: {
       url: generatedContent.imageUrl,
       template: generatedContent.imageUrl,
-      dimensions: 'Square',
-      size: {
-        width: 1280,
-        height: 1280
-      }
+      ...imageDimensions
     },
     text: {
       post: generatedContent.textContent.post,
@@ -189,14 +186,34 @@ export const generateContentPlan = async (accountId) => {
       { new: true }
     );
 
-    // Generate posts for each date in the content plan
+    // Generate posts for each date and platform in the content plan
     const generatedPosts = [];
     for (const [dateStr, topic] of Object.entries(contentPlan)) {
       try {
         const date = new Date(dateStr);
-        const generatedContent = await generatePostContent(topic, contentPlanner);
-        const post = await createPost(date, topic, contentPlanner, generatedContent);
-        generatedPosts.push(post);
+        
+        // Generate posts for each platform
+        for (const platform of contentPlanner.platforms) {
+          // Set platform-specific image dimensions
+          const imageDimensions = platform === 'Instagram' 
+            ? { width: 1024, height: 1024, dimensions: 'Square' }
+            : { width: 1024, height: 960, dimensions: 'Horizontal' };
+
+          // Generate platform-specific content
+          const generatedContent = await generatePostContent(topic, contentPlanner, platform);
+          
+          // Create post with platform-specific settings
+          const post = await createPost(
+            date, 
+            topic, 
+            contentPlanner, 
+            generatedContent,
+            [platform], // Pass platform as array for platforms field
+            imageDimensions
+          );
+          
+          generatedPosts.push(post);
+        }
       } catch (error) {
         console.error(`Error generating post for ${dateStr}:`, error);
         // Continue with next post even if one fails

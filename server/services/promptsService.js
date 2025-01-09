@@ -1,13 +1,23 @@
 export const singlePostPrompt = ({ topic, targetAudience = "adults", style = "casual", maxLength = 280, platform = "instagram" }) => {
-    return {prompt: `
-    Generate a social media post for ${platform} about ${topic}.
+    const platformGuidelines = {
+        Instagram: "Visual-first content, use emojis, hashtags, and engaging captions up to 2,200 characters",
+        Facebook: "Longer form content, focus on community engagement, support rich media",
+        LinkedIn: "Professional tone, industry insights, thought leadership content",
+        TikTok: "Trendy, short-form content, focus on entertainment and engagement",
+        X: "Concise messaging, trending topics, hashtags, limited to 280 characters"
+    };
+
+    return {
+        prompt: `
+    Generate a social media post specifically for ${platform} about ${topic}.
         Style: ${style}
         Target Audience: ${targetAudience}
         Maximum Length: ${maxLength} characters
+        Platform Guidelines: ${platformGuidelines[platform] || platformGuidelines.Instagram}
         
         The post should be engaging and follow ${platform}'s best practices.
         Return only the JSON object with post, title, and subtitle.`,
-    system: `You are a skilled social media content creator. Generate engaging posts that follow the given style and structure guidelines while maintaining brand voice. Always output valid JSON in the format: {post, title, subtitle}. Omit preamble and postamble.`
+        system: `You are a skilled social media content creator specializing in ${platform} content. Generate engaging posts that follow the platform's best practices, given style, and structure guidelines while maintaining brand voice. Always output valid JSON in the format: {post, title, subtitle}. Omit preamble and postamble.`
     }
 };
 
