@@ -177,7 +177,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
         console.error('Error saving changes:', error);
         setLocalError(error.message || 'Failed to save changes');
       }
-    }, 1000);
+    }, 500);
 
     return () => {
       if (saveTimeoutRef.current) {

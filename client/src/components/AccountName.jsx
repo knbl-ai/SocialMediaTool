@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import debounce from 'lodash/debounce';
 import axios from 'axios';
 import { Camera } from 'lucide-react';
 
@@ -7,6 +6,8 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 const AccountName = ({ account, onNameUpdate }) => {
   const [name, setName] = useState('');
+  const [isDirty, setIsDirty] = useState(false);
+  const timeoutRef = useRef(null);
 
   useEffect(() => {
     if (account?.name) {
@@ -18,19 +19,49 @@ const AccountName = ({ account, onNameUpdate }) => {
 
   const fileInputRef = useRef(null);
 
-  const debouncedUpdate = useCallback(
-    debounce((value) => {
-      if (onNameUpdate) {
-        onNameUpdate(value);
-      }
-    }, 500),
-    [onNameUpdate]
-  );
+  const updateName = useCallback((value) => {
+    if (onNameUpdate) {
+      onNameUpdate(value);
+    }
+  }, [onNameUpdate]);
 
   const handleNameChange = (e) => {
     const newName = e.target.value;
     setName(newName);
-    debouncedUpdate(newName);
+    setIsDirty(true);
+
+    // Clear any existing timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    // Set new timeout
+    timeoutRef.current = setTimeout(() => {
+      if (isDirty) {
+        updateName(newName);
+        setIsDirty(false);
+      }
+    }, 500);
+  };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Handle blur event to ensure update happens
+  const handleBlur = () => {
+    if (isDirty) {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      updateName(name);
+      setIsDirty(false);
+    }
   };
 
   const handleLogoClick = () => {
@@ -98,6 +129,7 @@ const AccountName = ({ account, onNameUpdate }) => {
           type="text"
           value={name}
           onChange={handleNameChange}
+          onBlur={handleBlur}
           placeholder="Account Name"
           className="text-3xl font-bold bg-transparent border-none focus:border-none focus:outline-none focus:ring-0 p-0 h-auto text-center w-60
                    relative
