@@ -1,4 +1,4 @@
-export const singlePostPrompt = ({ topic, targetAudience = "adults", style = "casual", maxLength = 280, platform = "instagram" }) => {
+export const singlePostPrompt = ({ topic, targetAudience = "adults", style = "casual", maxLength = 280, platform = "Instagram" }) => {
     const platformGuidelines = {
         Instagram: "Visual-first content, use emojis, hashtags, and engaging captions up to 2,200 characters",
         Facebook: "Longer form content, focus on community engagement, support rich media",
@@ -7,12 +7,19 @@ export const singlePostPrompt = ({ topic, targetAudience = "adults", style = "ca
         X: "Concise messaging, trending topics, hashtags, limited to 280 characters"
     };
 
+    const maxLenghPlatforms = {
+        Instagram: 280,
+        Facebook: 400,
+        LinkedIn: 1000,
+        TikTok: 280,
+        X: 280
+    }
     return {
         prompt: `
     Generate a social media post specifically for ${platform} about ${topic}.
         Style: ${style}
         Target Audience: ${targetAudience}
-        Maximum Length: ${maxLength} characters
+        Maximum Length: ${maxLenghPlatforms[platform] || maxLength} characters
         Platform Guidelines: ${platformGuidelines[platform] || platformGuidelines.Instagram}
         
         The post should be engaging and follow ${platform}'s best practices.
