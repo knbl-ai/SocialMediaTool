@@ -5,6 +5,7 @@ import { generateImage as generateImageService } from '../services/imageService.
 import { generateText as generateTextService } from '../services/llmService.js';
 import { generateTemplates as generateTemplatesService } from '../services/templateService.js';
 import { singlePostPrompt } from '../services/promptsService.js';
+import ContentPlanner from '../models/ContentPlanner.js';
 
 export const createPost = async (req, res) => {
   try {
@@ -128,7 +129,7 @@ export const deletePost = async (req, res) => {
 
 export const generateImage = async (req, res) => {
   try {
-    const { prompt, model, width, height } = req.body;
+    const { prompt, model, width, height, accountId } = req.body;
     
     if (!process.env.FAL_KEY) {
       throw new ApiError(500, 'FAL_KEY is not configured');
@@ -153,11 +154,13 @@ export const generateImage = async (req, res) => {
 
 export const generateText = async (req, res) => {
   try {
-    let { prompt, model } = req.body;
+    let { prompt, model, accountId } = req.body;
+
+    const contentPlanner = await ContentPlanner.findOne({ accountId });
 
     const { system } = singlePostPrompt({
       topic: prompt,
-  
+      language: contentPlanner.language
     });
 
     prompt = singlePostPrompt({

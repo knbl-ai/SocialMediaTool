@@ -540,7 +540,8 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                         prompt: imagePrompt,
                         model: selectedImageModel,
                         width: imageSize.width,
-                        height: imageSize.height
+                        height: imageSize.height,
+                        accountId: accountId
                       });
                       
                       // Delete old templates if they exist
@@ -630,7 +631,8 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                       // Generate text with the prompt
                       const result = await api.generateText({
                         prompt: textPrompt,
-                        model: selectedLLMModel
+                        model: selectedLLMModel,
+                        accountId: accountId
                       });
 
                       // Ensure we have valid data
