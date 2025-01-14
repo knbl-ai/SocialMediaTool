@@ -24,22 +24,74 @@ const sanitizeJsonString = (str) => {
     return str;
 };
 
-const validateAndFixJson = (jsonString) => {
+const validateAndFixJson = (jsonString, isContentPlan = false) => {
     try {
         // First try to parse as is
-        return JSON.parse(jsonString);
+        const parsed = JSON.parse(jsonString);
+
+        if (isContentPlan) {
+            // For content plan, validate that all keys are valid dates
+            const validatedPlan = {};
+            for (const [dateStr, content] of Object.entries(parsed)) {
+                try {
+                    // Attempt to parse the date
+                    const date = new Date(dateStr);
+                    if (!isNaN(date.getTime())) {
+                        validatedPlan[dateStr] = content;
+                    } else {
+                        console.error(`Invalid date in content plan: ${dateStr}`);
+                    }
+                } catch (error) {
+                    console.error(`Error validating date: ${dateStr}`, error);
+                }
+            }
+            return validatedPlan;
+        }
+
+        // For regular post content
+        return {
+            post: typeof parsed.post === 'string' ? parsed.post : '',
+            title: typeof parsed.title === 'string' ? parsed.title : '',
+            subtitle: typeof parsed.subtitle === 'string' ? parsed.subtitle : ''
+        };
     } catch (error) {
         try {
             // Try to sanitize and parse again
             const sanitized = sanitizeJsonString(jsonString);
-            return JSON.parse(sanitized);
+            const parsed = JSON.parse(sanitized);
+
+            if (isContentPlan) {
+                // For content plan, validate that all keys are valid dates
+                const validatedPlan = {};
+                for (const [dateStr, content] of Object.entries(parsed)) {
+                    try {
+                        const date = new Date(dateStr);
+                        if (!isNaN(date.getTime())) {
+                            validatedPlan[dateStr] = content;
+                        }
+                    } catch (error) {
+                        console.error(`Error validating date: ${dateStr}`, error);
+                    }
+                }
+                return validatedPlan;
+            }
+
+            // For regular post content
+            return {
+                post: typeof parsed.post === 'string' ? parsed.post : '',
+                title: typeof parsed.title === 'string' ? parsed.title : '',
+                subtitle: typeof parsed.subtitle === 'string' ? parsed.subtitle : ''
+            };
         } catch (error) {
-            // If still fails, try to extract content from the text
+            if (isContentPlan) {
+                return {}; // Return empty plan if parsing fails
+            }
+
+            // For regular post content, try to extract using regex
             const postMatch = jsonString.match(/"post"\s*:\s*"([^"]+)"/);
             const titleMatch = jsonString.match(/"title"\s*:\s*"([^"]+)"/);
             const subtitleMatch = jsonString.match(/"subtitle"\s*:\s*"([^"]+)"/);
 
-            // Construct a valid JSON object with extracted or default values
             return {
                 post: postMatch ? postMatch[1] : '',
                 title: titleMatch ? titleMatch[1] : '',
@@ -49,7 +101,7 @@ const validateAndFixJson = (jsonString) => {
     }
 };
 
-export const generateText = async ({ topic, model = 'claude-3-5-haiku-20241022', maxTokens = 1024, system, temperature = 0.3, responseFormat = 'json' }) => {
+export const generateText = async ({ topic, model = 'claude-3-5-haiku-20241022', maxTokens = 1024, system, temperature = 0.3, responseFormat = 'json', isContentPlan = false }) => {
     try {
         const response = await client.messages.create({
             system: system,
@@ -58,27 +110,22 @@ export const generateText = async ({ topic, model = 'claude-3-5-haiku-20241022',
             model,
             temperature
         });
-
+      
         const text = response.content[0].text;
         
         if (responseFormat === 'json') {
             try {
-                // Use the new validation and fixing function
-                const parsedResponse = validateAndFixJson(text);
+                console.log('Raw LLM response:', text);
                 
-                // Ensure all required fields exist with proper types
-                const validatedResponse = {
-                    post: typeof parsedResponse.post === 'string' ? parsedResponse.post : '',
-                    title: typeof parsedResponse.title === 'string' ? parsedResponse.title : '',
-                    subtitle: typeof parsedResponse.subtitle === 'string' ? parsedResponse.subtitle : ''
-                };
-
-                console.log('Validated response:', validatedResponse);
-                return validatedResponse;
+                // Use the new validation and fixing function with isContentPlan flag
+                const parsedResponse = validateAndFixJson(text, isContentPlan);
+                
+                console.log('Validated response:', parsedResponse);
+                return parsedResponse;
             } catch (parseError) {
                 console.error('Failed to parse or fix LLM response:', parseError);
-                // Return a valid empty response instead of throwing
-                return {
+                // Return appropriate empty response based on type
+                return isContentPlan ? {} : {
                     post: '',
                     title: '',
                     subtitle: ''

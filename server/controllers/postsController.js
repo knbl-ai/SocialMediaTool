@@ -7,19 +7,36 @@ import { generateTemplates as generateTemplatesService } from '../services/templ
 import { singlePostPrompt } from '../services/promptsService.js';
 
 export const createPost = async (req, res) => {
-  const post = new Post({
-    accountId: req.body.accountId,
-    platforms: req.body.platforms,
-    datePost: req.body.datePost,
-    timePost: req.body.timePost,
-    text: req.body.text || { post: '', title: '', subtitle: '' },
-    image: req.body.image || { url: '', size: { width: 0, height: 0 }, template: '' },
-    prompts: req.body.prompts || { image: '', video: '', text: '' },
-    models: req.body.models || { image: '', video: '', text: '' }
-  });
+  try {
+    // Validate date
+    const datePost = new Date(req.body.datePost);
+    if (isNaN(datePost.getTime())) {
+      throw new ApiError(400, 'Invalid date format');
+    }
 
-  const savedPost = await post.save();
-  res.status(201).json(savedPost);
+    const post = new Post({
+      accountId: req.body.accountId,
+      platforms: req.body.platforms,
+      datePost: datePost,
+      timePost: req.body.timePost,
+      text: req.body.text || { post: '', title: '', subtitle: '' },
+      image: req.body.image || { url: '', size: { width: 0, height: 0 }, template: '' },
+      prompts: req.body.prompts || { image: '', video: '', text: '' },
+      models: req.body.models || { image: '', video: '', text: '' }
+    });
+
+    const savedPost = await post.save();
+    res.status(201).json(savedPost);
+  } catch (error) {
+    console.error('Error creating post:', error);
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    if (error.name === 'ValidationError') {
+      throw new ApiError(400, `Validation error: ${error.message}`);
+    }
+    throw new ApiError(500, `Failed to create post: ${error.message}`);
+  }
 };
 
 export const updatePost = async (req, res) => {

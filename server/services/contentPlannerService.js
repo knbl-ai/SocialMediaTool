@@ -50,7 +50,8 @@ const generatePostContent = async (topic, contentPlanner, platform) => {
     topic,
     targetAudience: contentPlanner.audience,
     style: contentPlanner.voice,
-    platform
+    platform,
+    language: contentPlanner.language || 'English'
   };
   const { prompt: textPrompt, system: textSystem } = singlePostPrompt(textPromptData);
   const textContent = await generateText({
@@ -90,58 +91,68 @@ const generatePostContent = async (topic, contentPlanner, platform) => {
 };
 
 const createPost = async (date, topic, contentPlanner, generatedContent, platforms, imageDimensions) => {
-  // Create the post
-  const post = new Post({
-    accountId: contentPlanner.accountId,
-    platforms,
-    templatesUrls: [],
-    datePost: date,
-    timePost: `${contentPlanner.postingTime.toString().padStart(2, '0')}`,
-    image: {
-      url: generatedContent.imageUrl,
-      template: generatedContent.imageUrl,
-      ...imageDimensions
-    },
-    text: {
-      post: generatedContent.textContent.post,
-      title: generatedContent.textContent.title,
-      subtitle: generatedContent.textContent.subtitle
-    },
-    prompts: {
-      image: generatedContent.imagePromptResult,
-      video: '',
-      text: topic
-    },
-    models: {
-      image: contentPlanner.imageModel,
-      text: contentPlanner.llm,
-      video: ''
+  try {
+    // Ensure date is valid
+    if (!(date instanceof Date) || isNaN(date.getTime())) {
+      throw new Error('Invalid date provided');
     }
-  });
 
-  const savedPost = await post.save();
-
-  // Generate templates if we have an image
-  if (savedPost.image?.url) {
-    try {
-      const templates = await generateTemplates({
-        post: savedPost,
-        accountId: contentPlanner.accountId
-      });
-
-      // Update post with template URLs
-      if (templates?.results) {
-        const templateUrls = templates.results.map(template => template.imageUrl);
-        savedPost.templatesUrls = templateUrls;
-        await savedPost.save();
+    // Create the post
+    const post = new Post({
+      accountId: contentPlanner.accountId,
+      platforms,
+      templatesUrls: [],
+      datePost: date,
+      timePost: `${contentPlanner.postingTime.toString().padStart(2, '0')}`,
+      image: {
+        url: generatedContent.imageUrl,
+        template: generatedContent.imageUrl,
+        ...imageDimensions
+      },
+      text: {
+        post: generatedContent.textContent.post,
+        title: generatedContent.textContent.title,
+        subtitle: generatedContent.textContent.subtitle
+      },
+      prompts: {
+        image: generatedContent.imagePromptResult,
+        video: '',
+        text: topic
+      },
+      models: {
+        image: contentPlanner.imageModel,
+        text: contentPlanner.llm,
+        video: ''
       }
-    } catch (error) {
-      console.error('Error generating templates for post:', error);
-      // Continue with post creation even if template generation fails
-    }
-  }
+    });
 
-  return savedPost;
+    const savedPost = await post.save();
+
+    // Generate templates if we have an image
+    if (savedPost.image?.url) {
+      try {
+        const templates = await generateTemplates({
+          post: savedPost,
+          accountId: contentPlanner.accountId
+        });
+
+        // Update post with template URLs
+        if (templates?.results) {
+          const templateUrls = templates.results.map(template => template.imageUrl);
+          savedPost.templatesUrls = templateUrls;
+          await savedPost.save();
+        }
+      } catch (error) {
+        console.error('Error generating templates for post:', error);
+        // Continue with post creation even if template generation fails
+      }
+    }
+
+    return savedPost;
+  } catch (error) {
+    console.error('Error creating post:', error);
+    throw error;
+  }
 };
 
 export const generateContentPlan = async (accountId) => {
@@ -176,8 +187,14 @@ export const generateContentPlan = async (accountId) => {
       topic: prompt,
       system,
       model: contentPlanner.llm,
-      responseFormat: 'json'
+      responseFormat: 'json',
+      isContentPlan: true
     });
+
+    // Validate that we got a valid content plan
+    if (!contentPlan || Object.keys(contentPlan).length === 0) {
+      throw new Error('Failed to generate valid content plan');
+    }
 
     // Save content plan to database
     await ContentPlanner.findOneAndUpdate(
@@ -190,33 +207,45 @@ export const generateContentPlan = async (accountId) => {
     const generatedPosts = [];
     for (const [dateStr, topic] of Object.entries(contentPlan)) {
       try {
+        // Validate date format
         const date = new Date(dateStr);
+        if (isNaN(date.getTime())) {
+          console.error(`Invalid date format for: ${dateStr}, skipping...`);
+          continue;
+        }
         
         // Generate posts for each platform
         for (const platform of contentPlanner.platforms) {
-          // Set platform-specific image dimensions
-          const imageDimensions = platform === 'Instagram' 
-            ? { width: 1024, height: 1024, dimensions: 'Square' }
-            : { width: 1024, height: 960, dimensions: 'Horizontal' };
+          try {
+            // Set platform-specific image dimensions
+            const imageDimensions = platform === 'Instagram' 
+              ? { width: 1024, height: 1024, dimensions: 'Square' }
+              : { width: 1024, height: 960, dimensions: 'Horizontal' };
 
-          // Generate platform-specific content
-          const generatedContent = await generatePostContent(topic, contentPlanner, platform);
-          
-          // Create post with platform-specific settings
-          const post = await createPost(
-            date, 
-            topic, 
-            contentPlanner, 
-            generatedContent,
-            [platform], // Pass platform as array for platforms field
-            imageDimensions
-          );
-          
-          generatedPosts.push(post);
+            // Generate platform-specific content
+            const generatedContent = await generatePostContent(topic, contentPlanner, platform);
+            
+            // Create post with platform-specific settings
+            const post = await createPost(
+              date, 
+              topic, 
+              contentPlanner, 
+              generatedContent,
+              [platform], // Pass platform as array for platforms field
+              imageDimensions
+            );
+            
+            if (post) {
+              generatedPosts.push(post);
+            }
+          } catch (platformError) {
+            console.error(`Error generating post for platform ${platform}:`, platformError);
+            // Continue with next platform
+          }
         }
-      } catch (error) {
-        console.error(`Error generating post for ${dateStr}:`, error);
-        // Continue with next post even if one fails
+      } catch (dateError) {
+        console.error(`Error processing date ${dateStr}:`, dateError);
+        // Continue with next date
       }
     }
 

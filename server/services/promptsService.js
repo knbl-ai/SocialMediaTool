@@ -1,4 +1,4 @@
-export const singlePostPrompt = ({ topic, targetAudience = "adults", style = "casual", maxLength = 280, platform = "Instagram" }) => {
+export const singlePostPrompt = ({ topic, targetAudience = "adults", style = "casual", maxLength = 280, platform = "Instagram", language = "English" }) => {
     const platformGuidelines = {
         Instagram: "Visual-first content, use emojis, hashtags, and engaging captions up to 2,200 characters",
         Facebook: "Longer form content, focus on community engagement, support rich media",
@@ -7,25 +7,53 @@ export const singlePostPrompt = ({ topic, targetAudience = "adults", style = "ca
         X: "Concise messaging, trending topics, hashtags, limited to 280 characters"
     };
 
-    const maxLenghPlatforms = {
+    const maxLengthPlatforms = {
         Instagram: 280,
         Facebook: 400,
         LinkedIn: 1000,
         TikTok: 280,
         X: 280
-    }
+    };
+
+    const languageInstructions = {
+        English: {
+            instruction: "Write the content in English using natural, fluent language",
+            direction: "left-to-right"
+        },
+        Hebrew: {
+            instruction: "Write the content in Hebrew using proper Hebrew grammar and RTL text",
+            direction: "right-to-left"
+        }
+    };
+
+    const currentLang = languageInstructions[language] || languageInstructions.English;
+
     return {
         prompt: `
     Generate a social media post specifically for ${platform} about ${topic}.
         Style: ${style}
         Target Audience: ${targetAudience}
-        Maximum Length: ${maxLenghPlatforms[platform] || maxLength} characters
+        Maximum Length: ${maxLengthPlatforms[platform] || maxLength} characters
         Platform Guidelines: ${platformGuidelines[platform] || platformGuidelines.Instagram}
+        Language Instructions: ${currentLang.instruction}
+        Text Direction: ${currentLang.direction}
         
         The post should be engaging and follow ${platform}'s best practices.
         Return only the JSON object with post, title, and subtitle.`,
-        system: `You are a skilled social media content creator specializing in ${platform} content. Generate engaging posts that follow the platform's best practices, given style, and structure guidelines while maintaining brand voice. Always output valid JSON in the format: {post, title, subtitle}. Omit preamble and postamble.`
-    }
+        system: `You are a skilled social media content creator specializing in ${platform} content and ${language} language content creation.
+        
+        Important Language Instructions:
+        1. Generate all content in ${language}
+        2. Follow ${currentLang.direction} text direction
+        3. Use appropriate cultural context for ${language} speakers
+        4. Maintain proper grammar and style for ${language}
+        5. Keep JSON keys in English: {post, title, subtitle}
+        
+        Generate engaging posts that follow the platform's best practices and language requirements while maintaining brand voice.
+        Always output valid JSON in the format: {post, title, subtitle}.
+        The JSON keys must always be in English, but the values should be in ${language}.
+        Omit preamble and postamble.`
+    };
 };
 
 export const contentPlanPrompt = ({
