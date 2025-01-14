@@ -61,7 +61,7 @@ const AccountDashboard = () => {
     <div className="p-6 w-full h-full">
       <div className="flex justify-between items-start mb-8">
         <div className="flex items-start flex-1">
-          <div className="flex flex-col justify-evenly h-[216px] align-center"> 
+          <div className="flex flex-col justify-evenly h-[256px] align-center"> 
             <AccountName 
               account={account} 
               onNameUpdate={handleNameUpdate}
@@ -69,6 +69,7 @@ const AccountDashboard = () => {
             <div className="flex justify-center ps-10">
               <ConnectedPlatforms accountId={accountId}/>
             </div>
+            
           </div>
           <div className="flex flex-col gap-4 mx-12 mt-5">
             <AccountOverview 

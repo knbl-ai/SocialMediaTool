@@ -5,6 +5,7 @@ import CreativitySlider from './contentPlanner/CreativitySlider';
 import Duration from './contentPlanner/Duration';
 import TargetAudience from './contentPlanner/TargetAudience';
 import PlatformSelector from './contentPlanner/PlatformSelector';
+import LanguegeSelector from './contentPlanner/LanguegeSelector';
 import { toneOptions, frequencyOptions, templateOptions, postingTimeOptions } from './contentPlanner/options';
 import MODELS from '../config/models';
 import { contentPlannerTooltips } from '../config/tooltips';
@@ -108,7 +109,7 @@ export default function ContentPlanner() {
                   Content Guidelines
                 </TooltipLabel>
                 <Textarea
-                  placeholder="Enter posts generation guidelines..."
+                  placeholder="Describe the content you want to generate"
                   className="min-h-[38px] mt-2"
                   value={contentPlanner.textGuidelines}
                   onChange={(e) => handleFieldChange('textGuidelines', e.target.value)}
@@ -218,29 +219,36 @@ export default function ContentPlanner() {
             </div>
 
             <div className="relative">
-              <div className="flex items-center gap-4 justify-center">
+              <div className="flex items-center gap-4 justify-between">
                 <div>
-                  <PlatformSelector
-                    value={contentPlanner.platforms}
-                    onChange={(value) => handleFieldChange('platforms', value)}
-                    tooltip={contentPlannerTooltips.platforms}
+                  <LanguegeSelector
+                    value={contentPlanner.language}
+                    onChange={(value) => handleFieldChange('language', value)}
+                    tooltip={contentPlannerTooltips.language}
                   />
                 </div>
-                <div className="pt-8">
-                  <PulsatingButton 
-                    className="bg-[#5CB338] hover:bg-[#4a9c2d] text-white w-[200px]" 
-                    pulseColor="92 179 56"
-                    duration="2s"
-                    onClick={handleGenerateContent}
-                    disabled={isLoading}
-                  >
-                    Generate Content
-                  </PulsatingButton>
+                <div className="flex items-center gap-4">
+                  <div>
+                    <PlatformSelector
+                      value={contentPlanner.platforms}
+                      onChange={(value) => handleFieldChange('platforms', value)}
+                      tooltip={contentPlannerTooltips.platforms}
+                    />
+                  </div>
+                  <div className="pt-8">
+                    <PulsatingButton 
+                      className="bg-[#5CB338] hover:bg-[#4a9c2d] text-white w-[200px]" 
+                      pulseColor="92 179 56"
+                      duration="2s"
+                      onClick={handleGenerateContent}
+                      disabled={isLoading}
+                    >
+                      Generate Content
+                    </PulsatingButton>
+                  </div>
                 </div>
-              </div>
-              <div className="absolute right-0 bottom-0 flex items-center gap-2 ">
-             
-                <div
+                <div className="flex items-center gap-2">
+                  <div
                     onClick={() => handleFieldChange('autoRenew', !contentPlanner.autoRenew)}
                     className={cn(
                       "px-3 py-1 rounded-full cursor-pointer transition-all duration-500 select-none w-4 h-6",
@@ -249,15 +257,14 @@ export default function ContentPlanner() {
                         : "bg-gray-200 text-gray-600"
                     )}
                   >
-
                   </div>
-                     
                   <TooltipLabel 
-                  tooltip="Enable automatic content plan renewal"
-                  className="text-sm text-lime-500"
-                >
-                Auto-renew
-                </TooltipLabel>
+                    tooltip="Enable automatic content plan renewal"
+                    className="text-sm text-lime-500"
+                  >
+                    Auto-renew
+                  </TooltipLabel>
+                </div>
               </div>
             </div>
           </>

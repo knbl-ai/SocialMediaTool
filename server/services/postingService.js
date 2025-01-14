@@ -26,7 +26,11 @@ class PostingService {
         content: postData.content
       };
 
-      // Make the post request to the platform's webhook
+     if (!webhookUrl) return {
+      success: false,
+      platform,
+      response: 'No webhook URL found'
+     }
       const response = await axios.post(webhookUrl, requestData);
       
       return {

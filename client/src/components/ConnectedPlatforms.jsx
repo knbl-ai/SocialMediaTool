@@ -112,7 +112,7 @@ const ConnectedPlatforms = ({ accountId }) => {
           );
         })}
       </div>
-      <h2 className='mt-4 text-m'>Connect Platform</h2>
+      <b><h2 className='mt-4 text-m text-lime-400'>Connect Platform</h2></b>
       <ConnectionModal 
         isOpen={isModalOpen} 
         onClose={handleModalClose}

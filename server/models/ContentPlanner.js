@@ -40,6 +40,11 @@ const contentPlannerSchema = new mongoose.Schema({
     type: String,
     default: 'fal-ai/flux/schnell'
   },
+  language: {
+    type: String,
+    default: 'English',
+    enum: ['English', 'Hebrew']
+  },
   date: {
     type: Date,
     default: Date.now
