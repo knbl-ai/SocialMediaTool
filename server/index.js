@@ -14,6 +14,7 @@ import contentPlannerRoutes from './routes/contentPlannerRoutes.js';
 import connectionRoutes from './routes/connectionRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import postingRoutes from './routes/postingRoutes.js';
+import pdfRoutes from './routes/pdfRoutes.js';
 import initScheduler from './cron/scheduler.js';
 
 const app = express();
@@ -63,11 +64,19 @@ app.use('/api/storage', storageRoutes);
 app.use('/api/content-planner', contentPlannerRoutes);
 app.use('/api/connections', connectionRoutes);
 app.use('/api/posting', postingRoutes);
+app.use('/api/pdf', pdfRoutes);
 
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 300 // limit each IP to 300 requests per windowMs
+  max: 300, // limit each IP to 300 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  // Configure IP resolution for proxied requests
+  keyGenerator: (req) => {
+    // Use X-Forwarded-For header from Cloud Run
+    return req.headers['x-forwarded-for'] || req.ip;
+  }
 });
 
 // Apply rate limiting to all routes
