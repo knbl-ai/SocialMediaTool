@@ -4,16 +4,20 @@ import { ApiError } from '../utils/ApiError.js';
 
 const router = express.Router();
 
-router.post('/parse', async (req, res) => {
+router.post('/parse', async (req, res, next) => {
   try {
     const { url, accountId } = req.body;
 
     if (!url) {
-      throw new ApiError(400, 'URL is required');
+      return res.status(400).json({
+        error: 'URL is required'
+      });
     }
 
     if (!accountId) {
-      throw new ApiError(400, 'Account ID is required');
+      return res.status(400).json({
+        error: 'Account ID is required'
+      });
     }
 
     // Parse the Google Doc content
@@ -28,10 +32,18 @@ router.post('/parse', async (req, res) => {
     });
   } catch (error) {
     console.error('Error processing Google Doc:', error);
+    
+    // Handle known errors
     if (error instanceof ApiError) {
-      throw error;
+      return res.status(error.status || 500).json({
+        error: error.message
+      });
     }
-    throw new ApiError(500, 'Failed to process Google Doc');
+
+    // Handle unknown errors
+    return res.status(500).json({
+      error: 'Failed to process Google Doc'
+    });
   }
 });
 
