@@ -21,7 +21,7 @@ import { toast } from 'sonner';
 import { usePosts as usePostsHook } from '../hooks/usePosts';
 import { usePosts as usePostsContext } from '../context/PostsContext';
 import { cn } from "@/lib/utils";
-
+import ContentGuidelinesAdvanced from './contentPlanner/ContentGuidelinesAdvanced';
 
 export default function ContentPlanner() {
   const { accountId } = useParams();
@@ -100,34 +100,28 @@ export default function ContentPlanner() {
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-           
               <div className="w-full">
-                <TooltipLabel 
-                  className="text-lime-500" 
-                  tooltip={contentPlannerTooltips.contentGuidelines}
-                >
-                  Content Guidelines
-                </TooltipLabel>
-                <Textarea
-                  placeholder="Describe the content you want to generate"
-                  className="min-h-[38px] mt-2"
-                  value={contentPlanner.textGuidelines}
-                  onChange={(e) => handleFieldChange('textGuidelines', e.target.value)}
+                <ContentGuidelinesAdvanced 
+                  contentPlanner={contentPlanner} 
+                  contentPlannerTooltips={contentPlannerTooltips} 
+                  handleFieldChange={handleFieldChange}
                 />
               </div>
               <div className="w-full">
-                <TooltipLabel 
-                  className="text-lime-500" 
-                  tooltip={contentPlannerTooltips.imageGuidelines}
-                >
-                  Image Guidelines
-                </TooltipLabel>
-                <Textarea
-                  placeholder="Enter image generation guidelines..."
-                  className="min-h-[38px] mt-2"
-                  value={contentPlanner.imageGuidelines}
-                  onChange={(e) => handleFieldChange('imageGuidelines', e.target.value)}
-                />
+                <div className="flex flex-col h-full">
+                  <TooltipLabel 
+                    className="text-lime-500" 
+                    tooltip={contentPlannerTooltips.imageGuidelines}
+                  >
+                    Image Guidelines
+                  </TooltipLabel>
+                  <Textarea
+                    placeholder="Enter image generation guidelines..."
+                    className="min-h-[38px] mt-2"
+                    value={contentPlanner.imageGuidelines}
+                    onChange={(e) => handleFieldChange('imageGuidelines', e.target.value)}
+                  />
+                </div>
               </div>
               <div className="w-full">
                 <TargetAudience
