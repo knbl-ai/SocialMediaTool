@@ -1,13 +1,11 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { Textarea } from '../ui/textarea'
 import TooltipLabel from '../ui/tooltip-label'
 import PDFButton from './PDFButton'
 import GoogleDocButton from './GoogleDocButton'
 
 export default function ContentGuidelinesAdvanced({ contentPlanner, contentPlannerTooltips, handleFieldChange }) {
-  const [isDocOpen, setIsDocOpen] = useState(false)
-
-  const handlePDFSuccess = (textGuidelines) => {
+  const handleDocSuccess = (textGuidelines) => {
     if (textGuidelines) {
       handleFieldChange('textGuidelines', textGuidelines)
     }
@@ -22,14 +20,14 @@ export default function ContentGuidelinesAdvanced({ contentPlanner, contentPlann
         >
           Content Guidelines
         </TooltipLabel>
-        <div className="absolute right-0 bottom-16 flex gap-2">
+        <div className="absolute right-0 -top-3 flex gap-2">
           <PDFButton 
             accountId={contentPlanner.accountId}
-            onSuccess={handlePDFSuccess}
+            onSuccess={handleDocSuccess}
           />
           <GoogleDocButton 
-            isOpen={isDocOpen}
-            onOpenChange={setIsDocOpen}
+            accountId={contentPlanner.accountId}
+            onSuccess={handleDocSuccess}
           />
         </div>
       </div>

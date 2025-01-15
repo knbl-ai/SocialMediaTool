@@ -16,6 +16,7 @@ import { errorHandler } from './middleware/errorHandler.js';
 import postingRoutes from './routes/postingRoutes.js';
 import pdfRoutes from './routes/pdfRoutes.js';
 import initScheduler from './cron/scheduler.js';
+import googleDocsRoutes from './routes/googleDocsRoutes.js';
 
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
@@ -65,6 +66,7 @@ app.use('/api/content-planner', contentPlannerRoutes);
 app.use('/api/connections', connectionRoutes);
 app.use('/api/posting', postingRoutes);
 app.use('/api/pdf', pdfRoutes);
+app.use('/api/google-docs', googleDocsRoutes);
 
 // Rate limiting
 const limiter = rateLimit({
