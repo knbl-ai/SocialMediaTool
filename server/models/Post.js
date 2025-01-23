@@ -43,6 +43,10 @@ const PostSchema = new mongoose.Schema({
     dimensions: {
       type: String,
       default: 'Square'
+    },
+    video: {
+      type: String,
+      default: ''
     }
   },
   text: {

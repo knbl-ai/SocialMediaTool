@@ -12,11 +12,13 @@ import postsRoutes from './routes/posts.js';
 import storageRoutes from './routes/storage.js';
 import contentPlannerRoutes from './routes/contentPlannerRoutes.js';
 import connectionRoutes from './routes/connectionRoutes.js';
-import { errorHandler } from './middleware/errorHandler.js';
+import errorHandler from './middleware/errorHandler.js';
 import postingRoutes from './routes/postingRoutes.js';
 import pdfRoutes from './routes/pdfRoutes.js';
 import initScheduler from './cron/scheduler.js';
 import googleDocsRoutes from './routes/googleDocsRoutes.js';
+import videoRoutes from './routes/videoRoutes.js';
+import webRoutes from './routes/webRoutes.js';
 
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
@@ -67,6 +69,8 @@ app.use('/api/connections', connectionRoutes);
 app.use('/api/posting', postingRoutes);
 app.use('/api/pdf', pdfRoutes);
 app.use('/api/google-docs', googleDocsRoutes);
+app.use('/api/video', videoRoutes);
+app.use('/api/web', webRoutes);
 
 // Rate limiting
 const limiter = rateLimit({

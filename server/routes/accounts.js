@@ -137,6 +137,7 @@ router.patch('/:id', [auth, validateObjectId], async (req, res) => {
 router.post('/:id/analyze', [auth, validateObjectId], async (req, res) => {
   try {
     const { url } = req.body;
+
     if (!url) {
       return res.status(400).json({ message: 'URL is required' });
     }
@@ -155,23 +156,50 @@ router.post('/:id/analyze', [auth, validateObjectId], async (req, res) => {
     // Save the formatted URL to the account
     account.websiteUrl = formattedUrl;
     
-    // Make request to external API
-    const response = await axios.post(
-      `${process.env.COMPANY_ANALYZER_API}/api/analyze`, 
-      { url: formattedUrl }
-    );
+    try {
+      // Make request to external API with a longer timeout
+      const response = await axios.post(
+        `${process.env.COMPANY_ANALYZER_API}/api/analyze`, 
+        { url: formattedUrl },
+        { timeout: 90000 } 
+      );
 
-    if (response.data?.summary) {
-      account.accountReview = response.data.summary;
-      const updatedAccount = await account.save();
-      res.json(updatedAccount);
-    } else {
-      res.status(400).json({ message: 'Failed to analyze website' });
+      if (response.data?.summary) {
+        account.accountReview = response.data.summary;
+        const updatedAccount = await account.save();
+        res.json(updatedAccount);
+      } else {
+        res.status(400).json({ message: 'Failed to analyze website: No summary generated' });
+      }
+    } catch (analyzeError) {
+      console.error('Website analysis error:', analyzeError);
+      
+      // Handle specific error cases
+      if (analyzeError.code === 'ECONNABORTED' || analyzeError.message.includes('timeout')) {
+        return res.status(408).json({ 
+          message: 'Website analysis timed out. The website might be slow or unavailable.',
+          details: analyzeError.message
+        });
+      }
+      
+      if (analyzeError.response?.data?.details) {
+        return res.status(400).json({ 
+          message: 'Failed to analyze website',
+          details: analyzeError.response.data.details
+        });
+      }
+
+      res.status(500).json({ 
+        message: 'Failed to analyze website',
+        details: analyzeError.message
+      });
     }
   } catch (error) {
     console.error('Error analyzing website:', error);
-    const message = error.response?.data?.message || 'Failed to analyze website';
-    res.status(500).json({ message });
+    res.status(500).json({ 
+      message: 'Server error while analyzing website',
+      details: error.message
+    });
   }
 });
 

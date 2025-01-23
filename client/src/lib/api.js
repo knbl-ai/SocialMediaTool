@@ -204,6 +204,26 @@ class ApiClient {
       }
     );
   }
+
+  /**
+   * Generate video from prompt and optional image
+   * @param {Object} params
+   * @param {string} params.prompt - Video generation prompt
+   * @param {string} params.model - Selected video model
+   * @param {string} [params.imageUrl] - Optional source image URL
+   * @param {Object} params.size - Video dimensions
+   * @param {string} params.postId - Post ID
+   * @returns {Promise<{videoUrl: string}>}
+   */
+  async generateVideo(params) {
+    return this.client.post('/video/generate', {
+      prompt: params.prompt,
+      model: params.model,
+      imageUrl: params.imageUrl,
+      size: params.size,
+      postId: params.postId
+    });
+  }
 }
 
 // Create a singleton instance

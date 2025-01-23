@@ -3,6 +3,7 @@ import { Textarea } from '../ui/textarea'
 import TooltipLabel from '../ui/tooltip-label'
 import PDFButton from './PDFButton'
 import GoogleDocButton from './GoogleDocButton'
+import WebButton from './WebButton'
 
 export default function ContentGuidelinesAdvanced({ contentPlanner, contentPlannerTooltips, handleFieldChange }) {
   const handleDocSuccess = (textGuidelines) => {
@@ -18,9 +19,13 @@ export default function ContentGuidelinesAdvanced({ contentPlanner, contentPlann
           className="text-lime-500" 
           tooltip={contentPlannerTooltips.contentGuidelines}
         >
-          Content Guidelines
+          Guidelines
         </TooltipLabel>
         <div className="absolute right-0 -top-3 flex gap-2">
+          <WebButton 
+            accountId={contentPlanner.accountId}
+            onSuccess={handleDocSuccess}
+          />
           <PDFButton 
             accountId={contentPlanner.accountId}
             onSuccess={handleDocSuccess}

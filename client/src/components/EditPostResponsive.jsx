@@ -78,6 +78,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [isGeneratingText, setIsGeneratingText] = useState(false);
   const [isGeneratingTemplates, setIsGeneratingTemplates] = useState(false);
+  const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
 
   // Platform and model states
   const [selectedPlatforms, setSelectedPlatforms] = useState(() => 
@@ -119,7 +120,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
   // Debounced save effect
   useEffect(() => {
     if (!postId || !show || isDeletingRef.current || isSelectingTemplateRef.current || !initializationRef.current) return;
-
+    console.log('postId', postId);
     const hasChanges = () => {
       const current = currentPostRef.current;
       if (!current) return false;
@@ -608,6 +609,51 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                   buttonText="Generate Video"
                   value={videoPrompt}
                   onChange={setVideoPrompt}
+                  isLoading={isGeneratingVideo}
+                  onGenerate={async () => {
+                    if (!videoPrompt || !selectedVideoModel) {
+                      setLocalError('Please provide all required fields for video generation');
+                      return;
+                    }
+                    try {
+                      setIsGeneratingVideo(true);
+                      
+                      // Generate video with the prompt
+                      const result = await api.generateVideo({
+                        prompt: videoPrompt,
+                        model: selectedVideoModel,
+                        imageUrl: currentPost?.image?.url || '',
+                        size: currentPost?.image?.size || { width: 1024, height: 1024 },
+                        postId: postId
+                      });
+
+                      // Update post with the generated video URL
+                      const updatedPost = await updatePost(postId, {
+                        ...currentPost,
+                        image: {
+                          ...currentPost?.image,
+                          video: result.videoUrl
+                        },
+                        prompts: {
+                          ...currentPost?.prompts,
+                          video: videoPrompt
+                        },
+                        models: {
+                          ...currentPost?.models,
+                          video: selectedVideoModel
+                        }
+                      });
+
+                      setCurrentPost(updatedPost);
+                      setImageTemplate(result.videoUrl); // Update template to show video
+                      setLocalError(null);
+                    } catch (error) {
+                      console.error('Error generating video:', error);
+                      setLocalError(error.message || 'Failed to generate video');
+                    } finally {
+                      setIsGeneratingVideo(false);
+                    }
+                  }}
                 />
 
                 {/* Text Generation */}

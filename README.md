@@ -861,3 +861,118 @@ This documentation serves as a reference for understanding the application's arc
    ├── Exposes auth methods and state
    └── Throws if used outside AuthProvider
    ```
+
+### Content Import System
+
+#### PDF Import Service
+```javascript
+// PDFService Features
+- Automatic text extraction from PDF files
+- Text cleaning and formatting
+- File size limit: 5MB
+- Error handling with specific messages
+- Integration with ContentPlanner model
+
+// API Endpoint
+POST /api/pdf/upload
+Content-Type: multipart/form-data
+{
+  pdf: File,
+  accountId: string
+}
+
+// Response
+{
+  message: string,
+  textGuidelines: string
+}
+```
+
+#### Google Docs Integration
+```javascript
+// Features
+- Support for both Google Docs and Sheets
+- Real-time content extraction
+- Automatic text formatting
+- Access validation
+- Error handling with specific messages
+
+// Requirements
+- Document must be set to "Anyone with the link can view"
+- Supports both docs.google.com and drive.google.com URLs
+- HTTPS protocol required
+- Valid Google Cloud credentials
+
+// API Endpoint
+POST /api/google-docs/parse
+{
+  url: string,
+  accountId: string
+}
+
+// Response
+{
+  message: string,
+  textGuidelines: string
+}
+```
+
+#### Environment Variables for Content Import
+```env
+# Google Cloud Configuration for Docs API
+GOOGLE_CLOUD_PROJECT_ID=your-project-id
+GOOGLE_CLOUD_PRIVATE_KEY="your-private-key"  # Include quotes to preserve newlines
+GOOGLE_CLOUD_CLIENT_EMAIL=your-service-account-email
+```
+
+#### Content Import Components
+```javascript
+// PDFButton Component
+- File selection and upload
+- Progress indication
+- Error handling with toasts
+- Success feedback
+- Automatic content update
+
+// GoogleDocButton Component
+- URL input and validation
+- Processing state indication
+- Error handling with toasts
+- Success feedback
+- Automatic content update
+
+// ContentGuidelinesAdvanced Component
+- Integration of both import methods
+- Shared success handler
+- Real-time content updates
+- Error state management
+```
+
+#### Error Handling for Content Import
+```javascript
+// Common Error Codes
+400: {
+  - Invalid file type
+  - Invalid URL format
+  - Missing document ID
+  - Invalid protocol
+}
+403: {
+  - Access denied to Google Doc
+  - Insufficient permissions
+}
+404: {
+  - Document not found
+  - No content in document
+}
+500: {
+  - PDF parsing failed
+  - Google API errors
+  - Server processing errors
+}
+
+// Error Response Format
+{
+  error: "Detailed error message"
+}
+```

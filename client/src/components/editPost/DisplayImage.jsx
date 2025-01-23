@@ -1,14 +1,17 @@
-import { ImagePlus } from "lucide-react";
+import { ImagePlus, Video, Image as ImageIcon } from "lucide-react";
 import { useRef, useState } from "react";
 import api from "../../lib/api";
 
-const DisplayImage = ({ imageUrl, templateUrl, templatesUrls = [], onTemplateSelect, onImageUpload }) => {
+const DisplayImage = ({ imageUrl, templateUrl, videoUrl, templatesUrls = [], onTemplateSelect, onImageUpload }) => {
   const displayUrl = templateUrl || imageUrl;
   const fileInputRef = useRef(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [showVideo, setShowVideo] = useState(false);
 
   const handleImageClick = () => {
-    fileInputRef.current?.click();
+    if (!showVideo) { // Only trigger file upload when in image mode
+      fileInputRef.current?.click();
+    }
   };
 
   const handleFileChange = async (event) => {
@@ -39,7 +42,6 @@ const DisplayImage = ({ imageUrl, templateUrl, templatesUrls = [], onTemplateSel
       
       // Call the callback with the new image URL
       if (onImageUpload && response.url) {
-        // Pass both URL and template URL (same as image URL initially)
         await onImageUpload(response.url, response.url);
       } else {
         throw new Error('No URL received from server');
@@ -77,18 +79,51 @@ const DisplayImage = ({ imageUrl, templateUrl, templatesUrls = [], onTemplateSel
         ) : displayUrl ? (
           <div className="absolute inset-0 flex items-center justify-center p-4">
             <div className="relative w-full h-full">
-              <img
-                src={displayUrl}
-                alt="Post preview"
-                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 max-w-full max-h-full object-contain"
-                style={{ maxWidth: '100%', maxHeight: '100%' }}
-              />
+              {showVideo && videoUrl ? (
+                <video 
+                  className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 max-w-full max-h-full object-contain"
+                  controls
+                  autoPlay
+                  loop
+                  style={{ maxWidth: '100%', maxHeight: '100%' }}
+                >
+                  <source src={videoUrl} type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
+              ) : (
+                <img
+                  src={displayUrl}
+                  alt="Post preview"
+                  className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 max-w-full max-h-full object-contain"
+                  style={{ maxWidth: '100%', maxHeight: '100%' }}
+                />
+              )}
             </div>
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center gap-2">
             <ImagePlus className="h-12 w-12 text-gray-400" />
             <span className="text-sm text-gray-500">Click to upload image</span>
+          </div>
+        )}
+
+        {/* Toggle button - only show if video is available */}
+        {videoUrl && (
+          <div className="absolute top-4 right-4 flex gap-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent triggering file upload
+                setShowVideo(!showVideo);
+              }}
+              className="p-2 bg-white/80 hover:bg-white rounded-full shadow-md transition-colors"
+              title={showVideo ? "Show Image" : "Show Video"}
+            >
+              {showVideo ? (
+                <ImageIcon className="h-5 w-5 text-gray-700" />
+              ) : (
+                <Video className="h-5 w-5 text-gray-700" />
+              )}
+            </button>
           </div>
         )}
       </div>
