@@ -47,6 +47,10 @@ const PostSchema = new mongoose.Schema({
     video: {
       type: String,
       default: ''
+    },
+    showVideo: {
+      type: Boolean,
+      default: false
     }
   },
   text: {

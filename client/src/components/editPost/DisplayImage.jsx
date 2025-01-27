@@ -1,15 +1,40 @@
 import { ImagePlus, Video, Image as ImageIcon } from "lucide-react";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import api from "../../lib/api";
 
-const DisplayImage = ({ imageUrl, templateUrl, videoUrl, templatesUrls = [], onTemplateSelect, onImageUpload }) => {
+const DisplayImage = ({ imageUrl, templateUrl, videoUrl, templatesUrls = [], onTemplateSelect, onImageUpload, postId, showVideo: initialShowVideo = false }) => {
   const displayUrl = templateUrl || imageUrl;
   const fileInputRef = useRef(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [showVideo, setShowVideo] = useState(false);
+  const [showVideo, setShowVideo] = useState(initialShowVideo);
+
+  useEffect(() => {
+    setShowVideo(initialShowVideo);
+  }, [initialShowVideo]);
+
+  const handleToggleVideo = async () => {
+    try {
+      if (!postId) {
+        console.error('Post ID is required to toggle video state');
+        return;
+      }
+
+      const newShowVideo = !showVideo;
+      setShowVideo(newShowVideo);
+      
+      // Update showVideo in the database
+      await api.request('patch', `/posts/${postId}`, {
+        image: { showVideo: newShowVideo }
+      });
+    } catch (error) {
+      console.error('Error updating video state:', error);
+      // Revert state on error
+      setShowVideo(!showVideo);
+    }
+  };
 
   const handleImageClick = () => {
-    if (!showVideo) { // Only trigger file upload when in image mode
+    if (!showVideo) {
       fileInputRef.current?.click();
     }
   };
@@ -113,7 +138,7 @@ const DisplayImage = ({ imageUrl, templateUrl, videoUrl, templatesUrls = [], onT
             <button
               onClick={(e) => {
                 e.stopPropagation(); // Prevent triggering file upload
-                setShowVideo(!showVideo);
+                handleToggleVideo();
               }}
               className="p-2 bg-white/80 hover:bg-white rounded-full shadow-md transition-colors"
               title={showVideo ? "Show Image" : "Show Video"}

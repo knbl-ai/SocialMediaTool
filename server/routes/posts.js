@@ -12,6 +12,8 @@ import {
   generateText,
   generateTemplates
 } from '../controllers/postsController.js';
+import { ApiError } from '../utils/ApiError.js';
+import Post from '../models/Post.js';
 
 const router = express.Router();
 
@@ -87,5 +89,36 @@ router.post('/:id/generate-templates',
   validateRequest(schemas.id),
   generateTemplates
 );
+
+// Add new PATCH endpoint for updating specific fields
+router.patch('/:id', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { image } = req.body;
+
+    const post = await Post.findById(id);
+    if (!post) {
+      throw new ApiError(404, 'Post not found');
+    }
+
+    // Only update showVideo while preserving other image properties
+    if (image && 'showVideo' in image) {
+      const updatedPost = await Post.findByIdAndUpdate(
+        id,
+        { 
+          $set: { 
+            'image.showVideo': image.showVideo 
+          }
+        },
+        { new: true }
+      );
+      res.json(updatedPost);
+    } else {
+      throw new ApiError(400, 'Invalid update data');
+    }
+  } catch (error) {
+    next(error);
+  }
+});
 
 export default router;

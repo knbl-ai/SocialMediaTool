@@ -84,6 +84,23 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const register = async (email, password, name) => {
+    try {
+      setLoading(true);
+      const response = await api.register({ email, password, name });
+      setUser(response.user);
+      setError(null);
+      return response;
+    } catch (error) {
+      console.error('Registration error:', error);
+      const message = error.message || 'Registration failed';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const value = {
     user,
     loading,
@@ -91,6 +108,7 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     googleLogin,
+    register,
     checkAuthStatus
   };
 

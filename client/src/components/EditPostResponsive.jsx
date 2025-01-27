@@ -15,6 +15,7 @@ import api from '../lib/api';
 import MODELS from '../config/models';
 import PulsatingButton from "@/components/ui/pulsating-button";
 import PostNow from "./editPost/PostNow";
+// import { toast } from "react-hot-toast";
 
 
 const DEFAULT_STATE = {
@@ -203,30 +204,43 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
     updatePost
   ]);
 
-  const handleDimensionsChange = async (dimensionName, dimensionSize) => {
-    try {
-      // Update local state
-      setDimensions(dimensionName);
-      setImageSize(dimensionSize);
+  const handleDimensionsChange = async (newDimensions) => {
+    setDimensions(newDimensions);
+    
+    // Set image size based on dimensions
+    let newSize;
+    switch (newDimensions) {
+      case 'Square':
+        newSize = { width: 1280, height: 1280 };
+        break;
+      case 'Portrait':
+        newSize = { width: 1080, height: 1350 };
+        break;
+      case 'Landscape':
+        newSize = { width: 1350, height: 1080 };
+        break;
+      default:
+        newSize = { width: 1280, height: 1280 };
+    }
+    
+    setImageSize(newSize);
 
-      // Update post in database
-      const updatedPost = await updatePost(postId, {
-        ...currentPost,
-        image: {
-          ...currentPost?.image,
-          dimensions: dimensionName,
-          size: dimensionSize
-        }
-      });
-
-      setCurrentPost(updatedPost);
-      setLocalError(null);
-    } catch (error) {
-      console.error('Error updating dimensions:', error);
-      setLocalError('Failed to update dimensions');
-      // Revert local state on error
-      setDimensions(currentPost?.image?.dimensions || 'Square');
-      setImageSize(currentPost?.image?.size || DEFAULT_STATE.imageSize);
+    // Update post if it exists
+    if (currentPost) {
+      try {
+        const updatedPost = await updatePost(postId, {
+          ...currentPost,
+          image: {
+            ...currentPost.image,
+            dimensions: newDimensions,
+            size: newSize
+          }
+        });
+        setCurrentPost(updatedPost);
+      } catch (error) {
+        console.error('Error updating dimensions:', error);
+        setLocalError('Failed to update dimensions');
+      }
     }
   };
 
@@ -360,6 +374,66 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
     }
   };
 
+  const onGenerate = async () => {
+    try {
+      if (!videoPrompt || !selectedVideoModel) {
+        setLocalError('Please provide a prompt and select a model');
+        return;
+      }
+
+      setIsGeneratingVideo(true);
+      setLocalError(null);
+
+      // Ensure we have valid dimensions
+      if (!imageSize?.width || !imageSize?.height) {
+        setLocalError('Invalid image dimensions');
+        return;
+      }
+
+      const params = {
+        prompt: videoPrompt,
+        model: selectedVideoModel,
+        postId,
+        size: {
+          width: parseInt(imageSize.width),
+          height: parseInt(imageSize.height)
+        }
+      };
+
+      // If we have an image URL, use imageToVideo
+      if (currentPost?.image?.url) {
+        params.imageUrl = currentPost.image.url;
+      }
+
+      const response = await api.generateVideo(params);
+      
+      // Update the post with the new video URL
+      const updatedPost = await updatePost(postId, {
+        ...currentPost,
+        image: {
+          ...currentPost.image,
+          video: response.videoUrl
+        },
+        prompts: {
+          ...currentPost.prompts,
+          video: videoPrompt
+        },
+        models: {
+          ...currentPost.models,
+          video: selectedVideoModel
+        }
+      });
+
+      setCurrentPost(updatedPost);
+      setLocalError(null);
+    } catch (error) {
+      console.error('Error generating video:', error);
+      setLocalError(error.message || 'Failed to generate video');
+    } finally {
+      setIsGeneratingVideo(false);
+    }
+  };
+
   return (
     <Modal show={show} onClose={handleClose}>
       <div className="flex flex-col h-[90vh] w-full">
@@ -418,8 +492,11 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
               <DisplayImage 
                 imageUrl={currentPost?.image?.url}
                 templateUrl={currentPost?.image?.template}
+                videoUrl={currentPost?.image?.video}
                 templatesUrls={currentPost?.templatesUrls || []}
                 onTemplateSelect={handleTemplateSelect}
+                showVideo={currentPost?.image?.showVideo}
+                postId={postId}
                 onImageUpload={async (imageUrl, templateUrl) => {
                   try {
                     // Delete old templates if they exist
@@ -610,50 +687,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                   value={videoPrompt}
                   onChange={setVideoPrompt}
                   isLoading={isGeneratingVideo}
-                  onGenerate={async () => {
-                    if (!videoPrompt || !selectedVideoModel) {
-                      setLocalError('Please provide all required fields for video generation');
-                      return;
-                    }
-                    try {
-                      setIsGeneratingVideo(true);
-                      
-                      // Generate video with the prompt
-                      const result = await api.generateVideo({
-                        prompt: videoPrompt,
-                        model: selectedVideoModel,
-                        imageUrl: currentPost?.image?.url || '',
-                        size: currentPost?.image?.size || { width: 1024, height: 1024 },
-                        postId: postId
-                      });
-
-                      // Update post with the generated video URL
-                      const updatedPost = await updatePost(postId, {
-                        ...currentPost,
-                        image: {
-                          ...currentPost?.image,
-                          video: result.videoUrl
-                        },
-                        prompts: {
-                          ...currentPost?.prompts,
-                          video: videoPrompt
-                        },
-                        models: {
-                          ...currentPost?.models,
-                          video: selectedVideoModel
-                        }
-                      });
-
-                      setCurrentPost(updatedPost);
-                      setImageTemplate(result.videoUrl); // Update template to show video
-                      setLocalError(null);
-                    } catch (error) {
-                      console.error('Error generating video:', error);
-                      setLocalError(error.message || 'Failed to generate video');
-                    } finally {
-                      setIsGeneratingVideo(false);
-                    }
-                  }}
+                  onGenerate={onGenerate}
                 />
 
                 {/* Text Generation */}
