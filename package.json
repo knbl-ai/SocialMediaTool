@@ -1,0 +1,5 @@
+{
+  "scripts": {
+    "test:twitter": "node --experimental-json-modules server/test/testTwitter.js"
+  }
+} 
