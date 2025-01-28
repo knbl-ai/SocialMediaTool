@@ -49,7 +49,7 @@ export function SelectTemplate({
           : 'hover:scale-[1.02]'
       }`}
     >
-      <div className="aspect-square relative bg-gray-50 flex items-center justify-center">
+      <div className="aspect-square relative bg-gray-50 dark:bg-gray-800 flex items-center justify-center">
         {originalImageUrl ? (
           <div className="absolute inset-0 flex items-center justify-center p-2">
             <div className="relative w-full h-full">
@@ -61,7 +61,7 @@ export function SelectTemplate({
             </div>
           </div>
         ) : (
-          <span className="text-gray-500 font-medium">No Template</span>
+          <span className="text-gray-500 dark:text-gray-400 font-medium">No Template</span>
         )}
       </div>
     </div>
@@ -70,7 +70,7 @@ export function SelectTemplate({
   const hasTemplates = templatesUrls && templatesUrls.length > 0;
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col bg-background">
       <div className="space-y-4 overflow-y-auto px-3 py-3 h-[60vh]">
         <NoTemplateBlock />
 
@@ -84,7 +84,7 @@ export function SelectTemplate({
                 : 'hover:scale-[1.02]'
             }`}
           >
-            <div className="aspect-square relative bg-gray-50">
+            <div className="aspect-square relative bg-gray-50 dark:bg-gray-800">
               <div className="absolute inset-0 flex items-center justify-center p-2">
                 <div className="relative w-full h-full">
                   <img
@@ -103,13 +103,13 @@ export function SelectTemplate({
           <Input
             type="text"
             placeholder="Title"
-            className="w-full outline-none"
+            className="w-full outline-none bg-background"
             value={title}
             onChange={(e) => onTitleChange?.(e.target.value)}
           />
           <Textarea
             placeholder="Subtitle"
-            className="w-full h-[11vh] outline-none"
+            className="w-full h-[11vh] outline-none bg-background"
             value={subtitle}
             onChange={(e) => onSubtitleChange?.(e.target.value)}
           />

@@ -94,12 +94,12 @@ const DisplayImage = ({ imageUrl, templateUrl, videoUrl, templatesUrls = [], onT
         onChange={handleFileChange}
       />
       <div 
-        className="flex-1 flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity bg-gray-50 relative"
+        className="flex-1 flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity bg-gray-50 dark:bg-gray-800 relative"
         onClick={handleImageClick}
       >
         {isUploading ? (
           <div className="flex items-center justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-gray-100"></div>
           </div>
         ) : displayUrl ? (
           <div className="absolute inset-0 flex items-center justify-center p-4">
@@ -127,8 +127,8 @@ const DisplayImage = ({ imageUrl, templateUrl, videoUrl, templatesUrls = [], onT
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center gap-2">
-            <ImagePlus className="h-12 w-12 text-gray-400" />
-            <span className="text-sm text-gray-500">Click to upload image</span>
+            <ImagePlus className="h-12 w-12 text-gray-400 dark:text-gray-500" />
+            <span className="text-sm text-gray-500 dark:text-gray-400">Click to upload image</span>
           </div>
         )}
 
@@ -140,13 +140,13 @@ const DisplayImage = ({ imageUrl, templateUrl, videoUrl, templatesUrls = [], onT
                 e.stopPropagation(); // Prevent triggering file upload
                 handleToggleVideo();
               }}
-              className="p-2 bg-white/80 hover:bg-white rounded-full shadow-md transition-colors"
+              className="p-2 bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-700 rounded-full shadow-md transition-colors"
               title={showVideo ? "Show Image" : "Show Video"}
             >
               {showVideo ? (
-                <ImageIcon className="h-5 w-5 text-gray-700" />
+                <ImageIcon className="h-5 w-5 text-gray-700 dark:text-gray-300" />
               ) : (
-                <Video className="h-5 w-5 text-gray-700" />
+                <Video className="h-5 w-5 text-gray-700 dark:text-gray-300" />
               )}
             </button>
           </div>

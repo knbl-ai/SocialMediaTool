@@ -140,7 +140,7 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
     if (isToday) {
       return 'bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500';
     }
-    return 'bg-gray-50 hover:bg-gray-100';
+    return 'bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700';
   };
 
   return (
@@ -158,7 +158,7 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
             onClick={hasPosts ? handleExistingPostClick : handleEmptyCellClick}
             className={`
               w-full h-full rounded-xl cursor-pointer
-              ${!isToday ? getCellBackground() : 'bg-white'}
+              ${!isToday ? getCellBackground() : 'bg-white dark:bg-gray-900'}
               transition-all duration-200
               ${isLoading ? 'opacity-50' : ''}
               relative
@@ -167,8 +167,8 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
           >
             {/* Loading Spinner */}
             {isLoading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-white/50 z-20">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900"></div>
+              <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-gray-900/50 z-20">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900 dark:border-gray-100"></div>
               </div>
             )}
             
@@ -179,8 +179,8 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
                 ${hasPosts 
                   ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white' 
                   : isToday 
-                    ? 'bg-blue-100 text-blue-600' 
-                    : 'text-gray-600'
+                    ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300' 
+                    : 'text-gray-600 dark:text-gray-400'
                 }
               `}>
                 {day}
@@ -211,8 +211,8 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
                           )}
                         </div>
                       ) : (
-                        <div className="w-full h-full bg-gray-100 rounded-xl flex items-center justify-center">
-                          <span className="text-gray-400 text-sm">No image</span>
+                        <div className="w-full h-full bg-gray-100 dark:bg-gray-700 rounded-xl flex items-center justify-center">
+                          <span className="text-gray-400 dark:text-gray-500">No image</span>
                         </div>
                       )}
                     </div>
@@ -221,8 +221,8 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
                     {currentPost.text?.post && (
                       <div className="absolute inset-x-0 bottom-0 z-10">
                         {/* Preview text */}
-                        <div className={`p-2 bg-gradient-to-t from-white via-white/95 to-white/80 transition-opacity duration-300 group-hover:opacity-0 group-hover:invisible ${currentPost.status === 'published' ? 'from-gray-100 via-gray-100/95 to-gray-100/80' : ''}`}>
-                          <p className={`text-xs line-clamp-2 font-medium ${currentPost.status === 'published' ? 'text-gray-600' : 'text-gray-800'}`}>
+                        <div className={`p-2 bg-gradient-to-t from-white via-white/95 to-white/80 dark:from-gray-900 dark:via-gray-900/95 dark:to-gray-900/80 transition-opacity duration-300 group-hover:opacity-0 group-hover:invisible ${currentPost.status === 'published' ? 'from-gray-100 via-gray-100/95 to-gray-100/80 dark:from-gray-800 dark:via-gray-800/95 dark:to-gray-800/80' : ''}`}>
+                          <p className={`text-xs line-clamp-2 font-medium ${currentPost.status === 'published' ? 'text-gray-600 dark:text-gray-400' : 'text-gray-800 dark:text-gray-200'}`}>
                             {currentPost.text.post}
                           </p>
                         </div>
@@ -256,8 +256,8 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
               z-[100]
             "
           >
-            <div className="bg-white shadow-xl p-3 rounded-b-xl border-t border-gray-100">
-              <p className="text-xs text-gray-800 font-medium">
+            <div className="bg-white dark:bg-gray-900 shadow-xl p-3 rounded-b-xl border-t border-gray-100 dark:border-gray-700">
+              <p className="text-xs text-gray-800 dark:text-gray-200 font-medium">
                 {currentPost.text.post}
               </p>
             </div>

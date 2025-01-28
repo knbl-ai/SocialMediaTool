@@ -3,19 +3,29 @@ import { FaFacebook, FaInstagram, FaLinkedin, FaTiktok, FaXTwitter } from 'react
 import ConnectionModal from './ConnectionModal';
 import api from '@/lib/api';
 import { useToast } from "@/components/ui/use-toast";
+import { useTheme } from "@/components/theme/theme-provider";
 
 const ConnectedPlatforms = ({ accountId }) => {
   const [selectedPlatform, setSelectedPlatform] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [connections, setConnections] = useState({});
   const { toast } = useToast();
+  const { theme } = useTheme();
 
   const platforms = [
     { icon: FaInstagram, color: '#E4405F', name: 'Instagram' },
     { icon: FaFacebook, color: '#1877F2', name: 'Facebook' },
     { icon: FaLinkedin, color: '#0A66C2', name: 'LinkedIn' },
-    {icon: FaTiktok, color: '#000000', name: 'TikTok'},
-    { icon: FaXTwitter, color: '#000000', name: 'X' }
+    { 
+      icon: FaTiktok, 
+      color: theme === 'dark' ? '#FFFFFF' : '#000000', 
+      name: 'TikTok'
+    },
+    { 
+      icon: FaXTwitter, 
+      color: theme === 'dark' ? '#FFFFFF' : '#000000', 
+      name: 'X'
+    }
   ];
 
   useEffect(() => {
