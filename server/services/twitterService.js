@@ -249,16 +249,13 @@ class TwitterService {
 }
 
 // Test function
-export async function testTwitterService() {
+export async function testTwitterService(apiKey, apiSecret, accessToken, accessTokenSecret) {
   try {
-    // These are your keys from the Twitter Developer Portal
-    const API_KEY = 'spUI0ZSdBxW8ekmcdLjnnSlKF';  // Consumer Key
-    const API_SECRET = 'y81rvA0IpekhWY5SFbj6gqBqtWeKE6tn9dtgZBvKhtrcd1mrE3';  // Consumer Secret
-    const ACCESS_TOKEN = '1884183363730239488-4Ityp5Lq08mNjVU5UK9EP6saG6AE1D';  // OAuth 1.0a Access Token
-    const ACCESS_TOKEN_SECRET = 'Bnmyfk9qyxTXIVuBKYCJM3BJKwRbqyLmt2l1TrlY2RLDC';  // OAuth 1.0a Access Token Secret
+    if (!apiKey || !apiSecret || !accessToken || !accessTokenSecret) {
+      throw new Error('Missing required Twitter API credentials');
+    }
 
-    const twitter = new TwitterService(API_KEY, API_SECRET, ACCESS_TOKEN, ACCESS_TOKEN_SECRET);
-
+    const twitter = new TwitterService(apiKey, apiSecret, accessToken, accessTokenSecret);
     console.log('Service initialized with OAuth 1.0a');
 
     // Upload an image and get the media ID

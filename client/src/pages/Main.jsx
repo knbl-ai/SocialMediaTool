@@ -6,6 +6,7 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import NewAccountButton from '../components/NewAccountButton';
 import AccountCard from '../components/AccountCard';
+import { ThemeToggle } from '../components/theme/theme-toggle';
 import api from '../lib/api';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -98,16 +99,19 @@ const Main = () => {
               {user.email}
             </span>
             <div className="flex flex-col items-center">
-              <h1 className="text-2xl font-bold">SMAPP</h1>
+              <h1 className="text-2xl font-bold">iGentity</h1>
               <h3 className="text-m text-muted-foreground">Social Media App</h3>
             </div>
-            <Button 
-              variant="outline" 
-              onClick={handleLogout}
-              disabled={loading || authLoading}
-            >
-              Logout
-            </Button>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <Button 
+                variant="outline" 
+                onClick={handleLogout}
+                disabled={loading || authLoading}
+              >
+                Logout
+              </Button>
+            </div>
           </div>
 
           <div className="flex justify-center items-center mb-8">

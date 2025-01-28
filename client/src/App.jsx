@@ -5,20 +5,30 @@ import { PlatformProvider } from './context/PlatformContext';
 import { PostsProvider } from './context/PostsContext';
 import AppRoutes from './AppRoutes';
 import './styles/animations.css';
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/toaster";
+import { ThemeProvider } from "@/components/theme/theme-provider";
+
+const queryClient = new QueryClient();
 
 function App() {
   return (
-    <BrowserRouter>
-      <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
-        <AuthProvider>
-          <PlatformProvider>
-            <PostsProvider>
-              <AppRoutes />
-            </PostsProvider>
-          </PlatformProvider>
-        </AuthProvider>
-      </GoogleOAuthProvider>
-    </BrowserRouter>
+    <ThemeProvider defaultTheme="system" storageKey="app-theme">
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+            <AuthProvider>
+              <PlatformProvider>
+                <PostsProvider>
+                  <AppRoutes />
+                </PostsProvider>
+              </PlatformProvider>
+            </AuthProvider>
+          </GoogleOAuthProvider>
+          <Toaster />
+        </BrowserRouter>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
 
