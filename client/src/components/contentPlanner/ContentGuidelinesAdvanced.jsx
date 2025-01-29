@@ -4,6 +4,7 @@ import TooltipLabel from '../ui/tooltip-label'
 import PDFButton from './PDFButton'
 import GoogleDocButton from './GoogleDocButton'
 import WebButton from './WebButton'
+import OptimizeGuidelines from './OptimizeGuidelines'
 
 export default function ContentGuidelinesAdvanced({ contentPlanner, contentPlannerTooltips, handleFieldChange }) {
   const handleDocSuccess = (textGuidelines) => {
@@ -12,15 +13,25 @@ export default function ContentGuidelinesAdvanced({ contentPlanner, contentPlann
     }
   }
 
+  const handleOptimize = (optimizedGuidelines) => {
+    handleFieldChange('textGuidelines', optimizedGuidelines);
+  }
+
   return (
     <div className="flex flex-col h-full relative">
-      <div>
+      <div className="relative">
         <TooltipLabel 
           className="text-lime-500" 
           tooltip={contentPlannerTooltips.contentGuidelines}
         >
           Guidelines
         </TooltipLabel>
+        <div className="absolute left-[92px] -top-[9px]">
+          <OptimizeGuidelines 
+            accountId={contentPlanner.accountId}
+            onOptimize={handleOptimize}
+          />
+        </div>
         <div className="absolute right-0 -top-3 flex gap-2">
           <WebButton 
             accountId={contentPlanner.accountId}

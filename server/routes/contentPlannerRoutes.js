@@ -1,6 +1,8 @@
 import express from 'express';
 import { auth } from '../middleware/auth.js';
 import * as contentPlannerService from '../services/contentPlannerService.js';
+import { generateText } from '../services/llmService.js';
+import { optimizeGuidelinesPrompt } from '../services/promptsService.js';
 
 const router = express.Router();
 
@@ -40,6 +42,39 @@ router.post('/:accountId/generate', auth, async (req, res) => {
     res.json(result);
   } catch (error) {
     res.status(500).json({ message: 'Error generating content plan', error: error.message });
+  }
+});
+
+// Optimize guidelines
+router.post('/:accountId/optimize-guidelines', auth, async (req, res) => {
+  try {
+    const { accountId } = req.params;
+    const contentPlanner = await contentPlannerService.getContentPlannerByAccountId(accountId);
+    
+    if (!contentPlanner) {
+      return res.status(404).json({ message: 'Content planner not found' });
+    }
+
+    const prompt = optimizeGuidelinesPrompt({ 
+      guidelines: contentPlanner.textGuidelines 
+    });
+
+    const optimizedGuidelines = await generateText({
+      topic: prompt.prompt,
+      system: prompt.system,
+      maxTokens: 5000,
+      responseFormat: 'text'  // We want plain text, not JSON
+    });
+
+    const updatedContentPlanner = await contentPlannerService.updateContentPlanner(
+      accountId,
+      { textGuidelines: optimizedGuidelines }
+    );
+
+    res.json(updatedContentPlanner);
+  } catch (error) {
+    console.error('Error optimizing guidelines:', error);
+    res.status(500).json({ message: 'Error optimizing guidelines', error: error.message });
   }
 });
 

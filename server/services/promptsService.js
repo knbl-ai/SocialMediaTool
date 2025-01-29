@@ -179,3 +179,19 @@ Generate prompts that are:
         system: `You are an expert at crafting image generation prompts. Convert content ideas into detailed visual descriptions. Focus on composition, style, lighting, and mood. Output a single descriptive string without explanations or formatting. Avoid technical jargon and keep descriptions clear and specific.`,
     }
 }
+
+export const optimizeGuidelinesPrompt = ({ guidelines }) => {
+    return {
+        prompt: `Given the following social media guideline:
+
+"${guidelines}"
+
+Optimize it into a structured content plan that includes:
+
+Post Topics – A series of engaging post ideas based on the guideline.
+Captions & Hashtags – Creative caption ideas and relevant hashtags.
+Engagement Strategy – Best practices for creating engaging posts, such as storytelling, interactive elements, and user participation techniques.
+Ensure the plan is concise, actionable, and aligned with social media best practices`,
+        system: `You are a social media strategist. Your task is to turn broad guidelines into clear, structured instructions for creating engaging social media content. Provide specific, creative, and actionable steps to maximize audience engagement.`,
+    }
+}
