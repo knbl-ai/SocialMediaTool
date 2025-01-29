@@ -82,7 +82,8 @@ const Auth = () => {
   return (
     <div className="flex-1 flex items-center justify-center  flex-col">
       <HyperText className="text-4xl">iGentity</HyperText>
-      <HyperText className="text-xl text-gray-500">Social Media App</HyperText>
+      <HyperText className="text-xl text-gray-500">Next generation of social presence
+      </HyperText>
       <div className='grid grid-cols-3 gap-1'>
       <WordRotate
       className="text-4xl font-bold text-black dark:text-white pt-[20vh] pe-[5vw]"

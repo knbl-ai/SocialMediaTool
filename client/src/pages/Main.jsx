@@ -100,7 +100,8 @@ const Main = () => {
             </span>
             <div className="flex flex-col items-center">
               <h1 className="text-2xl font-bold">iGentity</h1>
-              <h3 className="text-m text-muted-foreground">Social Media App</h3>
+              <h3 className="text-m text-muted-foreground">Next generation of social presence
+              </h3>
             </div>
             <div className="flex items-center gap-2">
               <ThemeToggle />

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaFacebook, FaInstagram, FaLinkedin, FaTiktok, FaXTwitter } from 'react-icons/fa6';
 import ConnectionModal from './ConnectionModal';
+import XConnectionModal from './XConnectionModal';
 import api from '@/lib/api';
 import { useToast } from "@/components/ui/use-toast";
 import { useTheme } from "@/components/theme/theme-provider";
@@ -8,6 +9,7 @@ import { useTheme } from "@/components/theme/theme-provider";
 const ConnectedPlatforms = ({ accountId }) => {
   const [selectedPlatform, setSelectedPlatform] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isXModalOpen, setIsXModalOpen] = useState(false);
   const [connections, setConnections] = useState({});
   const { toast } = useToast();
   const { theme } = useTheme();
@@ -64,12 +66,18 @@ const ConnectedPlatforms = ({ accountId }) => {
       });
       return;
     }
-    setSelectedPlatform(platform);
-    setIsModalOpen(true);
+    
+    if (platform.name === 'X') {
+      setIsXModalOpen(true);
+    } else {
+      setSelectedPlatform(platform);
+      setIsModalOpen(true);
+    }
   };
 
   const handleModalClose = () => {
     setIsModalOpen(false);
+    setIsXModalOpen(false);
     fetchConnections(); // Refresh connections after modal closes
   };
 
@@ -127,6 +135,11 @@ const ConnectedPlatforms = ({ accountId }) => {
         isOpen={isModalOpen} 
         onClose={handleModalClose}
         platform={selectedPlatform}
+        accountId={accountId}
+      />
+      <XConnectionModal
+        isOpen={isXModalOpen}
+        onClose={handleModalClose}
         accountId={accountId}
       />
     </div>

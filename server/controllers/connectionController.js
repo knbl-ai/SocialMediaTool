@@ -22,23 +22,37 @@ export const getConnection = async (req, res) => {
 export const updateConnection = async (req, res) => {
   try {
     const { accountId } = req.params;
-    const { platform, webhookUrl, pageId } = req.body;
+    const requestData = req.body;
+    let updateData = {};
 
     if (!accountId || !mongoose.Types.ObjectId.isValid(accountId)) {
       return res.status(400).json({ error: 'Invalid account ID' });
     }
 
-    if (!platform || !webhookUrl || !pageId) {
-      return res.status(400).json({ error: 'Missing required fields' });
+    // Check if this is an X platform update
+    if (requestData.X) {
+      const { apiKey, apiSecret, accessToken, accessTokenSecret } = requestData.X;
+      if (!apiKey || !apiSecret || !accessToken || !accessTokenSecret) {
+        return res.status(400).json({ error: 'Missing required fields for X platform' });
+      }
+      updateData = requestData; // Use the X data as is
+    } 
+    // Standard platform update
+    else if (requestData.platform) {
+      const { platform, webhookUrl, pageId } = requestData;
+      if (!platform || !webhookUrl || !pageId) {
+        return res.status(400).json({ error: 'Missing required fields' });
+      }
+      updateData = {
+        [`${platform}`]: { webhookUrl, pageId }
+      };
+    } else {
+      return res.status(400).json({ error: 'Invalid connection data format' });
     }
-
-    const update = {
-      [`${platform}`]: { webhookUrl, pageId }
-    };
 
     const connection = await Connection.findOneAndUpdate(
       { accountId },
-      update,
+      updateData,
       { upsert: true, new: true }
     );
 

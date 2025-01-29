@@ -5,6 +5,14 @@ const platformConnectionSchema = {
   pageId: String
 };
 
+const xConnectionSchema = {
+  webhookUrl: String,
+  apiKey: String,
+  apiSecret: String,
+  accessToken: String,
+  accessTokenSecret: String
+};
+
 const connectionSchema = new mongoose.Schema({
   accountId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -16,9 +24,11 @@ const connectionSchema = new mongoose.Schema({
   Facebook: platformConnectionSchema,
   LinkedIn: platformConnectionSchema,
   TikTok: platformConnectionSchema,
-  X: platformConnectionSchema
+  X: xConnectionSchema
 }, { timestamps: true });
 
 const Connection = mongoose.model('Connection', connectionSchema);
 
 export default Connection; 
+
+
