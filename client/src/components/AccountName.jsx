@@ -6,8 +6,13 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 const AccountName = ({ account, onNameUpdate }) => {
   const [name, setName] = useState('');
-  const [isDirty, setIsDirty] = useState(false);
+  const nameRef = useRef(name);
   const timeoutRef = useRef(null);
+
+  // Update ref when name changes
+  useEffect(() => {
+    nameRef.current = name;
+  }, [name]);
 
   useEffect(() => {
     if (account?.name) {
@@ -19,49 +24,35 @@ const AccountName = ({ account, onNameUpdate }) => {
 
   const fileInputRef = useRef(null);
 
-  const updateName = useCallback((value) => {
-    if (onNameUpdate) {
-      onNameUpdate(value);
-    }
-  }, [onNameUpdate]);
+  // Debounced update effect
+  useEffect(() => {
+    if (!account?._id) return;
 
-  const handleNameChange = (e) => {
-    const newName = e.target.value;
-    setName(newName);
-    setIsDirty(true);
+    const hasChanges = () => {
+      return nameRef.current !== account.name;
+    };
 
-    // Clear any existing timeout
+    if (!hasChanges()) return;
+
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
 
-    // Set new timeout
     timeoutRef.current = setTimeout(() => {
-      if (isDirty) {
-        updateName(newName);
-        setIsDirty(false);
+      if (onNameUpdate) {
+        onNameUpdate(nameRef.current);
       }
     }, 500);
-  };
 
-  // Cleanup timeout on unmount
-  useEffect(() => {
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
     };
-  }, []);
+  }, [name, account, onNameUpdate]);
 
-  // Handle blur event to ensure update happens
-  const handleBlur = () => {
-    if (isDirty) {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      updateName(name);
-      setIsDirty(false);
-    }
+  const handleNameChange = (e) => {
+    setName(e.target.value);
   };
 
   const handleLogoClick = () => {
@@ -129,7 +120,6 @@ const AccountName = ({ account, onNameUpdate }) => {
           type="text"
           value={name}
           onChange={handleNameChange}
-          onBlur={handleBlur}
           placeholder="Account Name"
           className="text-3xl font-bold bg-transparent border-none focus:border-none focus:outline-none focus:ring-0 p-0 h-auto text-center w-60
                    relative

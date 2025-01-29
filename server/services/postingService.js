@@ -18,6 +18,7 @@ class PostingService {
       }
 
       let requestData;
+      let publishResult;
 
       // Handle X platform differently
       if (platform === 'X') {
@@ -33,26 +34,26 @@ class PostingService {
         // Prepare request data for X platform
         requestData = {
           id: "no_id", // Special case for X platform
-          imageUploadId, // Use media ID instead of URL
+          imageUrl: imageUploadId, // Use media ID instead of URL
           platform: platform.toLowerCase(),
           content: postData.content
         };
 
-        if (!webhookUrl) return {
-          success: false,
-          platform,
-          response: 'No webhook URL found'
+        if (!webhookUrl) {
+          publishResult = {
+            success: false,
+            platform,
+            response: 'No webhook URL found'
+          };
+        } else {
+          const response = await axios.post(webhookUrl, requestData);
+          publishResult = {
+            success: true,
+            platform,
+            response: response.data
+          };
         }
-
-        const response = await axios.post(webhookUrl, requestData);
-        return {
-          success: true,
-          platform,
-          response: response.data
-        };
-      }
-
-      else {
+      } else {
         const { webhookUrl, pageId } = platformConnection;
         
         requestData = {
@@ -62,19 +63,30 @@ class PostingService {
           content: postData.content
         };
 
-        if (!webhookUrl) return {
-          success: false,
-          platform,
-          response: 'No webhook URL found'
+        if (!webhookUrl) {
+          publishResult = {
+            success: false,
+            platform,
+            response: 'No webhook URL found'
+          };
+        } else {
+          const response = await axios.post(webhookUrl, requestData);
+          publishResult = {
+            success: true,
+            platform,
+            response: response.data
+          };
         }
-
-        const response = await axios.post(webhookUrl, requestData);
-        return {
-          success: true,
-          platform,
-          response: response.data
-        };
       }
+
+      // Update post status in database if publication was successful
+      if (publishResult.success && postData._id) {
+        await Post.findByIdAndUpdate(postData._id, {
+          $set: { status: 'published' }
+        });
+      }
+
+      return publishResult;
     } catch (error) {
       console.error(`Error publishing to ${platform}:`, error);
       throw new Error(`Failed to publish to ${platform}: ${error.message}`);

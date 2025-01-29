@@ -1,8 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
-import debounce from 'lodash/debounce';
 import axios from 'axios';
-
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -11,6 +9,19 @@ const AccountOverview = ({ account, onUpdate }) => {
   const [accountReview, setAccountReview] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
+  const websiteUrlRef = useRef(websiteUrl);
+  const accountReviewRef = useRef(accountReview);
+  const timeoutRef = useRef(null);
+
+  // Update refs when values change
+  useEffect(() => {
+    websiteUrlRef.current = websiteUrl;
+  }, [websiteUrl]);
+
+  useEffect(() => {
+    accountReviewRef.current = accountReview;
+  }, [accountReview]);
+
   useEffect(() => {
     if (account) {
       setWebsiteUrl(account.websiteUrl || '');
@@ -18,34 +29,84 @@ const AccountOverview = ({ account, onUpdate }) => {
     }
   }, [account]);
 
-  const debouncedUpdate = useCallback(
-    debounce(async (field, value) => {
+  // Debounced update effect for website URL
+  useEffect(() => {
+    if (!account?._id) return;
+
+    const hasUrlChanges = () => {
+      return websiteUrlRef.current !== account.websiteUrl;
+    };
+
+    if (!hasUrlChanges()) return;
+
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    timeoutRef.current = setTimeout(async () => {
       try {
         const response = await axios.patch(
           `${API_URL}/api/accounts/${account._id}`,
-          { [field]: value },
+          { websiteUrl: websiteUrlRef.current },
           { withCredentials: true }
         );
         if (onUpdate) {
           onUpdate(response.data);
         }
       } catch (error) {
-        console.error('Error updating account:', error);
+        console.error('Error updating website URL:', error);
       }
-    }, 500),
-    [account?._id, onUpdate]
-  );
+    }, 500);
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [websiteUrl, account, onUpdate]);
+
+  // Debounced update effect for account review
+  useEffect(() => {
+    if (!account?._id) return;
+
+    const hasReviewChanges = () => {
+      return accountReviewRef.current !== account.accountReview;
+    };
+
+    if (!hasReviewChanges()) return;
+
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    timeoutRef.current = setTimeout(async () => {
+      try {
+        const response = await axios.patch(
+          `${API_URL}/api/accounts/${account._id}`,
+          { accountReview: accountReviewRef.current },
+          { withCredentials: true }
+        );
+        if (onUpdate) {
+          onUpdate(response.data);
+        }
+      } catch (error) {
+        console.error('Error updating account review:', error);
+      }
+    }, 500);
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [accountReview, account, onUpdate]);
 
   const handleWebsiteChange = (e) => {
-    const value = e.target.value;
-    setWebsiteUrl(value);
-    debouncedUpdate('websiteUrl', value);
+    setWebsiteUrl(e.target.value);
   };
 
   const handleReviewChange = (e) => {
-    const value = e.target.value;
-    setAccountReview(value);
-    debouncedUpdate('accountReview', value);
+    setAccountReview(e.target.value);
   };
 
   const handleAnalyze = async () => {
