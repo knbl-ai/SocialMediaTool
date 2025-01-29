@@ -7,7 +7,7 @@ import TargetAudience from './contentPlanner/TargetAudience';
 import PlatformSelector from './contentPlanner/PlatformSelector';
 import LanguegeSelector from './contentPlanner/LanguegeSelector';
 import UTCtime from './contentPlanner/UTCtime';
-import { toneOptions, frequencyOptions, templateOptions, postingTimeOptions } from './contentPlanner/options';
+import { toneOptions, frequencyOptions, templateOptions, postingTimeOptions, getDisplayTime, getUTCTime } from './contentPlanner/options';
 import MODELS from '../config/models';
 import { contentPlannerTooltips } from '../config/tooltips';
 import HyperText from './ui/hyper-text';
@@ -203,7 +203,10 @@ export default function ContentPlanner() {
               <div className="w-full">
                 <SelectField
                   label="Posting Time"
-                  options={postingTimeOptions}
+                  options={postingTimeOptions.map(option => ({
+                    value: option.value,
+                    label: `${getDisplayTime(option.value, contentPlanner.utcOffset)}:00`
+                  }))}
                   placeholder="Select time"
                   labelClass="text-lime-500"
                   value={contentPlanner.postingTime.toString()}

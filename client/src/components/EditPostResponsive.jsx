@@ -51,6 +51,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
   const templateSelectionTimeoutRef = useRef(null);
   const currentPostRef = useRef(currentPost);
 
+
   // Update ref when currentPost changes
   useEffect(() => {
     currentPostRef.current = currentPost;
@@ -489,7 +490,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                   />
                 </div>
                 <div className="flex items-center justify-center ps-2 pe-2 ms-3">
-                  <PostTimeSelector time={selectedTime} onChange={setSelectedTime} />
+                  <PostTimeSelector time={selectedTime} onChange={setSelectedTime} accountId={accountId} />
                 </div>
               </div>
             </div>
