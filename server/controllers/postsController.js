@@ -232,3 +232,27 @@ export const generateTemplates = async (req, res) => {
     throw new ApiError(500, `Failed to generate templates: ${error.message}`);
   }
 };
+
+// Clear all posts for a month
+export const clearMonthPosts = async (req, res, next) => {
+  try {
+    const { accountId } = req.params;
+    const { startDate, endDate } = req.body;
+
+    // Delete all posts for the specified month and account
+    const result = await Post.deleteMany({
+      accountId,
+      datePost: {
+        $gte: startDate,
+        $lte: endDate
+      }
+    });
+
+    res.json({
+      message: 'Posts cleared successfully',
+      deletedCount: result.deletedCount
+    });
+  } catch (error) {
+    next(error);
+  }
+};

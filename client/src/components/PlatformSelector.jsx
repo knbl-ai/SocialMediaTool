@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { FaFacebook, FaInstagram, FaLinkedin, FaTiktok, FaXTwitter } from 'react-icons/fa6';
 import { useTheme } from "@/components/theme/theme-provider";
+
+const PLATFORM_STORAGE_KEY = 'selectedPlatform';
 
 const PlatformSelector = ({ currentPlatform, onPlatformSelect }) => {
   const { theme } = useTheme();
@@ -27,10 +29,34 @@ const PlatformSelector = ({ currentPlatform, onPlatformSelect }) => {
     }
   ];
 
+  // Load saved platform from localStorage on mount and when currentPlatform changes
+  useEffect(() => {
+    const savedPlatform = localStorage.getItem(PLATFORM_STORAGE_KEY);
+    
+    // If there's a saved platform and it's different from current
+    if (savedPlatform && savedPlatform !== currentPlatform) {
+      console.log('Loading saved platform:', savedPlatform);
+      onPlatformSelect(savedPlatform);
+    } 
+    // If there's no saved platform and no current platform, set default
+    else if (!savedPlatform && !currentPlatform) {
+      const defaultPlatform = platforms[0].name;
+      console.log('Setting default platform:', defaultPlatform);
+      localStorage.setItem(PLATFORM_STORAGE_KEY, defaultPlatform);
+      onPlatformSelect(defaultPlatform);
+    }
+    // If there's no saved platform but there is a current platform, save it
+    else if (!savedPlatform && currentPlatform) {
+      console.log('Saving current platform:', currentPlatform);
+      localStorage.setItem(PLATFORM_STORAGE_KEY, currentPlatform);
+    }
+  }, [currentPlatform, onPlatformSelect, platforms]); // Add platforms to dependencies
+
   const handleClick = (e, platformName) => {
     e.stopPropagation();
     e.preventDefault();
-    console.log('Platform clicked:', platformName);
+    // Save selected platform to localStorage
+    localStorage.setItem(PLATFORM_STORAGE_KEY, platformName);
     onPlatformSelect(platformName);
   };
 

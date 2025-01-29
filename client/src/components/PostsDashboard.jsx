@@ -4,18 +4,33 @@ import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import DayCell from './DayCell';
 import PlatformSelector from './PlatformSelector';
+import ClearMonthPosts from './ClearMonthPosts';
 import { usePlatform } from '../context/PlatformContext';
 import { usePosts as usePostsHook } from '../hooks/usePosts';
 import { usePosts as usePostsContext } from '../context/PostsContext';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { Calendar } from '../components/ui/calendar';
 
+const PLATFORM_STORAGE_KEY = 'selectedPlatform';
+
+const monthNames = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
+
+const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
 const PostsDashboard = ({ accountId, onMonthChange }) => {
+  // All useState hooks
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedPlatform, setSelectedPlatform] = useState(null);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // All context hooks
   const { refreshTrigger } = usePostsContext();
   const { getAccountPlatform, setAccountPlatform } = usePlatform();
   const currentPlatform = getAccountPlatform(accountId);
+  
+  // Posts hook
   const { 
     loading, 
     error, 
@@ -25,7 +40,17 @@ const PostsDashboard = ({ accountId, onMonthChange }) => {
     clearError 
   } = usePostsHook(accountId);
 
+  // All useCallback hooks
+  const handlePlatformSelect = useCallback((platformName) => {
+    console.log('Platform selected:', platformName);
+    localStorage.setItem(PLATFORM_STORAGE_KEY, platformName);
+    setAccountPlatform(accountId, platformName);
+  }, [accountId, setAccountPlatform]);
+
   const fetchMonthPosts = useCallback(async () => {
+    if (!currentPlatform || !isInitialized) return;
+    
+    console.log('Fetching posts for platform:', currentPlatform);
     const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
     const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
     
@@ -35,33 +60,7 @@ const PostsDashboard = ({ accountId, onMonthChange }) => {
       platform: currentPlatform,
       forceRefresh: true
     });
-  }, [currentDate, currentPlatform, fetchPosts]);
-
-  useEffect(() => {
-    if (accountId) {
-      fetchMonthPosts();
-    }
-  }, [accountId, fetchMonthPosts, refreshTrigger]);
-
-  const refreshPosts = useCallback(() => {
-    setLastRefreshTime(Date.now());
-  }, []);
-
-  const handlePlatformSelect = (platformName) => {
-    setAccountPlatform(accountId, platformName);
-  };
-
-  const handlePreviousMonth = () => {
-    const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1);
-    setCurrentDate(newDate);
-    onMonthChange?.(newDate);
-  };
-
-  const handleNextMonth = () => {
-    const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1);
-    setCurrentDate(newDate);
-    onMonthChange?.(newDate);
-  };
+  }, [currentDate, currentPlatform, fetchPosts, isInitialized]);
 
   const handlePostDrop = useCallback(async (postId, targetDate) => {
     try {
@@ -74,11 +73,72 @@ const PostsDashboard = ({ accountId, onMonthChange }) => {
     }
   }, [updatePost, fetchMonthPosts]);
 
-  const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
+  const getPostsForDay = useCallback((day) => {
+    if (!day) return [];
+    const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    return getPostsByDate(date);
+  }, [currentDate, getPostsByDate]);
 
+  // All useEffect hooks
+  useEffect(() => {
+    const initializePlatform = async () => {
+      if (!accountId) return;
+
+      const savedPlatform = localStorage.getItem(PLATFORM_STORAGE_KEY);
+      console.log('Saved platform from localStorage:', savedPlatform);
+      console.log('Current platform:', currentPlatform);
+
+      if (savedPlatform) {
+        // Always set the platform from localStorage on initial load
+        await setAccountPlatform(accountId, savedPlatform);
+      } else if (!currentPlatform) {
+        // If no saved platform and no current platform, set default to Instagram
+        const defaultPlatform = 'Instagram';
+        localStorage.setItem(PLATFORM_STORAGE_KEY, defaultPlatform);
+        await setAccountPlatform(accountId, defaultPlatform);
+      }
+      
+      setIsInitialized(true);
+    };
+
+    initializePlatform();
+  }, [accountId, setAccountPlatform]);
+
+  useEffect(() => {
+    if (accountId && currentPlatform && isInitialized) {
+      console.log('Fetching posts after initialization. Platform:', currentPlatform);
+      fetchMonthPosts();
+    }
+  }, [accountId, currentPlatform, fetchMonthPosts, refreshTrigger, isInitialized]);
+
+  // Regular functions (not hooks)
+  const handlePreviousMonth = () => {
+    const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1);
+    setCurrentDate(newDate);
+    onMonthChange?.(newDate);
+  };
+
+  const handleNextMonth = () => {
+    const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1);
+    setCurrentDate(newDate);
+    onMonthChange?.(newDate);
+  };
+
+  const handleMonthChange = (date) => {
+    setCurrentDate(date);
+    onMonthChange?.(date);
+  };
+
+  // Don't render anything until initialization is complete
+  if (!isInitialized) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
+
+  // Calendar calculations
   const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
   const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
   const firstDayWeekday = firstDayOfMonth.getDay();
@@ -87,19 +147,6 @@ const PostsDashboard = ({ accountId, onMonthChange }) => {
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   const emptyCells = Array.from({ length: firstDayWeekday }, (_, i) => null);
   const allCells = [...emptyCells, ...days];
-
-  const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-  const getPostsForDay = useCallback((day) => {
-    if (!day) return [];
-    const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-    return getPostsByDate(date);
-  }, [currentDate, getPostsByDate]);
-
-  const handleMonthChange = (date) => {
-    setCurrentDate(date);
-    onMonthChange?.(date);
-  };
 
   return (
     <DndProvider backend={HTML5Backend}>
@@ -114,7 +161,7 @@ const PostsDashboard = ({ accountId, onMonthChange }) => {
           </button>
           
           <div className='flex items-center flex-col gap-2'>
-            <h2 className="text-xl font-semibold text-gray-800">
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
               {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
             </h2>
             <PlatformSelector 
@@ -181,6 +228,13 @@ const PostsDashboard = ({ accountId, onMonthChange }) => {
             );
           })}
         </div>
+
+        {/* Clear Month Posts Button */}
+        <ClearMonthPosts 
+          accountId={accountId}
+          currentDate={currentDate}
+          onClear={fetchMonthPosts}
+        />
       </div>
     </DndProvider>
   );

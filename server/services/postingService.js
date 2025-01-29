@@ -1,6 +1,7 @@
 import axios from 'axios';
 import Connection from '../models/Connection.js';
 import Post from '../models/Post.js';
+import TwitterService from './twitterService.js';
 
 class PostingService {
   async publishPost(accountId, platform, postData) {
@@ -16,28 +17,64 @@ class PostingService {
         throw new Error(`No connection found for platform ${platform}`);
       }
 
-      const { webhookUrl, pageId } = platformConnection;
+      let requestData;
 
-      // Prepare the request data
-      const requestData = {
-        id: pageId,
-        imageUrl: postData.imageUrl,
-        platform: platform.toLowerCase(),
-        content: postData.content
-      };
+      // Handle X platform differently
+      if (platform === 'X') {
+        const { apiKey, apiSecret, accessToken, accessTokenSecret, webhookUrl } = platformConnection;
+        
+        // Initialize Twitter service with credentials
+        const twitterService = new TwitterService(apiKey, apiSecret, accessToken, accessTokenSecret);
+        
+        // Upload image to Twitter and get media ID
+        const mediaUploadResponse = await twitterService.uploadMediaFromUrl(postData.imageUrl);
+        const imageUploadId = mediaUploadResponse.media_id_string;
 
-     if (!webhookUrl) return {
-      success: false,
-      platform,
-      response: 'No webhook URL found'
-     }
-      const response = await axios.post(webhookUrl, requestData);
-      
-      return {
-        success: true,
-        platform,
-        response: response.data
-      };
+        // Prepare request data for X platform
+        requestData = {
+          id: "no_id", // Special case for X platform
+          imageUploadId, // Use media ID instead of URL
+          platform: platform.toLowerCase(),
+          content: postData.content
+        };
+
+        if (!webhookUrl) return {
+          success: false,
+          platform,
+          response: 'No webhook URL found'
+        }
+
+        const response = await axios.post(webhookUrl, requestData);
+        return {
+          success: true,
+          platform,
+          response: response.data
+        };
+      }
+
+      else {
+        const { webhookUrl, pageId } = platformConnection;
+        
+        requestData = {
+          id: pageId,
+          imageUrl: postData.imageUrl,
+          platform: platform.toLowerCase(),
+          content: postData.content
+        };
+
+        if (!webhookUrl) return {
+          success: false,
+          platform,
+          response: 'No webhook URL found'
+        }
+
+        const response = await axios.post(webhookUrl, requestData);
+        return {
+          success: true,
+          platform,
+          response: response.data
+        };
+      }
     } catch (error) {
       console.error(`Error publishing to ${platform}:`, error);
       throw new Error(`Failed to publish to ${platform}: ${error.message}`);

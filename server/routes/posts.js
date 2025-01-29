@@ -10,7 +10,8 @@ import {
   deletePost,
   generateImage,
   generateText,
-  generateTemplates
+  generateTemplates,
+  clearMonthPosts
 } from '../controllers/postsController.js';
 import { ApiError } from '../utils/ApiError.js';
 import Post from '../models/Post.js';
@@ -120,5 +121,19 @@ router.patch('/:id', async (req, res, next) => {
     next(error);
   }
 });
+
+// Clear all posts for a month
+router.post('/:accountId/clear-month',
+  validateRequest(Joi.object({
+    params: Joi.object({
+      accountId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).required()
+    }),
+    body: Joi.object({
+      startDate: Joi.string().isoDate().required(),
+      endDate: Joi.string().isoDate().required()
+    })
+  })),
+  clearMonthPosts
+);
 
 export default router;
