@@ -10,6 +10,7 @@ import { usePosts as usePostsHook } from '../hooks/usePosts';
 import { usePosts as usePostsContext } from '../context/PostsContext';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { Calendar } from '../components/ui/calendar';
+import api from '@/lib/api';
 
 const PLATFORM_STORAGE_KEY = 'selectedPlatform';
 
@@ -21,14 +22,29 @@ const monthNames = [
 const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const PostsDashboard = ({ accountId, onMonthChange }) => {
-  // All useState hooks
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isInitialized, setIsInitialized] = useState(false);
+  const [utcOffset, setUtcOffset] = useState(0);
 
   // All context hooks
   const { refreshTrigger } = usePostsContext();
   const { getAccountPlatform, setAccountPlatform } = usePlatform();
   const currentPlatform = getAccountPlatform(accountId);
+
+  // Fetch UTC offset when component mounts
+  useEffect(() => {
+    const fetchUtcOffset = async () => {
+      try {
+        if (accountId) {
+          const contentPlanner = await api.get(`/content-planner/${accountId}`);
+          setUtcOffset(contentPlanner.utcOffset || 0);
+        }
+      } catch (error) {
+        console.error("Error fetching UTC offset:", error);
+      }
+    };
+    fetchUtcOffset();
+  }, [accountId]);
   
   // Posts hook
   const { 
@@ -40,9 +56,7 @@ const PostsDashboard = ({ accountId, onMonthChange }) => {
     clearError 
   } = usePostsHook(accountId);
 
-  // All useCallback hooks
   const handlePlatformSelect = useCallback((platformName) => {
-    console.log('Platform selected:', platformName);
     localStorage.setItem(PLATFORM_STORAGE_KEY, platformName);
     setAccountPlatform(accountId, platformName);
   }, [accountId, setAccountPlatform]);
@@ -50,7 +64,6 @@ const PostsDashboard = ({ accountId, onMonthChange }) => {
   const fetchMonthPosts = useCallback(async () => {
     if (!currentPlatform || !isInitialized) return;
     
-    console.log('Fetching posts for platform:', currentPlatform);
     const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
     const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
     
@@ -64,8 +77,16 @@ const PostsDashboard = ({ accountId, onMonthChange }) => {
 
   const handlePostDrop = useCallback(async (postId, targetDate) => {
     try {
+      // Create a new date at UTC midnight
+      const utcDate = new Date(Date.UTC(
+        targetDate.getFullYear(),
+        targetDate.getMonth(),
+        targetDate.getDate(),
+        0, 0, 0, 0
+      ));
+
       await updatePost(postId, {
-        datePost: targetDate.toISOString().split('T')[0]
+        datePost: utcDate.toISOString().split('T')[0]
       });
       await fetchMonthPosts();
     } catch (error) {
@@ -76,8 +97,20 @@ const PostsDashboard = ({ accountId, onMonthChange }) => {
   const getPostsForDay = useCallback((day) => {
     if (!day) return [];
     const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-    return getPostsByDate(date);
-  }, [currentDate, getPostsByDate]);
+    
+    // Get posts for the current date
+    const posts = getPostsByDate(date);
+    
+    // If we have a positive UTC offset, we need to also get posts from the previous day
+    // because posts saved at UTC midnight might appear on the previous day in local time
+    if (utcOffset > 0) {
+      const nextDate = new Date(date);
+      nextDate.setDate(nextDate.getDate() + 1);
+      return getPostsByDate(nextDate);
+    }
+    
+    return posts;
+  }, [currentDate, getPostsByDate, utcOffset]);
 
   // All useEffect hooks
   useEffect(() => {

@@ -121,7 +121,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
   // Debounced save effect
   useEffect(() => {
     if (!postId || !show || isDeletingRef.current || isSelectingTemplateRef.current || !initializationRef.current) return;
-    console.log('postId', postId);
+    
     const hasChanges = () => {
       const current = currentPostRef.current;
       if (!current) return false;
@@ -150,9 +150,17 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
 
     saveTimeoutRef.current = setTimeout(async () => {
       try {
+        // Create a new date at UTC midnight
+        const utcDate = new Date(Date.UTC(
+          new Date(selectedDate).getFullYear(),
+          new Date(selectedDate).getMonth(),
+          new Date(selectedDate).getDate(),
+          0, 0, 0, 0
+        ));
+
         const postData = {
           platforms: selectedPlatforms,
-          datePost: selectedDate,
+          datePost: utcDate.toISOString().split('T')[0], // Only use the date portion
           timePost: selectedTime,
           image: currentPostRef.current?.image || {},
           text: {
@@ -472,7 +480,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
             <div className="h-16 rounded-lg">
               <div className="grid grid-cols-3 h-full">
                 <div className="flex items-center justify-center ps-2 pe-2 me-7">
-                  <PostDateSelector date={selectedDate} onChange={setSelectedDate} />
+                  <PostDateSelector date={selectedDate} onChange={setSelectedDate} accountId={accountId}/>
                 </div>
                 <div className="flex items-center justify-center">
                   <PostPlatformSelector

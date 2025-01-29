@@ -4,26 +4,59 @@ import { Button } from "@/components/ui/button"
 import { CalendarIcon } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
+import api from "@/lib/api"
 
-export function PostDateSelector({ date, onChange }) {
+export function PostDateSelector({ date, onChange, accountId }) {
   const [open, setOpen] = useState(false)
+  const [utcOffset, setUtcOffset] = useState(0)
 
-  const formattedDate = useMemo(() => {
-    try {
-      return date instanceof Date && !isNaN(date) ? format(date, "PPP") : "Select date"
-    } catch (error) {
-      console.error("Error formatting date:", error)
-      return "Select date"
-    }
-  }, [date])
+  // Fetch UTC offset when component mounts
+  useEffect(() => {
+    const fetchUtcOffset = async () => {
+      try {
+        if (accountId) {
+          const contentPlanner = await api.get(`/content-planner/${accountId}`);
+          setUtcOffset(contentPlanner.utcOffset || 0);
+        }
+      } catch (error) {
+        console.error("Error fetching UTC offset:", error);
+      }
+    };
+    fetchUtcOffset();
+  }, [accountId]);
 
   const handleSelect = (newDate) => {
     if (newDate instanceof Date && !isNaN(newDate)) {
-      onChange(newDate)
-      setOpen(false)
+      // Create a new date at UTC midnight
+      const selectedDate = new Date(Date.UTC(
+        newDate.getFullYear(),
+        newDate.getMonth(),
+        newDate.getDate(),
+        0, 0, 0, 0
+      ));
+
+      // Only pass the date portion, matching PostsDashboard behavior
+      onChange(selectedDate.toISOString().split('T')[0]);
+      setOpen(false);
     }
-  }
+  };
+
+  // Convert stored UTC date to display date
+  const displayDate = useMemo(() => {
+    if (!date) return undefined;
+    return new Date(date);
+  }, [date]);
+
+  const formattedDate = useMemo(() => {
+    try {
+      if (!date) return "Select date";
+      return format(new Date(date), "PPP");
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return "Select date";
+    }
+  }, [date]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -36,7 +69,7 @@ export function PostDateSelector({ date, onChange }) {
       <PopoverContent className="w-auto p-0" align="start">
         <Calendar
           mode="single"
-          selected={date instanceof Date && !isNaN(date) ? date : undefined}
+          selected={displayDate}
           onSelect={handleSelect}
           initialFocus
           className="bg-white"
@@ -53,5 +86,6 @@ export function PostDateSelector({ date, onChange }) {
         />
       </PopoverContent>
     </Popover>
-  )
+  );
 }
+

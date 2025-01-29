@@ -49,13 +49,25 @@ export const updatePost = async (req, res) => {
     throw ApiError.notFound('Post not found');
   }
 
+  // If datePost is provided, ensure it's a valid date
+  let datePost = req.body.datePost;
+  if (datePost) {
+    // Just parse the ISO string to ensure it's valid
+    const date = new Date(datePost);
+    if (isNaN(date.getTime())) {
+      throw new ApiError(400, 'Invalid date format');
+    }
+    // Use the ISO string as is, since it's already in UTC format from the client
+    datePost = date.toISOString();
+  }
+
   // Update the post
   const updatedPost = await Post.findByIdAndUpdate(
     id,
     {
       $set: {
         platforms: req.body.platforms,
-        datePost: req.body.datePost,
+        datePost: datePost,
         timePost: req.body.timePost,
         text: req.body.text,
         image: req.body.image,
@@ -71,7 +83,6 @@ export const updatePost = async (req, res) => {
   if (!updatedPost) {
     throw ApiError.notFound('Post not found');
   }
-
 
   res.json(updatedPost);
 };
