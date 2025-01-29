@@ -12,5 +12,6 @@ export const contentPlannerTooltips = {
   frequency: "Define how many posts to generate per week",
   postingTime: "Set the default posting time for scheduled content",
   platforms: "Select which social media platforms to generate content for",
-  language: "Select the language for content generation"
+  language: "Select the language for content generation",
+  utcOffset: "Select your timezone for accurate post scheduling"
 }; 

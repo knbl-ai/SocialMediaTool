@@ -6,6 +6,7 @@ import Duration from './contentPlanner/Duration';
 import TargetAudience from './contentPlanner/TargetAudience';
 import PlatformSelector from './contentPlanner/PlatformSelector';
 import LanguegeSelector from './contentPlanner/LanguegeSelector';
+import UTCtime from './contentPlanner/UTCtime';
 import { toneOptions, frequencyOptions, templateOptions, postingTimeOptions } from './contentPlanner/options';
 import MODELS from '../config/models';
 import { contentPlannerTooltips } from '../config/tooltips';
@@ -214,14 +215,19 @@ export default function ContentPlanner() {
 
             <div className="relative">
               <div className="flex items-center gap-4 justify-between">
-                <div>
+                <div className="flex items-center gap-4">
                   <LanguegeSelector
                     value={contentPlanner.language}
                     onChange={(value) => handleFieldChange('language', value)}
                     tooltip={contentPlannerTooltips.language}
                   />
+                  <UTCtime
+                    value={contentPlanner.utcOffset}
+                    onChange={(value) => handleFieldChange('utcOffset', value)}
+                    tooltip={contentPlannerTooltips.utcOffset}
+                  />
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 pe-[7vw]">
                   <div>
                     <PlatformSelector
                       value={contentPlanner.platforms}

@@ -67,6 +67,17 @@ const contentPlannerSchema = new mongoose.Schema({
     min: 0,
     max: 23
   },
+  utcOffset: {
+    type: Number,
+    default: () => {
+      // Get current timezone offset in hours
+      const offset = -new Date().getTimezoneOffset() / 60;
+      // Ensure the offset is within valid range (-12 to +12)
+      return Math.max(-12, Math.min(12, offset));
+    },
+    min: -12,
+    max: 12
+  },
   autoRenew: {
     type: Boolean,
     default: false
