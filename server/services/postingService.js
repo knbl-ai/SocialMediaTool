@@ -139,7 +139,8 @@ class PostingService {
       // Get current time rounded to hours
       const now = new Date();
       now.setMinutes(0, 0, 0);
-      const time = now.getHours().toString();
+      // Format time as two-digit string (e.g., "09" for 9, "15" for 15)
+      const time = now.getHours().toString().padStart(2, '0');
       now.setHours(0, 0, 0, 0);
 
       console.log(`Running scheduled posts check for: ${now}, time: ${time}`);
@@ -147,7 +148,7 @@ class PostingService {
       // Find all posts scheduled for current hour
       const scheduledPosts = await Post.find({
         datePost: { $eq: now },
-        timePost: time, // timePost is stored as string "0"-"23"
+        timePost: time, // timePost is stored as string "00"-"23"
         status: { $ne: 'published' } // Don't republish already published posts
       });
 
