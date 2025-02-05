@@ -8,10 +8,10 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 const AccountTemplates = ({ accountId, logoUrl }) => {
   const [colors, setColors] = useState({
-    main: '#4F46E5',
-    secondary: '#6366F1',
-    title: '#1F2937',
-    text: '#4B5563'
+    main: '#ffffff',
+    secondary: '#FFA500',
+    title: '#333333',
+    text: '#666666'
   });
   const [selectedColor, setSelectedColor] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
