@@ -6,7 +6,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Alert, AlertDescription } from '../components/ui/alert';
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, InfoIcon } from "lucide-react";
 import HyperText from '@/components/ui/hyper-text';
 import Testimonials from '@/components/Testimonials';
 import WordRotate from '@/components/ui/word-rotate';
@@ -80,7 +80,8 @@ const Auth = () => {
   };
 
   return (
-    <div className="flex-1 flex items-center justify-center  flex-col">
+    <div className="flex-1 flex items-center justify-center flex-col relative">
+    
       <HyperText className="text-4xl">iGentity</HyperText>
       <HyperText className="text-xl text-gray-500">Next generation of social presence
       </HyperText>

@@ -7,6 +7,7 @@ import { Card, CardContent } from '../components/ui/card';
 import NewAccountButton from '../components/NewAccountButton';
 import AccountCard from '../components/AccountCard';
 import { ThemeToggle } from '../components/theme/theme-toggle';
+import { Power } from 'lucide-react';
 import api from '../lib/api';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -95,13 +96,24 @@ const Main = () => {
       <div className="w-full h-full flex flex-col bg-background">
         <main className="flex-1 overflow-auto p-4 w-full">
           <div className="flex justify-between items-center mb-8">
-            <span className="text-sm text-muted-foreground">
-              {user.email}
-            </span>
-            <div className="flex flex-col items-center">
-              <h1 className="text-2xl font-bold">iGentity</h1>
-              <h3 className="text-m text-muted-foreground">Next generation of social presence
-              </h3>
+            <div className="flex items-center gap-2">
+             
+              <Button
+                variant="default"
+                size="icon"
+                onClick={() => navigate('/about')}
+                className="rounded-full bg-lime-500 hover:bg-lime-600 h-12 w-12"
+              >
+                <Power className="h-7 w-7 text-white" />
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                {user.email}
+              </span>
+            </div>
+            <div className="flex flex-col items-center me-20">
+              {/* <h1 className="text-2xl font-bold">iGentity</h1> */}
+              <img src="/iGentity_full.png" alt="iGentity" className="h-12 w-30 mb-4" />
+              <h3 className="text-m text-muted-foreground">Next generation of social presence</h3>
             </div>
             <div className="flex items-center gap-2">
               <ThemeToggle />
