@@ -1,10 +1,29 @@
 import express from 'express';
 import { auth } from '../middleware/auth.js';
+import multer from 'multer';
 import * as contentPlannerService from '../services/contentPlannerService.js';
-import { generateText } from '../services/llmService.js';
+import { generateText, analyzeImage } from '../services/llmService.js';
 import { optimizeGuidelinesPrompt } from '../services/promptsService.js';
+import { uploadImage, deleteFile } from '../config/storage.js';
+import { ApiError } from '../utils/ApiError.js';
+import ContentPlanner from '../models/ContentPlanner.js';
 
 const router = express.Router();
+
+// Configure multer for memory storage
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new ApiError(400, 'Only image files are allowed'));
+    }
+  },
+});
 
 // Get content planner by account ID
 router.get('/:accountId', auth, async (req, res) => {
@@ -75,6 +94,120 @@ router.post('/:accountId/optimize-guidelines', auth, async (req, res) => {
   } catch (error) {
     console.error('Error optimizing guidelines:', error);
     res.status(500).json({ message: 'Error optimizing guidelines', error: error.message });
+  }
+});
+
+// Upload images route
+router.post('/:accountId/upload-images', auth, upload.array('images', 10), async (req, res) => {
+  try {
+    const { accountId } = req.params;
+    
+    if (!req.files || req.files.length === 0) {
+      throw new ApiError(400, 'No files uploaded');
+    }
+
+    const contentPlanner = await contentPlannerService.getContentPlannerByAccountId(accountId);
+    if (!contentPlanner) {
+      throw new ApiError(404, 'Content planner not found');
+    }
+
+    // Upload each image and get URLs
+    const uploadPromises = req.files.map(async (file) => {
+      const imageUrl = await uploadImage(file);
+      
+      // Analyze the image using the content planner's guidelines
+      const imageDescription = await analyzeImage({
+        imageUrl
+      });
+
+      return {
+        imageUrl,
+        imageDescription
+      };
+    });
+
+    const uploadedImages = await Promise.all(uploadPromises);
+
+    // Add new images to existing uploadedImages array
+    contentPlanner.uploadedImages.push(...uploadedImages);
+    await contentPlanner.save();
+
+    res.json({
+      message: 'Images uploaded and analyzed successfully',
+      uploadedImages: contentPlanner.uploadedImages
+    });
+  } catch (error) {
+    console.error('Error uploading images:', error);
+    res.status(error.status || 500).json({ 
+      error: error.message || 'Failed to upload images' 
+    });
+  }
+});
+
+// Delete image route
+router.post('/:accountId/delete-image', auth, async (req, res) => {
+  try {
+    const { accountId } = req.params;
+    const { imageUrl, index } = req.body;
+
+    if (!imageUrl || index === undefined) {
+      throw new ApiError(400, 'Image URL and index are required');
+    }
+
+    const contentPlanner = await contentPlannerService.getContentPlannerByAccountId(accountId);
+    if (!contentPlanner) {
+      throw new ApiError(404, 'Content planner not found');
+    }
+
+    // Delete image from Google Cloud Storage
+    await deleteFile(imageUrl);
+
+    // Remove image from uploadedImages array
+    contentPlanner.uploadedImages.splice(index, 1);
+    await contentPlanner.save();
+
+    res.json({
+      message: 'Image deleted successfully',
+      uploadedImages: contentPlanner.uploadedImages
+    });
+  } catch (error) {
+    console.error('Error deleting image:', error);
+    res.status(error.status || 500).json({ 
+      error: error.message || 'Failed to delete image' 
+    });
+  }
+});
+
+// Update image description
+router.post('/:accountId/update-image-description', auth, async (req, res) => {
+  try {
+    const { accountId } = req.params;
+    const { index, description } = req.body;
+
+    if (typeof index !== 'number' || !description) {
+      throw new ApiError(400, 'Invalid request data');
+    }
+
+    const contentPlanner = await ContentPlanner.findOne({ accountId });
+    if (!contentPlanner) {
+      throw new ApiError(404, 'Content planner not found');
+    }
+
+    // Check if the index is valid
+    if (index < 0 || index >= contentPlanner.uploadedImages.length) {
+      throw new ApiError(400, 'Invalid image index');
+    }
+
+    // Update the description
+    contentPlanner.uploadedImages[index].imageDescription = description;
+    await contentPlanner.save();
+
+    res.json({
+      message: 'Image description updated successfully',
+      uploadedImages: contentPlanner.uploadedImages
+    });
+  } catch (error) {
+    next(error);
   }
 });
 

@@ -9,16 +9,25 @@ import ImagePromptModal from './ImagePromptModal'
 export default function ImageGuidelines({ contentPlanner, contentPlannerTooltips, handleFieldChange }) {
   const [isUploadMode, setIsUploadMode] = useState(contentPlanner?.generateUploaded || false)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [uploadedImages, setUploadedImages] = useState(contentPlanner?.uploadedImages || [])
 
   useEffect(() => {
     if (contentPlanner?.generateUploaded !== undefined) {
       setIsUploadMode(contentPlanner.generateUploaded)
     }
-  }, [contentPlanner?.generateUploaded])
+    if (contentPlanner?.uploadedImages) {
+      setUploadedImages(contentPlanner.uploadedImages)
+    }
+  }, [contentPlanner?.generateUploaded, contentPlanner?.uploadedImages])
 
   const handleModeChange = (checked) => {
     setIsUploadMode(checked)
     handleFieldChange('generateUploaded', checked)
+  }
+
+  const handleImagesUpdate = (newImages) => {
+    setUploadedImages(newImages)
+    handleFieldChange('uploadedImages', newImages)
   }
 
   return (
@@ -51,7 +60,7 @@ export default function ImageGuidelines({ contentPlanner, contentPlannerTooltips
             className="min-h-[60px] mt-2 border rounded-md bg-background flex items-center justify-center gap-2 text-muted-foreground hover:bg-accent hover:cursor-pointer transition-colors"
           >
             <ImageIcon className="h-5 w-5" />
-            <span>0 images uploaded</span>
+            <span>{uploadedImages.length} {uploadedImages.length === 1 ? 'image' : 'images'} uploaded</span>
           </div>
         ) : (
           <Textarea
@@ -65,6 +74,8 @@ export default function ImageGuidelines({ contentPlanner, contentPlannerTooltips
       <ImagePromptModal 
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        contentPlanner={contentPlanner}
+        onUpdate={handleImagesUpdate}
       />
     </div>
   )

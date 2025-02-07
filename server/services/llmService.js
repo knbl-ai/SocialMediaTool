@@ -140,3 +140,62 @@ export const generateText = async ({ topic, model = 'claude-3-5-haiku-20241022',
         throw new Error('Failed to generate text content. Please try again.');
     }
 };
+
+/**
+ * Analyze an image using Claude's vision capabilities
+ * @param {string} imageUrl - URL of the image to analyze
+ * @param {string} textPrompt - Guidelines for image analysis
+ * @returns {Promise<string>} Image description
+ */
+export const analyzeImage = async ({ imageUrl, textPrompt }) => {
+  try {
+    if (!imageUrl) {
+      throw new Error('Image URL is required');
+    }
+
+    // Fetch the image data
+    const imageResponse = await fetch(imageUrl);
+    if (!imageResponse.ok) {
+      throw new Error('Failed to fetch image');
+    }
+
+    // Get the content type from the response headers
+    const contentType = imageResponse.headers.get('content-type');
+    if (!contentType || !contentType.startsWith('image/')) {
+      throw new Error('Invalid image type');
+    }
+
+    const imageBuffer = await imageResponse.arrayBuffer();
+    const base64Image = Buffer.from(imageBuffer).toString('base64');
+
+    const response = await client.messages.create({
+      model: 'claude-3-haiku-20240307',
+      max_tokens: 500,
+      system: `You are an expert image analyst. Analyze the provided image according to the following guidelines: ${textPrompt || 'Provide a detailed description of the image content, style, and composition.'}. Be specific and detailed in your analysis.`,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: {
+                type: 'base64',
+                media_type: contentType, // Use the actual content type from the response
+                data: base64Image
+              }
+            },
+            {
+              type: 'text',
+              text: 'Please provide a concise analysis of this image according to the provided guidelines.'
+            }
+          ]
+        }
+      ]
+    });
+
+    return response.content[0].text;
+  } catch (error) {
+    console.error('Error analyzing image:', error);
+    throw error;
+  }
+}
