@@ -36,6 +36,20 @@ const contentPlannerSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  generateUploaded: {
+    type: Boolean,
+    default: false
+  },
+  uploadedImages: [{
+    imageUrl: {
+      type: String,
+      required: true
+    },
+    imageDescription: {
+      type: String,
+      default: ''
+    }
+  }],
   imageModel: {
     type: String,
     default: 'fal-ai/flux/schnell'

@@ -13,5 +13,6 @@ export const contentPlannerTooltips = {
   postingTime: "Set the default posting time for scheduled content",
   platforms: "Select which social media platforms to generate content for",
   language: "Select the language for content generation",
-  utcOffset: "Select your timezone for accurate post scheduling"
+  utcOffset: "Select your timezone for accurate post scheduling",
+  uploadImages: "Upload images to use for content generation"
 }; 

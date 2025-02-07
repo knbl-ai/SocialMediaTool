@@ -1,22 +1,26 @@
 import * as React from "react"
-import * as SwitchPrimitives from "@radix-ui/react-switch"
-
 import { cn } from "@/lib/utils"
 
-const Switch = React.forwardRef(({ className, ...props }, ref) => (
-  <SwitchPrimitives.Root
-    className={cn(
-      "peer inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-input",
+const Switch = React.forwardRef(({ className, checked, onCheckedChange, ...props }, ref) => (
+  <label className="relative inline-block w-[30px] h-[17px]">
+    <input
+      type="checkbox"
+      className="opacity-0 w-0 h-0"
+      checked={checked}
+      onChange={(e) => onCheckedChange?.(e.target.checked)}
+      ref={ref}
+      {...props}
+    />
+    <span className={cn(
+      "absolute cursor-pointer inset-0 rounded-[17px] bg-gray-300 transition-all duration-400",
+      "before:absolute before:content-[''] before:h-[13px] before:w-[13px] before:left-[2px] before:bottom-[2px]",
+      "before:bg-white before:transition-all before:duration-400 before:rounded-full",
+      "data-[checked=true]:bg-lime-500 data-[checked=true]:before:translate-x-[13px]",
       className
-    )}
-    {...props}
-    ref={ref}>
-    <SwitchPrimitives.Thumb
-      className={cn(
-        "pointer-events-none block h-4 w-4 rounded-full bg-background shadow-lg ring-0 transition-transform data-[state=checked]:translate-x-4 data-[state=unchecked]:translate-x-0"
-      )} />
-  </SwitchPrimitives.Root>
+    )} data-checked={checked} />
+  </label>
 ))
-Switch.displayName = SwitchPrimitives.Root.displayName
+
+Switch.displayName = "Switch"
 
 export { Switch }

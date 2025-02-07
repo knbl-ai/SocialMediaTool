@@ -23,6 +23,7 @@ import { usePosts as usePostsHook } from '../hooks/usePosts';
 import { usePosts as usePostsContext } from '../context/PostsContext';
 import { cn } from "@/lib/utils";
 import ContentGuidelinesAdvanced from './contentPlanner/ContentGuidelinesAdvanced';
+import ImageGuidelines from './contentPlanner/ImageGuidelines';
 
 export default function ContentPlanner() {
   const { accountId } = useParams();
@@ -109,20 +110,11 @@ export default function ContentPlanner() {
                 />
               </div>
               <div className="w-full">
-                <div className="flex flex-col h-full">
-                  <TooltipLabel 
-                    className="text-lime-500" 
-                    tooltip={contentPlannerTooltips.imageGuidelines}
-                  >
-                    Image Guidelines
-                  </TooltipLabel>
-                  <Textarea
-                    placeholder="Enter image generation guidelines..."
-                    className="min-h-[38px] mt-2"
-                    value={contentPlanner.imageGuidelines}
-                    onChange={(e) => handleFieldChange('imageGuidelines', e.target.value)}
-                  />
-                </div>
+                <ImageGuidelines 
+                  contentPlanner={contentPlanner}
+                  contentPlannerTooltips={contentPlannerTooltips}
+                  handleFieldChange={handleFieldChange}
+                />
               </div>
               <div className="w-full">
                 <TargetAudience
