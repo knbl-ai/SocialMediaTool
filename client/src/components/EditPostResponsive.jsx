@@ -51,6 +51,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
   const templateSelectionTimeoutRef = useRef(null);
   const currentPostRef = useRef(currentPost);
 
+  console.log('currentPost', currentPost);
 
   // Update ref when currentPost changes
   useEffect(() => {
