@@ -82,7 +82,8 @@ const Auth = () => {
   return (
     <div className="flex-1 flex items-center justify-center flex-col relative">
     
-      <HyperText className="text-4xl">iGentity</HyperText>
+      {/* <HyperText className="text-4xl">iGentity</HyperText> */}
+      <img src="/iGentity_full.png" alt="iGentity" className="h-12 w-30 mb-1" />
       <HyperText className="text-xl text-gray-500">Next generation of social presence
       </HyperText>
       <div className='grid grid-cols-3 gap-1'>

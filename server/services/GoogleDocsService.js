@@ -1,6 +1,7 @@
 import { google } from 'googleapis';
 import { ApiError } from '../utils/ApiError.js';
 import ContentPlanner from '../models/ContentPlanner.js';
+import Account from '../models/Account.js';
 
 // Validate required environment variables
 const requiredEnvVars = [
@@ -214,33 +215,37 @@ export const parseGoogleDoc = async (url) => {
   }
 };
 
-export const saveGoogleDocContent = async (accountId, text) => {
-  if (!accountId) {
-    throw new ApiError(400, 'Account ID is required');
-  }
-
-  if (!text || typeof text !== 'string') {
-    throw new ApiError(400, 'Valid text content is required');
-  }
-
+export const saveGoogleDocContent = async (accountId, text, isContentPlanner = true) => {
   try {
-    // Find and update the content planner
-    const updatedPlanner = await ContentPlanner.findOneAndUpdate(
-      { accountId },
-      { textGuidelines: text },
-      { new: true }
-    );
+    if (isContentPlanner) {
+      // Content planner flow - save to ContentPlanner
+      const updatedPlanner = await ContentPlanner.findOneAndUpdate(
+        { accountId },
+        { textGuidelines: text },
+        { new: true, upsert: true }
+      );
 
-    if (!updatedPlanner) {
-      throw new ApiError(404, 'Content planner not found');
+      if (!updatedPlanner) {
+        throw new ApiError(404, 'Content planner not found');
+      }
+
+      return updatedPlanner;
+    } else {
+      // Account overview flow - save to Account
+      const updatedAccount = await Account.findByIdAndUpdate(
+        accountId,
+        { accountReview: text },
+        { new: true }
+      );
+
+      if (!updatedAccount) {
+        throw new ApiError(404, 'Account not found');
+      }
+
+      return updatedAccount;
     }
-
-    return updatedPlanner;
   } catch (error) {
     console.error('Error saving Google Doc content:', error);
-    if (error instanceof ApiError) {
-      throw error;
-    }
-    throw new ApiError(500, 'Failed to save content to database');
+    throw error;
   }
 }; 

@@ -26,7 +26,7 @@ router.post('/upload', upload.single('pdf'), async (req, res) => {
       throw new ApiError(400, 'No file uploaded');
     }
 
-    const { accountId } = req.body;
+    const { accountId, isContentPlanner = true } = req.body;
     if (!accountId) {
       throw new ApiError(400, 'Account ID is required');
     }
@@ -34,13 +34,21 @@ router.post('/upload', upload.single('pdf'), async (req, res) => {
     // Parse PDF content
     const pdfText = await parsePDF(req.file.buffer);
 
-    // Save to database
-    const updatedPlanner = await savePDFContent(accountId, pdfText);
+    // Save to database based on the context
+    const result = await savePDFContent(accountId, pdfText, isContentPlanner === 'true');
 
-    res.json({
-      message: 'PDF processed successfully',
-      textGuidelines: updatedPlanner.textGuidelines
-    });
+    // Return appropriate response based on context
+    if (isContentPlanner === 'true') {
+      res.json({
+        message: 'PDF processed successfully',
+        textGuidelines: result.textGuidelines
+      });
+    } else {
+      res.json({
+        message: 'PDF processed successfully',
+        accountReview: result.accountReview
+      });
+    }
   } catch (error) {
     console.error('Error processing PDF:', error);
     if (error instanceof ApiError) {

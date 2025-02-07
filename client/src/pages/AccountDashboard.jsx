@@ -60,32 +60,37 @@ const AccountDashboard = () => {
   return (
     <div className="p-6 w-full h-full">
       <div className="flex justify-between items-start mb-8">
-        <div className="flex items-start flex-1">
-          <div className="flex flex-col justify-evenly h-[256px] align-center"> 
+        <div className="flex items-start w-full gap-8">
+          {/* Left sidebar - fixed width */}
+          <div className="w-[400px] flex flex-col justify-evenly h-[256px] shrink-0"> 
             <AccountName 
               account={account} 
               onNameUpdate={handleNameUpdate}
             />
-            <div className="flex justify-center ps-10">
+            <div className="flex justify-center">
               <ConnectedPlatforms accountId={accountId}/>
             </div>
-            
           </div>
-          <div className="flex flex-col gap-4 mx-12 mt-5">
+
+          {/* Middle section - flexible width */}
+          <div className="flex-1 min-w-0 ">
             <AccountOverview 
               account={account}
               onUpdate={setAccount}
             />
           </div>
-          <div className="flex-1">
+
+          {/* Right sidebar - fixed width */}
+          <div className="w-[600px] shrink-0">
             <AccountTemplates accountId={accountId} />
           </div>
         </div>
+
         <Button 
           onClick={handleBack}
           variant="outline"
           size="icon"
-          className="rounded-full hover:bg-gray-100 text-gray-500"
+          className="rounded-full hover:bg-gray-100 text-gray-500 ml-4"
           aria-label="Back to Accounts"
         >
           <ArrowLeft className="h-6 w-6" />

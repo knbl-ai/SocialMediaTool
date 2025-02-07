@@ -11,7 +11,7 @@ import { Power } from 'lucide-react';
 import api from '../lib/api';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-
+import HyperText from '../components/ui/hyper-text';
 const Main = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading, logout, checkAuthStatus } = useAuth();
@@ -106,14 +106,15 @@ const Main = () => {
               >
                 <Power className="h-7 w-7 text-white" />
               </Button>
-              <span className="text-sm text-muted-foreground">
+              <span className="text-sm text-muted-foreground ms-2">
                 {user.email}
               </span>
             </div>
             <div className="flex flex-col items-center me-20">
               {/* <h1 className="text-2xl font-bold">iGentity</h1> */}
-              <img src="/iGentity_full.png" alt="iGentity" className="h-12 w-30 mb-4" />
-              <h3 className="text-m text-muted-foreground">Next generation of social presence</h3>
+              <img src="/iGentity_full.png" alt="iGentity" className="h-12 w-30 mb-1" />
+              <HyperText className="text-xs text-gray-500">Next generation of social presence</HyperText>
+              {/* <h3 className="text-m text-muted-foreground">Next generation of social presence</h3> */}
             </div>
             <div className="flex items-center gap-2">
               <ThemeToggle />

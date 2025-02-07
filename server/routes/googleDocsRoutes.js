@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.post('/parse', async (req, res, next) => {
   try {
-    const { url, accountId } = req.body;
+    const { url, accountId, isContentPlanner = true } = req.body;
 
     if (!url) {
       return res.status(400).json({
@@ -23,13 +23,24 @@ router.post('/parse', async (req, res, next) => {
     // Parse the Google Doc content
     const text = await parseGoogleDoc(url);
 
-    // Save to database
-    const updatedPlanner = await saveGoogleDocContent(accountId, text);
+    // Convert isContentPlanner to boolean if it's a string
+    const isContentPlannerBool = isContentPlanner === true || isContentPlanner === 'true';
 
-    res.json({
-      message: 'Google Doc processed successfully',
-      textGuidelines: updatedPlanner.textGuidelines
-    });
+    // Save to database based on context
+    const result = await saveGoogleDocContent(accountId, text, isContentPlannerBool);
+
+    // Return appropriate response based on context
+    if (isContentPlannerBool) {
+      res.json({
+        message: 'Google Doc processed successfully',
+        textGuidelines: result.textGuidelines
+      });
+    } else {
+      res.json({
+        message: 'Google Doc processed successfully',
+        accountReview: result.accountReview
+      });
+    }
   } catch (error) {
     console.error('Error processing Google Doc:', error);
     

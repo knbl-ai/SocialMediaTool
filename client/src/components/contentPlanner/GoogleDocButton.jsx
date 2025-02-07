@@ -13,7 +13,7 @@ import { FileTextIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import api from '../../lib/api'
 
-export default function GoogleDocButton({ accountId, onSuccess }) {
+export default function GoogleDocButton({ accountId, onSuccess, isContentPlanner = true }) {
   const [isOpen, setIsOpen] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
   const [url, setUrl] = useState('')
@@ -28,18 +28,26 @@ export default function GoogleDocButton({ accountId, onSuccess }) {
       setIsProcessing(true)
       const response = await api.post('/google-docs/parse', {
         url,
-        accountId
+        accountId,
+        isContentPlanner
       })
 
-      if (response?.textGuidelines) {
+      if (isContentPlanner && response?.textGuidelines) {
         onSuccess(response.textGuidelines)
         toast.success('Google Doc content extracted successfully')
-        setIsOpen(false)
-        setUrl('')
+      } else if (!isContentPlanner && response?.accountReview) {
+        onSuccess(response.accountReview)
+        toast.success('Google Doc content added to account overview')
+      } else {
+        throw new Error('Invalid response from server')
       }
+
+      setIsOpen(false)
+      setUrl('')
     } catch (error) {
       console.error('Error processing Google Doc:', error)
-      toast.error(error.response?.data?.message || 'Failed to process Google Doc')
+      const errorMessage = error.response?.data?.error || error.message || 'Failed to process Google Doc'
+      toast.error(errorMessage)
     } finally {
       setIsProcessing(false)
     }
@@ -70,15 +78,22 @@ export default function GoogleDocButton({ accountId, onSuccess }) {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add Google Doc</DialogTitle>
+          <DialogTitle>
+            {isContentPlanner ? 'Add Google Doc Content' : 'Add Google Doc Overview'}
+          </DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <Input
-            placeholder="Paste Google Doc URL here"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            disabled={isProcessing}
-          />
+          <div className="space-y-2">
+            <Input
+              placeholder="Paste Google Doc URL here"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              disabled={isProcessing}
+            />
+            <p className="text-sm text-muted-foreground">
+              Make sure the Google Doc is publicly accessible or shared with view access.
+            </p>
+          </div>
         </div>
         <DialogFooter>
           <Button 
@@ -86,7 +101,7 @@ export default function GoogleDocButton({ accountId, onSuccess }) {
             onClick={handleSubmit}
             disabled={!url || isProcessing}
           >
-            {isProcessing ? 'Processing...' : 'Add Content'}
+            {isProcessing ? 'Processing...' : isContentPlanner ? 'Add Content' : 'Add Overview'}
           </Button>
         </DialogFooter>
       </DialogContent>
