@@ -51,7 +51,7 @@ export default function ImageGuidelines({ contentPlanner, contentPlannerTooltips
             className={isUploadMode ? "text-lime-500" : "text-gray-400"}
             tooltip={contentPlannerTooltips.uploadImages}
           >
-            Upload Images
+            Uploaded Images
           </TooltipLabel>
         </div>
         {isUploadMode ? (

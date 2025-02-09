@@ -24,6 +24,8 @@ import { usePosts as usePostsContext } from '../context/PostsContext';
 import { cn } from "@/lib/utils";
 import ContentGuidelinesAdvanced from './contentPlanner/ContentGuidelinesAdvanced';
 import ImageGuidelines from './contentPlanner/ImageGuidelines';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { Switch } from "./ui/switch";
 
 export default function ContentPlanner() {
   const { accountId } = useParams();
@@ -179,18 +181,33 @@ export default function ContentPlanner() {
                   onDateChange={(value) => handleFieldChange('date', value)}
                   onDurationChange={(value) => handleFieldChange('duration', value)}
                   tooltip={contentPlannerTooltips}
+                  generateUploaded={contentPlanner.generateUploaded}
                 />
               </div>
               <div className="w-full">
-                <SelectField
-                  label="Post Frequency"
-                  options={frequencyOptions}
-                  placeholder="Select frequency"
-                  labelClass="text-lime-500"
-                  value={contentPlanner.frequency.toString()}
-                  onChange={(value) => handleFieldChange('frequency', parseInt(value, 10))}
-                  tooltip={contentPlannerTooltips.frequency}
-                />
+                <div className="flex flex-col gap-2">
+                  <TooltipLabel 
+                    className="text-lime-500"
+                    tooltip={contentPlannerTooltips.frequency}
+                  >
+                    Frequency
+                  </TooltipLabel>
+                  <Select
+                    value={contentPlanner.frequency.toString()}
+                    onValueChange={(value) => handleFieldChange('frequency', parseInt(value))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select frequency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {frequencyOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <div className="w-full">
                 <SelectField

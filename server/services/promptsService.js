@@ -195,3 +195,71 @@ Ensure the plan is concise, actionable, and aligned with social media best pract
         system: `You are a social media strategist. Your task is to turn broad guidelines into clear, structured instructions for creating engaging social media content. Provide specific, creative, and actionable steps to maximize audience engagement.`,
     }
 }
+
+export const textToMatchUploadedImagePrompt = ({ imageDescription, guidelines, targetAudience = "adults", style = "casual", maxLength = 280, platform = "Instagram", language = "English"  }) => {
+    const platformGuidelines = {
+        Instagram: "Visual-first content, use emojis, hashtags, and engaging captions up to 2,200 characters",
+        Facebook: "Longer form content, focus on community engagement, support rich media",
+        LinkedIn: "Professional tone, industry insights, thought leadership content",
+        TikTok: "Trendy, short-form content, focus on entertainment and engagement",
+        X: "Concise messaging, trending topics, hashtags, limited to 280 characters"
+    };
+
+    const maxLengthPlatforms = {
+        Instagram: 280,
+        Facebook: 400,
+        LinkedIn: 1000,
+        TikTok: 280,
+        X: 280
+    };
+
+    const languageInstructions = {
+        English: {
+            instruction: "Write the content in English using natural, fluent language",
+            direction: "left-to-right"
+        },
+        Hebrew: {
+            instruction: "Write the content in Hebrew using proper Hebrew grammar and RTL text",
+            direction: "right-to-left"
+        }
+    };
+
+    const currentLang = languageInstructions[language] || languageInstructions.English;
+
+    return {
+       
+        prompt: `
+        Generate a social media post which will be posted together with an image with following description:
+        ${imageDescription}
+        
+        Text should be aligned with image message.
+
+        Follow general content guidlines for a series of posts. This post should naturally align with a series, but be unique considering the image.
+
+        General guidelines: ${guidelines}
+        
+        Post should be tailoredspecifically for ${platform}.
+            Style: ${style}
+            Target Audience: ${targetAudience}
+            Maximum Length: ${maxLengthPlatforms[platform] || maxLength} characters
+            Platform Guidelines: ${platformGuidelines[platform] || platformGuidelines.Instagram}
+            Language Instructions: ${currentLang.instruction}
+            Text Direction: ${currentLang.direction}
+            
+            The post should be engaging and follow ${platform}'s best practices.
+            Return only the JSON object with post, title, and subtitle.`,
+            system: `You are a skilled social media content creator specializing in ${platform} content and ${language} language content creation.
+            
+            Important Language Instructions:
+            1. Generate all content in ${language}
+            2. Follow ${currentLang.direction} text direction
+            3. Use appropriate cultural context for ${language} speakers
+            4. Maintain proper grammar and style for ${language}
+            5. Keep JSON keys in English: {post, title, subtitle}
+            
+            Generate engaging posts that follow the platform's best practices and language requirements while maintaining brand voice.
+            Always output valid JSON in the format: {post, title, subtitle}.
+            The JSON keys must always be in English, but the values should be in ${language}.
+            Omit preamble and postamble.`
+    }
+}
