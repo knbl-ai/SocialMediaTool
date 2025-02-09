@@ -1,10 +1,15 @@
-import pdfParse from 'pdf-parse/lib/pdf-parse.js';
+import PDFParser from 'pdf2json';
 import ContentPlanner from '../models/ContentPlanner.js';
 import Account from '../models/Account.js';
 import { ApiError } from '../utils/ApiError.js';
 
 const cleanPDFText = (text) => {
   return text
+    // Decode URI encoded characters
+    .replace(/%20/g, ' ')
+    .replace(/%2C/g, ',')
+    .replace(/%0A/g, '\n')
+    .replace(/%09/g, '\t')
     // Remove multiple line breaks and replace with single line break
     .replace(/\n{3,}/g, '\n\n')
     // Remove multiple spaces
@@ -21,6 +26,11 @@ const validatePDFBuffer = (buffer) => {
     throw new ApiError(400, 'Empty PDF file');
   }
 
+  // Check minimum PDF file size (at least 100 bytes for a valid PDF)
+  if (buffer.length < 100) {
+    throw new ApiError(400, 'PDF file is too small to be valid');
+  }
+
   // Check if the file starts with the PDF magic number (%PDF-)
   const pdfHeader = buffer.toString('ascii', 0, 5);
   if (pdfHeader !== '%PDF-') {
@@ -28,48 +38,54 @@ const validatePDFBuffer = (buffer) => {
   }
 };
 
-export const parsePDF = async (buffer) => {
-  try {
-    // Validate PDF buffer before parsing
-    validatePDFBuffer(buffer);
+export const parsePDF = (buffer) => {
+  return new Promise((resolve, reject) => {
+    try {
+      // Validate PDF buffer before parsing
+      validatePDFBuffer(buffer);
 
-    const options = {
-      max: 2, // Maximum pages to parse (adjust as needed)
-      version: 'v2.0.550'  // Use a specific version of pdf.js
-    };
+      const pdfParser = new PDFParser();
 
-    const data = await pdfParse(buffer, options);
-    
-    if (!data || !data.text) {
-      throw new ApiError(500, 'Failed to extract text from PDF');
-    }
+      // Handle parsing errors
+      pdfParser.on('pdfParser_dataError', errData => {
+        console.error('PDF parsing error:', errData.parserError);
+        reject(new ApiError(400, 'Unable to parse PDF. The file might be corrupted or password protected.'));
+      });
 
-    const cleanedText = cleanPDFText(data.text);
-    
-    if (!cleanedText || cleanedText.length === 0) {
-      throw new ApiError(400, 'No readable text found in PDF');
-    }
+      // Handle successful parsing
+      pdfParser.on('pdfParser_dataReady', pdfData => {
+        try {
+          // Extract text from all pages
+          const text = pdfData.Pages
+            .map(page => 
+              page.Texts
+                .map(text => decodeURIComponent(text.R[0].T))
+                .join(' ')
+            )
+            .join('\n');
 
-    return cleanedText;
-  } catch (error) {
-    console.error('Error parsing PDF:', error);
-    
-    // Handle specific PDF parsing errors
-    if (error.message?.includes('bad XRef entry')) {
-      throw new ApiError(400, 'PDF file is corrupted or invalid');
+          const cleanedText = cleanPDFText(text);
+
+          if (!cleanedText || cleanedText.length === 0) {
+            reject(new ApiError(400, 'No readable text found in PDF'));
+            return;
+          }
+
+          resolve(cleanedText);
+        } catch (error) {
+          console.error('Error processing PDF content:', error);
+          reject(new ApiError(400, 'Error processing PDF content. Please try a different PDF.'));
+        }
+      });
+
+      // Start parsing
+      pdfParser.parseBuffer(buffer);
+
+    } catch (error) {
+      console.error('Error in PDF parsing:', error);
+      reject(new ApiError(400, 'Failed to process PDF. Please ensure the file is not corrupted.'));
     }
-    if (error.message?.includes('no PDF header found')) {
-      throw new ApiError(400, 'Invalid PDF file format');
-    }
-    
-    // If it's already an ApiError, rethrow it
-    if (error instanceof ApiError) {
-      throw error;
-    }
-    
-    // Generic error
-    throw new ApiError(500, 'Failed to process PDF file: ' + error.message);
-  }
+  });
 };
 
 export const savePDFContent = async (accountId, pdfText, isContentPlanner = true) => {

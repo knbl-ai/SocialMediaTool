@@ -15,6 +15,7 @@ const upload = multer({
     if (file.mimetype === 'application/pdf') {
       cb(null, true);
     } else {
+      cb(null, false);
       cb(new ApiError(400, 'Only PDF files are allowed'));
     }
   },
@@ -23,12 +24,16 @@ const upload = multer({
 router.post('/upload', upload.single('pdf'), async (req, res) => {
   try {
     if (!req.file) {
-      throw new ApiError(400, 'No file uploaded');
+      return res.status(400).json({
+        error: 'No file uploaded or invalid file type'
+      });
     }
 
     const { accountId, isContentPlanner = true } = req.body;
     if (!accountId) {
-      throw new ApiError(400, 'Account ID is required');
+      return res.status(400).json({
+        error: 'Account ID is required'
+      });
     }
 
     // Parse PDF content
@@ -39,22 +44,37 @@ router.post('/upload', upload.single('pdf'), async (req, res) => {
 
     // Return appropriate response based on context
     if (isContentPlanner === 'true') {
-      res.json({
+      return res.json({
         message: 'PDF processed successfully',
         textGuidelines: result.textGuidelines
       });
     } else {
-      res.json({
+      return res.json({
         message: 'PDF processed successfully',
         accountReview: result.accountReview
       });
     }
   } catch (error) {
     console.error('Error processing PDF:', error);
+    
+    // Handle ApiError instances
     if (error instanceof ApiError) {
-      throw error;
+      return res.status(error.statusCode || 400).json({
+        error: error.message
+      });
     }
-    throw new ApiError(500, 'Failed to process PDF file');
+    
+    // Handle multer errors
+    if (error instanceof multer.MulterError) {
+      return res.status(400).json({
+        error: 'File upload error: ' + error.message
+      });
+    }
+    
+    // Handle any other errors
+    return res.status(500).json({
+      error: 'Failed to process PDF file. Please try again.'
+    });
   }
 });
 

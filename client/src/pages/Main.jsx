@@ -7,7 +7,7 @@ import { Card, CardContent } from '../components/ui/card';
 import NewAccountButton from '../components/NewAccountButton';
 import AccountCard from '../components/AccountCard';
 import { ThemeToggle } from '../components/theme/theme-toggle';
-import { Power } from 'lucide-react';
+import { Info } from 'lucide-react';
 import api from '../lib/api';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -101,10 +101,10 @@ const Main = () => {
               <Button
                 variant="default"
                 size="icon"
-                onClick={() => navigate('/about')}
+                onClick={() => window.open('http://knbl360.com/wp-content/uploads/2025/02/One-pager.pdf', '_blank')}
                 className="rounded-full bg-lime-500 hover:bg-lime-600 h-12 w-12"
               >
-                <Power className="h-7 w-7 text-white" />
+                <Info className="text-white transform scale-150 animate-pulse" />
               </Button>
               <span className="text-sm text-muted-foreground ms-2">
                 {user.email}
