@@ -70,6 +70,44 @@ export default function ContentPlanner() {
     }
   };
 
+  const handleGenerateContentFromUploadedImages = async () => {
+    try {
+      setIsLoading(true);
+      const response = await api.post(`/content-planner/${accountId}/generate-from-uploaded`);
+      toast.success('Content plan generated successfully');
+      
+      // Fetch updated posts after generation
+      const firstDay = new Date(contentPlanner.date);
+      const lastDay = new Date(firstDay);
+      lastDay.setMonth(lastDay.getMonth() + (contentPlanner.duration === 'month' ? 1 : 0));
+      lastDay.setDate(lastDay.getDate() + (contentPlanner.duration === 'week' ? 7 : 0));
+      
+      // Force a complete refresh of posts
+      await fetchPosts({
+        startDate: firstDay.toISOString().split('T')[0],
+        endDate: lastDay.toISOString().split('T')[0],
+        platform: contentPlanner.platforms[0],
+        forceRefresh: true
+      });
+
+      // Trigger refresh in PostsDashboard
+      triggerRefresh();
+    } catch (err) {
+      toast.error('Failed to generate content plan');
+      console.error('Error generating content:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGenerateClick = () => {
+    if (contentPlanner.generateUploaded) {
+      handleGenerateContentFromUploadedImages();
+    } else {
+      handleGenerateContent();
+    }
+  };
+
   if (error) {
     return <div className="text-red-500">Error loading content planner: {error}</div>;
   }
@@ -252,7 +290,7 @@ export default function ContentPlanner() {
                       className="bg-[#5CB338] hover:bg-[#4a9c2d] text-white w-[200px]" 
                       pulseColor="92 179 56"
                       duration="2s"
-                      onClick={handleGenerateContent}
+                      onClick={handleGenerateClick}
                       disabled={isLoading}
                     >
                       Generate Content

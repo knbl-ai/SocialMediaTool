@@ -40,6 +40,11 @@ client/
      textGuidelines: String,   // Guidelines for text generation
      llm: String,             // Selected LLM model
      imageGuidelines: String,  // Guidelines for image generation
+     generateUploaded: Boolean, // Switch between image generation and uploaded images
+     uploadedImages: [{        // Array of uploaded images with descriptions
+       imageUrl: String,       // URL of the uploaded image
+       imageDescription: String // Description of the uploaded image
+     }],
      imageModel: String,       // Selected image model
      date: Date,              // Start date
      duration: String,         // Week/Month
@@ -128,57 +133,65 @@ client/
    ```
 
 6. **Content Plan Generation System**
-   - Step 1: Initial Content Plan Generation
-     ```javascript
-     // Input Parameters
-     {
-       accountName: String,     // From Account model
-       accountReview: String,   // From Account model
-       audience: String,        // From ContentPlanner
-       guidelines: String,      // From ContentPlanner.textGuidelines
-       startDate: Date,         // From ContentPlanner.date
-       endDate: Date,          // Calculated based on duration
-       frequency: Number,       // From ContentPlanner
-       voice: String           // From ContentPlanner
-     }
+   
+   The system supports two modes of content generation:
 
-     // Process
-     1. Calculate end date based on duration (week/month)
-     2. Generate content plan using LLM
-     3. Save plan as JSON string in contentPlanJSON field
-     4. Return success response
+   A. AI-Generated Images Mode:
+   // ... existing content about AI image generation ...
 
-     // Response Format
-     {
-       "2024-01-01": "Cloud migration success metrics overview",
-       "2024-01-03": "Common IT infrastructure challenges",
-       ...
-     }
-     ```
-
-   - Step 2: Post Generation Process
-     ```javascript
-     // For each date in content plan:
-     1. Generate Post Content
-        - Generate post text using LLM with context
-        - Generate image prompt based on topic
-        - Generate image if model selected (skip if 'no_images')
-     
-     2. Create Post
-        - Save post with generated content
-        - Set default image dimensions (Square, 1280x1280)
-        - Associate with platforms from content planner
-     
-     3. Generate Templates
-        - If post has image, generate templates
-        - Save template URLs to post
-        - Continue if template generation fails
-     
-     // Error Handling
-     - Individual post generation failures don't stop the process
-     - Template generation failures are logged but don't block post creation
-     - Each step has independent error handling
-     ```
+   B. Uploaded Images Mode:
+   ```javascript
+   // Process Flow
+   1. User uploads images with descriptions
+   2. User switches to "Uploaded Images" mode
+   3. System generates content based on:
+      - Start date from content planner
+      - Frequency setting for post spacing
+      - Image descriptions for context
+      - Text guidelines for content style
+   
+   // Generation Process
+   1. Date Calculation
+      - Starts from contentPlanner.date
+      - Spaces posts based on contentPlanner.frequency
+      - Creates a date-to-image mapping
+   
+   2. Content Generation
+      - Uses image descriptions as context
+      - Applies text guidelines and voice settings
+      - Generates matching content for each image
+      - Maintains platform-specific formatting
+   
+   3. Post Creation
+      - Creates posts with uploaded images
+      - Adds generated text content
+      - Sets proper image dimensions
+      - Maintains platform compatibility
+   
+   // API Endpoints
+   POST /api/content-planner/:accountId/generate-from-uploaded
+   
+   // Response Format
+   {
+     message: 'ContentPlanSaved:ok',
+     posts: [
+       {
+         datePost: "2024-02-10",
+         image: {
+           url: "https://...",
+           template: "https://...",
+           dimensions: "Square"
+         },
+         text: {
+           post: "Generated content...",
+           title: "Post title",
+           subtitle: "Post subtitle"
+         }
+       },
+       // ... more posts
+     ]
+   }
+   ```
 
 7. **Features**
    - Automatic content planner creation with new accounts

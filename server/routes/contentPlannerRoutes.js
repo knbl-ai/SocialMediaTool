@@ -211,4 +211,14 @@ router.post('/:accountId/update-image-description', auth, async (req, res) => {
   }
 });
 
+// Generate content plan from uploaded images
+router.post('/:accountId/generate-from-uploaded', auth, async (req, res) => {
+  try {
+    const result = await contentPlannerService.generateContentPlanFromUploadedImages(req.params.accountId);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ message: 'Error generating content plan from uploaded images', error: error.message });
+  }
+});
+
 export default router; 

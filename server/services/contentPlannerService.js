@@ -1,7 +1,7 @@
 import ContentPlanner from '../models/ContentPlanner.js';
 import Account from '../models/Account.js';
 import Post from '../models/Post.js';
-import { contentPlanPrompt, singlePostPrompt, imagePrompt } from './promptsService.js';
+import { contentPlanPrompt, singlePostPrompt, imagePrompt, textToMatchUploadedImagePrompt } from './promptsService.js';
 import { generateText } from './llmService.js';
 import { generateImage } from './imageService.js';
 import { generateTemplates } from './templateService.js';
@@ -255,6 +255,97 @@ export const generateContentPlan = async (accountId) => {
     };
   } catch (error) {
     console.error('Error generating content plan:', error);
+    throw error;
+  }
+};
+
+export const generateContentPlanFromUploadedImages = async (accountId) => {
+  try {
+    // Get content planner data
+    const contentPlanner = await ContentPlanner.findOne({ accountId });
+    if (!contentPlanner) {
+      throw new Error('Content planner not found');
+    }
+
+    // Calculate dates for each post based on frequency and start date
+    const startDate = new Date(contentPlanner.date);
+    const postDates = contentPlanner.uploadedImages.map((_, index) => {
+      const postDate = new Date(startDate);
+      postDate.setDate(startDate.getDate() + (index * contentPlanner.frequency));
+      return postDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+    });
+
+    // Create date-description mapping
+    const dateDescriptionMap = {};
+    contentPlanner.uploadedImages.forEach((image, index) => {
+      dateDescriptionMap[postDates[index]] = image.imageDescription;
+    });
+
+    const generatedPosts = [];
+
+    // Generate posts for each date
+    for (const [date, imageDescription] of Object.entries(dateDescriptionMap)) {
+      const matchingImage = contentPlanner.uploadedImages.find(
+        img => img.imageDescription === imageDescription
+      );
+
+      // Get prompt for text generation
+      const { prompt, system } = textToMatchUploadedImagePrompt({
+        imageDescription,
+        guidelines: contentPlanner.textGuidelines,
+        targetAudience: contentPlanner.audience,
+        style: contentPlanner.voice,
+        platform: contentPlanner.platforms[0],
+        language: contentPlanner.language
+      });
+
+      // Generate text content with proper parameters
+      const generatedContent = await generateText({
+        topic: prompt,
+        system,
+        model: contentPlanner.llm,
+        temperature: contentPlanner.creativity
+      });
+
+      // Create new post
+      const post = new Post({
+        accountId,
+        datePost: new Date(date),
+        platforms: contentPlanner.platforms,
+        image: {
+          url: matchingImage.imageUrl,
+          size: {
+            width: 1024,
+            height: 1024
+          },
+          dimensions: 'Square',  // Default to Square for Instagram-like format
+          template: matchingImage.imageUrl  // Add the same URL as template
+        },
+        text: {
+          post: generatedContent.post,
+          title: generatedContent.title,
+          subtitle: generatedContent.subtitle
+        },
+        prompts: {
+          text: prompt
+        },
+        models: {
+          text: contentPlanner.llm
+        },
+        timePost: contentPlanner.postingTime.toString(),
+        language: contentPlanner.language
+      });
+
+      await post.save();
+      generatedPosts.push(post);
+    }
+
+    return { 
+      message: 'ContentPlanSaved:ok',
+      posts: generatedPosts 
+    };
+  } catch (error) {
+    console.error('Error generating content plan from uploaded images:', error);
     throw error;
   }
 }; 
