@@ -30,7 +30,7 @@ const contentPlannerSchema = new mongoose.Schema({
   },
   llm: {
     type: String,
-    default: 'claude-3-5-haiku-20241022'
+    default: 'claude-3-5-sonnet-20241022'
   },
   imageGuidelines: {
     type: String,

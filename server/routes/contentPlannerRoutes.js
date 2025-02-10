@@ -160,7 +160,7 @@ router.post('/:accountId/delete-image', auth, async (req, res) => {
     }
 
     // Delete image from Google Cloud Storage
-    await deleteFile(imageUrl);
+    // await deleteFile(imageUrl);
 
     // Remove image from uploadedImages array
     contentPlanner.uploadedImages.splice(index, 1);

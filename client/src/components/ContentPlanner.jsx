@@ -186,10 +186,14 @@ export default function ContentPlanner() {
                 label="Image Model"
                 options={imageModelOptions}
                 placeholder="Select image model"
-                labelClass="text-lime-500"
+                labelClass={cn(
+                  "text-lime-500",
+                  contentPlanner.generateUploaded && "text-gray-400"
+                )}
                 value={contentPlanner.imageModel}
                 onChange={(value) => handleFieldChange('imageModel', value)}
                 tooltip={contentPlannerTooltips.imageModel}
+                disabled={contentPlanner.generateUploaded}
               />
               <SelectField
                 label="Voice"

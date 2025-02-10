@@ -267,83 +267,127 @@ export const generateContentPlanFromUploadedImages = async (accountId) => {
       throw new Error('Content planner not found');
     }
 
-    // Calculate dates for each post based on frequency and start date
-    const startDate = new Date(contentPlanner.date);
-    const postDates = contentPlanner.uploadedImages.map((_, index) => {
-      const postDate = new Date(startDate);
-      postDate.setDate(startDate.getDate() + (index * contentPlanner.frequency));
-      return postDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
-    });
+    // Validate uploaded images
+    if (!contentPlanner.uploadedImages || contentPlanner.uploadedImages.length === 0) {
+      throw new Error('No images uploaded');
+    }
 
-    // Create date-description mapping
-    const dateDescriptionMap = {};
-    contentPlanner.uploadedImages.forEach((image, index) => {
-      dateDescriptionMap[postDates[index]] = image.imageDescription;
-    });
+    // Calculate dates based on the number of images and platforms
+    const dates = [];
+    const startDate = new Date(contentPlanner.date);
+    const frequency = contentPlanner.frequency;
+
+    // Calculate how many dates we need based on images and platforms
+    const totalPosts = contentPlanner.uploadedImages.length * contentPlanner.platforms.length;
+    let currentDate = new Date(startDate);
+
+    // Generate enough dates for all posts
+    while (dates.length < totalPosts) {
+      dates.push(new Date(currentDate));
+      currentDate.setDate(currentDate.getDate() + frequency);
+    }
 
     const generatedPosts = [];
 
-    // Generate posts for each date
-    for (const [date, imageDescription] of Object.entries(dateDescriptionMap)) {
-      const matchingImage = contentPlanner.uploadedImages.find(
-        img => img.imageDescription === imageDescription
-      );
+    // Generate posts for each image
+    for (let i = 0; i < contentPlanner.uploadedImages.length; i++) {
+      const { imageUrl, imageDescription } = contentPlanner.uploadedImages[i];
+      const date = dates[i];
 
-      // Get prompt for text generation
+      // Generate text content for the image
       const { prompt, system } = textToMatchUploadedImagePrompt({
         imageDescription,
         guidelines: contentPlanner.textGuidelines,
         targetAudience: contentPlanner.audience,
         style: contentPlanner.voice,
-        platform: contentPlanner.platforms[0],
         language: contentPlanner.language
       });
 
-      // Generate text content with proper parameters
-      const generatedContent = await generateText({
+      const textContent = await generateText({
         topic: prompt,
         system,
         model: contentPlanner.llm,
-        temperature: contentPlanner.creativity
+        responseFormat: 'json'
       });
 
-      // Create new post
-      const post = new Post({
-        accountId,
-        datePost: new Date(date),
-        platforms: contentPlanner.platforms,
-        image: {
-          url: matchingImage.imageUrl,
-          size: {
-            width: 1024,
-            height: 1024
-          },
-          dimensions: 'Square',  // Default to Square for Instagram-like format
-          template: matchingImage.imageUrl  // Add the same URL as template
-        },
-        text: {
-          post: generatedContent.post,
-          title: generatedContent.title,
-          subtitle: generatedContent.subtitle
-        },
-        prompts: {
-          text: prompt
-        },
-        models: {
-          text: contentPlanner.llm
-        },
-        timePost: contentPlanner.postingTime.toString(),
-        language: contentPlanner.language
-      });
+      // Create posts for each platform
+      for (const platform of contentPlanner.platforms) {
+        try {
+          // Set platform-specific image dimensions
+          let imageDimensions = { size: { width: 1080, height: 1080 } };
+          if (platform === 'Instagram') {
+            imageDimensions = { size: { width: 1080, height: 1080 } };
+          } else if (platform === 'Facebook') {
+            imageDimensions = { size: { width: 1200, height: 630 } };
+          } else if (platform === 'LinkedIn') {
+            imageDimensions = { size: { width: 1200, height: 627 } };
+          } else if (platform === 'TikTok') {
+            imageDimensions = { size: { width: 1080, height: 1920 } };
+          } else if (platform === 'X') {
+            imageDimensions = { size: { width: 1200, height: 675 } };
+          }
 
-      await post.save();
-      generatedPosts.push(post);
+          // Create post
+          const post = new Post({
+            accountId: contentPlanner.accountId,
+            platforms: [platform],
+            templatesUrls: [],
+            datePost: date,
+            timePost: `${contentPlanner.postingTime.toString().padStart(2, '0')}`,
+            image: {
+              url: imageUrl,
+              template: imageUrl,
+              ...imageDimensions
+            },
+            text: {
+              post: textContent.post,
+              title: textContent.title,
+              subtitle: textContent.subtitle
+            },
+            prompts: {
+              image: imageDescription,
+              text: textContent.post
+            },
+            models: {
+              text: contentPlanner.llm
+            }
+          });
+
+          const savedPost = await post.save();
+
+          // Generate templates if template option is enabled and we have both image and text
+          if (savedPost.image?.url && savedPost.text?.title && savedPost.text?.subtitle) {
+            try {
+              const templates = await generateTemplates({
+                post: savedPost,
+                accountId: contentPlanner.accountId
+              });
+
+              // Update post with template URLs
+              if (templates?.results) {
+                const templateUrls = templates.results.map(template => template.imageUrl);
+                savedPost.templatesUrls = templateUrls;
+                await savedPost.save();
+              }
+            } catch (error) {
+              console.error('Error generating templates for post:', error);
+              // Continue with post creation even if template generation fails
+            }
+          }
+
+          generatedPosts.push(savedPost);
+        } catch (platformError) {
+          console.error(`Error generating post for platform ${platform}:`, platformError);
+          // Continue with next platform
+        }
+      }
     }
 
-    return { 
+    return {
       message: 'ContentPlanSaved:ok',
-      posts: generatedPosts 
+      posts: generatedPosts
     };
+
   } catch (error) {
     console.error('Error generating content plan from uploaded images:', error);
     throw error;

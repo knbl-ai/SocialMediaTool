@@ -1,6 +1,7 @@
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import TooltipLabel from '@/components/ui/tooltip-label';
+import { cn } from "@/lib/utils";
 
 const SelectField = ({ 
   label, 
@@ -9,15 +10,23 @@ const SelectField = ({
   onChange, 
   placeholder, 
   labelClass,
-  tooltip 
+  tooltip,
+  disabled = false
 }) => {
   return (
     <div className="w-full">
       <TooltipLabel className={labelClass} tooltip={tooltip}>
         {label}
       </TooltipLabel>
-      <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="mt-2">
+      <Select 
+        value={value} 
+        onValueChange={onChange}
+        disabled={disabled}
+      >
+        <SelectTrigger className={cn(
+          "mt-2",
+          disabled && "opacity-50 cursor-not-allowed"
+        )}>
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
