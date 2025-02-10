@@ -340,6 +340,67 @@ templatesUrls: [String] // Array of generated template URLs
    - Handle missing resources
    - Prevent orphaned files
 
+### Authorization System
+
+1. **Authorized Users Model**
+   ```javascript
+   authorizedUser: {
+     email: String,           // Required, unique, lowercase
+     status: String,          // 'active' or 'inactive'
+     addedBy: ObjectId,       // Reference to User who added
+     createdAt: Date         // Timestamp of creation
+   }
+   ```
+
+2. **Authorization Management**
+   - Server-side authorization checks
+   - Email-based access control
+   - Status tracking for user access
+   - Automatic email normalization
+   - Indexed email lookups for performance
+
+3. **CLI Tool for User Management**
+   ```bash
+   # Add single user
+   npm run auth-user user@example.com
+
+   # Add multiple users
+   npm run auth-user user1@example.com user2@example.com
+
+   # Add users from file
+   npm run auth-user -- --file emails.txt
+   ```
+
+4. **Features**
+   - Email validation and normalization
+   - Automatic reactivation of inactive users
+   - Bulk user import from file
+   - Status tracking and management
+   - Detailed operation logging
+   - Error handling and reporting
+
+5. **API Integration**
+   ```javascript
+   // Authorization Endpoints
+   GET    /api/auth/check-authorization   // Check user authorization
+   POST   /api/auth/login                 // User login with authorization check
+   POST   /api/auth/register              // User registration with authorization check
+   ```
+
+6. **UI Implementation**
+   - Conditional rendering based on authorization
+   - Clear feedback for unauthorized users
+   - Seamless integration with existing auth flow
+   - Status-aware component behavior
+
+7. **Best Practices**
+   - Secure email storage
+   - Case-insensitive email matching
+   - Efficient database indexing
+   - Detailed error messaging
+   - Audit logging capability
+   - Scalable user management
+
 ## Backend Architecture
 
 ### Core Structure

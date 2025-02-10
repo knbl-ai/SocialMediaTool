@@ -1,6 +1,9 @@
 import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
 import User from '../models/User.js';
+import AuthorizedUser from '../models/AuthorizedUser.js';
+import bcrypt from 'bcryptjs';
+import { ApiError } from '../utils/ApiError.js';
 
 const client = new OAuth2Client({
   clientId: process.env.GOOGLE_CLIENT_ID,
@@ -162,5 +165,32 @@ export const logout = async (req, res) => {
         code: 'LOGOUT_FAILED'
       }
     });
+  }
+};
+
+export const checkAuthorization = async (req, res) => {
+  try {
+    const user = req.user; // This comes from the auth middleware
+    
+    if (!user?.email) {
+      throw new ApiError(401, 'User not authenticated');
+    }
+
+    // Check if the email exists in the authorized users table
+    const authorizedUser = await AuthorizedUser.findOne({ 
+      email: user.email.toLowerCase(),
+      status: 'active'
+    });
+
+    res.json({
+      isAuthorized: !!authorizedUser
+    });
+  } catch (error) {
+    console.error('Authorization check error:', error);
+    if (error instanceof ApiError) {
+      res.status(error.statusCode).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: 'Internal server error' });
+    }
   }
 };

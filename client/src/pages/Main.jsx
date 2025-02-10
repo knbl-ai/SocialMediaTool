@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useAccounts } from '../hooks/useAccounts';
@@ -16,6 +16,23 @@ const Main = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading, logout, checkAuthStatus } = useAuth();
   const { accounts, loading, error, deleteAccount, updateAccountPosition, fetchAccounts } = useAccounts();
+  const [isAuthorized, setIsAuthorized] = useState(false);
+
+  // Check authorization status
+  useEffect(() => {
+    const checkAuthorization = async () => {
+      if (user?.email) {
+        try {
+          const response = await api.get('/auth/check-authorization');
+          setIsAuthorized(response.isAuthorized);
+        } catch (error) {
+          console.error('Error checking authorization:', error);
+          setIsAuthorized(false);
+        }
+      }
+    };
+    checkAuthorization();
+  }, [user]);
 
   // Check auth status on mount and when user changes
   useEffect(() => {
@@ -129,40 +146,61 @@ const Main = () => {
           </div>
 
           <div className="flex justify-center items-center mb-8">
-            <NewAccountButton />
+            {isAuthorized ? (
+              <NewAccountButton />
+            ) : (
+              <Card className="w-full max-w-2xl">
+                <CardContent className="p-6">
+                  <p className="text-center text-muted-foreground">
+                    Please contact KNBL to apply for early access to application at{' '}
+                    <a 
+                      href="mailto:info@kanibal.co.il" 
+                      className="text-lime-500 hover:text-lime-600"
+                    >
+                      info@kanibal.co.il
+                    </a>
+                  </p>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
-          {error && (
-            <Card className="mb-8 bg-destructive/10">
-              <CardContent className="p-4">
-                <p className="text-destructive">{error}</p>
-              </CardContent>
-            </Card>
-          )}
+          {/* Only show accounts section if user is authorized */}
+          {isAuthorized ? (
+            <>
+              {error && (
+                <Card className="mb-8 bg-destructive/10">
+                  <CardContent className="p-4">
+                    <p className="text-destructive">{error}</p>
+                  </CardContent>
+                </Card>
+              )}
 
-          {loading ? (
-            <div className="text-center">Loading accounts...</div>
-          ) : accounts.length === 0 ? (
-            <Card>
-              <CardContent className="p-8 text-center">
-                <p className="text-muted-foreground">
-                  You haven't added any accounts yet. Click the "Add Account" button to get started.
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="flex flex-col items-center w-full ">
-              {accounts.map((account, index) => (
-                <AccountCard 
-                  key={account._id} 
-                  account={account}
-                  index={index}
-                  onAccountDeleted={handleAccountDeleted}
-                  onDrop={handleDrop}
-                />
-              ))}
-            </div>
-          )}
+              {loading ? (
+                <div className="text-center">Loading accounts...</div>
+              ) : accounts.length === 0 ? (
+                <Card>
+                  <CardContent className="p-8 text-center">
+                    <p className="text-muted-foreground">
+                      You haven't added any accounts yet. Click the "Add Account" button to get started.
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="flex flex-col items-center w-full">
+                  {accounts.map((account, index) => (
+                    <AccountCard 
+                      key={account._id} 
+                      account={account}
+                      index={index}
+                      onAccountDeleted={handleAccountDeleted}
+                      onDrop={handleDrop}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
+          ) : null}
         </main>
       </div>
     </DndProvider>
