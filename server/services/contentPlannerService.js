@@ -90,11 +90,16 @@ const generatePostContent = async (topic, contentPlanner, platform) => {
   };
 };
 
-const createPost = async (date, topic, contentPlanner, generatedContent, platforms, imageDimensions) => {
+const createPost = async (date, topic, contentPlanner, generatedContent, platforms, { size, dimensions }) => {
   try {
     // Ensure date is valid
     if (!(date instanceof Date) || isNaN(date.getTime())) {
       throw new Error('Invalid date provided');
+    }
+
+    // Validate size
+    if (!size || !size.width || !size.height) {
+      throw new Error('Invalid image size provided');
     }
 
     // Create the post
@@ -107,7 +112,11 @@ const createPost = async (date, topic, contentPlanner, generatedContent, platfor
       image: {
         url: generatedContent.imageUrl,
         template: generatedContent.imageUrl,
-        ...imageDimensions
+        size: {
+          width: size.width,
+          height: size.height
+        },
+        dimensions: dimensions || 'Square'
       },
       text: {
         post: generatedContent.textContent.post,
@@ -218,21 +227,46 @@ export const generateContentPlan = async (accountId) => {
         for (const platform of contentPlanner.platforms) {
           try {
             // Set platform-specific image dimensions
-            const imageDimensions = platform === 'Instagram' 
-              ? { width: 1024, height: 1024, dimensions: 'Square' }
-              : { width: 1024, height: 960, dimensions: 'Horizontal' };
+            let size;
+            let dimensions;
+
+            switch (platform) {
+              case 'Instagram':
+                size = { width: 1080, height: 1080 };
+                dimensions = 'Square';
+                break;
+              case 'Facebook':
+                size = { width: 1200, height: 630 };
+                dimensions = 'Horizontal';
+                break;
+              case 'LinkedIn':
+                size = { width: 1200, height: 627 };
+                dimensions = 'Horizontal';
+                break;
+              case 'TikTok':
+                size = { width: 1080, height: 1920 };
+                dimensions = 'Story';
+                break;
+              case 'X':
+                size = { width: 1200, height: 675 };
+                dimensions = 'Horizontal';
+                break;
+              default:
+                size = { width: 1080, height: 1080 };
+                dimensions = 'Square';
+            }
 
             // Generate platform-specific content
             const generatedContent = await generatePostContent(topic, contentPlanner, platform);
-            
+           
             // Create post with platform-specific settings
             const post = await createPost(
               date, 
               topic, 
               contentPlanner, 
               generatedContent,
-              [platform], // Pass platform as array for platforms field
-              imageDimensions
+              [platform],
+              { size, dimensions }
             );
             
             if (post) {
