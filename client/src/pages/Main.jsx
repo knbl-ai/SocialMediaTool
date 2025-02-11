@@ -12,6 +12,8 @@ import api from '../lib/api';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import HyperText from '../components/ui/hyper-text';
+
+
 const Main = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading, logout, checkAuthStatus } = useAuth();

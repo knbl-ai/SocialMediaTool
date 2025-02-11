@@ -1,58 +1,48 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { Camera } from 'lucide-react';
+import { useDebounce } from '../hooks/useDebounce';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 const AccountName = ({ account, onNameUpdate }) => {
   const [name, setName] = useState('');
-  const nameRef = useRef(name);
-  const timeoutRef = useRef(null);
-
-  // Update ref when name changes
-  useEffect(() => {
-    nameRef.current = name;
-  }, [name]);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const fileInputRef = useRef(null);
+  const lastSavedName = useRef('');
 
   useEffect(() => {
     if (account?.name) {
       setName(account.name);
+      lastSavedName.current = account.name;
     } else {
       setName('');
+      lastSavedName.current = '';
     }
   }, [account]);
 
-  const fileInputRef = useRef(null);
-
-  // Debounced update effect
-  useEffect(() => {
-    if (!account?._id) return;
-
-    const hasChanges = () => {
-      return nameRef.current !== account.name;
-    };
-
-    if (!hasChanges()) return;
-
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
+  const handleUpdate = useCallback(async (newName) => {
+    if (!account?._id || newName === lastSavedName.current) return;
+    
+    try {
+      setIsUpdating(true);
+      await onNameUpdate(newName);
+      lastSavedName.current = newName;
+    } catch (error) {
+      console.error('Error updating name:', error);
+      // Revert to last saved name on error
+      setName(lastSavedName.current);
+    } finally {
+      setIsUpdating(false);
     }
+  }, [account?._id, onNameUpdate]);
 
-    timeoutRef.current = setTimeout(() => {
-      if (onNameUpdate) {
-        onNameUpdate(nameRef.current);
-      }
-    }, 500);
-
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, [name, account, onNameUpdate]);
+  const debouncedUpdate = useDebounce(handleUpdate, 500);
 
   const handleNameChange = (e) => {
-    setName(e.target.value);
+    const newName = e.target.value;
+    setName(newName);
+    debouncedUpdate(newName);
   };
 
   const handleLogoClick = () => {
@@ -61,7 +51,7 @@ const AccountName = ({ account, onNameUpdate }) => {
 
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !account?._id) return;
 
     const formData = new FormData();
     formData.append('logo', file);
@@ -77,8 +67,7 @@ const AccountName = ({ account, onNameUpdate }) => {
           }
         }
       );
-      // The parent component will handle the account update
-      if (onNameUpdate) {
+      if (onNameUpdate && response.data) {
         onNameUpdate(response.data.name, response.data);
       }
     } catch (error) {
@@ -120,11 +109,13 @@ const AccountName = ({ account, onNameUpdate }) => {
           type="text"
           value={name}
           onChange={handleNameChange}
+          disabled={isUpdating}
           placeholder="Account Name"
-          className="text-3xl font-bold bg-transparent border-none focus:border-none focus:outline-none focus:ring-0 p-0 h-auto text-center w-60
+          className={`text-3xl font-bold bg-transparent border-none focus:border-none focus:outline-none focus:ring-0 p-0 h-auto text-center w-60
                    relative
                    after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-1
-                   after:bg-gradient-to-r after:from-red-500 after:via-yellow-500 after:via-green-500 after:via-blue-500 after:to-purple-500"
+                   after:bg-gradient-to-r after:from-red-500 after:via-yellow-500 after:via-green-500 after:via-blue-500 after:to-purple-500
+                   ${isUpdating ? 'opacity-50' : ''}`}
         />
       </div>
     </div>
