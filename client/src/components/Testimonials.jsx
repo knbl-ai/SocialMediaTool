@@ -2,39 +2,39 @@ import { useState } from 'react';
 
 const reviews = [
   {
+    name: "Caliber",
+    username: "caliber.co.il",
+    body: "Smart, fast, and on-brand—let AI handle your social media while you focus on what matters! 🤖✨ #ContentMadeEasy",
+    img: "https://res.cloudinary.com/dbajenfxp/image/upload/v1739274864/WhatsApp_Image_2025-02-11_at_08.45.19_rxpind.jpg"
+  },
+  {
+    name: "GetStarted",
+    username: "getstarted.co.il ",
+    body: "Say goodbye to content stress—this app creates, you shine! 🚀📲 #GameChanger",
+    img: "https://res.cloudinary.com/dbajenfxp/image/upload/v1739274864/3_ek5ygr.png"
+  },
+  {
     name: "Company",
     username: "@company",
-    body: "I've never seen anything like this before. It's amazing. I love it.",
+    body: "Place for your testimonials",
     img: "https://png.pngtree.com/png-vector/20220825/ourmid/pngtree-creative-logo-design-vector-free-png-png-image_6123042.png"
   },
   {
     name: "Company",
     username: "@company",
-    body: "I don't know what to say. I'm speechless. This is amazing.",
+    body: "Place for your testimonials",
     img: "https://png.pngtree.com/png-vector/20220825/ourmid/pngtree-creative-logo-design-vector-free-png-png-image_6123042.png"
   },
   {
     name: "Company",
     username: "@company",
-    body: "I'm at a loss for words. This is amazing. I love it.",
+    body: "Place for your testimonials",
     img: "https://png.pngtree.com/png-vector/20220825/ourmid/pngtree-creative-logo-design-vector-free-png-png-image_6123042.png"
   },
   {
     name: "Company",
     username: "@company",
-    body: "I'm at a loss for words. This is amazing. I love it.",
-    img: "https://png.pngtree.com/png-vector/20220825/ourmid/pngtree-creative-logo-design-vector-free-png-png-image_6123042.png"
-  },
-  {
-    name: "Company",
-    username: "@company",
-    body: "I'm at a loss for words. This is amazing. I love it.",
-    img: "https://png.pngtree.com/png-vector/20220825/ourmid/pngtree-creative-logo-design-vector-free-png-png-image_6123042.png"
-  },
-  {
-    name: "Company",
-    username: "@company",
-    body: "I'm at a loss for words. This is amazing. I love it.",
+    body: "Place for your testimonials",
     img: "https://png.pngtree.com/png-vector/20220825/ourmid/pngtree-creative-logo-design-vector-free-png-png-image_6123042.png"
   }
 ];

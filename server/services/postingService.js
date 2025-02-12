@@ -27,16 +27,25 @@ class PostingService {
         // Initialize Twitter service with credentials
         const twitterService = new TwitterService(apiKey, apiSecret, accessToken, accessTokenSecret);
         
-        // Upload image to Twitter and get media ID
-        const mediaUploadResponse = await twitterService.uploadMediaFromUrl(postData.imageUrl);
-        const imageUploadId = mediaUploadResponse.media_id_string;
+        let mediaId;
+        
+        if (postData.showVideo) {
+          // Upload video to Twitter and get media ID
+          const videoUploadResponse = await twitterService.uploadVideoFromUrl(postData.videoUrl);
+          mediaId = videoUploadResponse.media_id_string;
+        } else {
+          // Upload image to Twitter and get media ID
+          const mediaUploadResponse = await twitterService.uploadMediaFromUrl(postData.imageUrl);
+          mediaId = mediaUploadResponse.media_id_string;
+        }
 
         // Prepare request data for X platform
         requestData = {
           id: "no_id", // Special case for X platform
-          imageUrl: imageUploadId, // Use media ID instead of URL
+          imageUrl: mediaId, // Use media ID instead of URL
           platform: platform.toLowerCase(),
-          content: postData.content
+          content: postData.content,
+          showVideo: postData.showVideo
         };
 
         if (!webhookUrl) {
@@ -60,7 +69,9 @@ class PostingService {
           id: pageId,
           imageUrl: postData.imageUrl,
           platform: platform.toLowerCase(),
-          content: postData.content
+          content: postData.content,
+          videoUrl: postData.videoUrl,
+          showVideo: postData.showVideo
         };
 
         if (!webhookUrl) {
@@ -111,7 +122,9 @@ class PostingService {
     // Prepare post data
     const postData = {
       imageUrl: post.image.template,
-      content: post.text.post
+      content: post.text.post,
+      videoUrl: post.image.video,
+      showVideo: post.image.showVideo
     };
 
     // Publish to each platform
