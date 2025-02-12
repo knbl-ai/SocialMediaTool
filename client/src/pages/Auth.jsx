@@ -10,10 +10,12 @@ import { AlertTriangle, InfoIcon } from "lucide-react";
 import HyperText from '@/components/ui/hyper-text';
 import Testimonials from '@/components/Testimonials';
 import WordRotate from '@/components/ui/word-rotate';
+import { useTheme } from "@/components/theme/theme-provider";
 
 const Auth = () => {
   const navigate = useNavigate();
   const { login, register, googleLogin, user } = useAuth();
+  const { theme } = useTheme();
   const [isSignUp, setIsSignUp] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -83,7 +85,11 @@ const Auth = () => {
     <div className="flex-1 flex items-center justify-center flex-col relative">
     
       {/* <HyperText className="text-4xl">iGentity</HyperText> */}
-      <img src="/iGentity_full.png" alt="iGentity" className="h-12 w-30 mb-1" />
+      <img 
+        src={theme === 'dark' ? "/logo_01.png" : "/logo_02.png"} 
+        alt="iGentity" 
+        className="h-20 w-30 mb-2 mt-4" 
+      />
       <HyperText className="text-xl text-gray-500">Next generation of social presence
       </HyperText>
       <div className='grid grid-cols-3 gap-1'>

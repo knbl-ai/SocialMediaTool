@@ -7,6 +7,7 @@ import { Card, CardContent } from '../components/ui/card';
 import NewAccountButton from '../components/NewAccountButton';
 import AccountCard from '../components/AccountCard';
 import { ThemeToggle } from '../components/theme/theme-toggle';
+import { useTheme } from "@/components/theme/theme-provider";
 import { Info } from 'lucide-react';
 import api from '../lib/api';
 import { DndProvider } from 'react-dnd';
@@ -16,6 +17,7 @@ import HyperText from '../components/ui/hyper-text';
 
 const Main = () => {
   const navigate = useNavigate();
+  const { theme } = useTheme();
   const { user, loading: authLoading, logout, checkAuthStatus } = useAuth();
   const { accounts, loading, error, deleteAccount, updateAccountPosition, fetchAccounts } = useAccounts();
   const [isAuthorized, setIsAuthorized] = useState(false);
@@ -59,6 +61,18 @@ const Main = () => {
       navigate('/auth');
     }
   }, [user, authLoading, navigate]);
+
+  // Add effect to load Vimeo script
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://player.vimeo.com/api/player.js';
+    script.async = true;
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -130,10 +144,12 @@ const Main = () => {
               </span>
             </div>
             <div className="flex flex-col items-center me-20">
-              {/* <h1 className="text-2xl font-bold">iGentity</h1> */}
-              <img src="/iGentity_full.png" alt="iGentity" className="h-12 w-30 mb-1" />
+              <img 
+                src={theme === 'dark' ? "/logo_01.png" : "/logo_02.png"} 
+                alt="iGentity" 
+                className="h-20 w-30 mb-1" 
+              />
               <HyperText className="text-xs text-gray-500">Next generation of social presence</HyperText>
-              {/* <h3 className="text-m text-muted-foreground">Next generation of social presence</h3> */}
             </div>
             <div className="flex items-center gap-2">
               <ThemeToggle />
@@ -151,19 +167,39 @@ const Main = () => {
             {isAuthorized ? (
               <NewAccountButton />
             ) : (
-              <Card className="w-full max-w-2xl">
-                <CardContent className="p-6">
-                  <p className="text-center text-muted-foreground">
-                    Please contact KNBL to apply for early access to application at{' '}
-                    <a 
-                      href="mailto:info@kanibal.co.il" 
-                      className="text-lime-500 hover:text-lime-600"
-                    >
-                      info@kanibal.co.il
-                    </a>
-                  </p>
-                </CardContent>
-              </Card>
+              <div className="w-full max-w-4xl">
+                <Card className="mb-8">
+                  <CardContent className="p-6">
+                    <p className="text-center text-muted-foreground">
+                      Please contact KNBL to apply for early access to application at{' '}
+                      <a 
+                        href="mailto:info@kanibal.co.il" 
+                        className="text-lime-500 hover:text-lime-600"
+                      >
+                        info@kanibal.co.il
+                      </a>
+                    </p>
+                  </CardContent>
+                </Card>
+                <div className="relative w-full rounded-lg overflow-hidden shadow-lg">
+                  <div style={{ padding: '56.72% 0 0 0', position: 'relative' }}>
+                    <iframe
+                      src="https://player.vimeo.com/video/1056046911?badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        borderRadius: '0.5rem'
+                      }}
+                      frameBorder="0"
+                      allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media"
+                      title="iGentity tutorial"
+                    />
+                  </div>
+                </div>
+              </div>
             )}
           </div>
 

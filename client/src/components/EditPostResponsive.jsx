@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { ImagePlus, X } from "lucide-react";
+import { ImagePlus, X, Trash2 } from "lucide-react";
 import { Modal } from "./ui/modal";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
@@ -50,6 +50,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
   const isSelectingTemplateRef = useRef(false);
   const templateSelectionTimeoutRef = useRef(null);
   const currentPostRef = useRef(currentPost);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
 
   console.log('currentPost', currentPost);
 
@@ -444,6 +445,24 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
     }
   };
 
+  // Add handleDelete function
+  const handleDelete = async () => {
+    if (!deleteConfirm) {
+      setDeleteConfirm(true);
+      // Reset confirmation after 3 seconds if not clicked
+      setTimeout(() => setDeleteConfirm(false), 3000);
+      return;
+    }
+
+    try {
+      await api.deletePost(postId);
+      onClose();
+      onUpdate?.();
+    } catch (error) {
+      console.error('Error deleting post:', error);
+    }
+  };
+
   return (
     <Modal show={show} onClose={handleClose}>
       <div className="flex flex-col h-[90vh] w-full">
@@ -575,30 +594,18 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
               <Button 
                 variant="ghost" 
                 size="icon" 
-                onClick={async () => {
-                  if (postId) {
-                    try {
-                      isDeletingRef.current = true;
-                      if (saveTimeoutRef.current) {
-                        clearTimeout(saveTimeoutRef.current);
-                      }
-
-                      // Delete the post (server will handle template cleanup)
-                      await deletePost(postId);
-                      setPostId(null);
-                      setCurrentPost(null);
-                      if (onUpdate) await onUpdate();
-                      handleClose();
-                    } catch (error) {
-                      console.error('Error deleting post:', error);
-                      setLocalError(error.message || 'Failed to delete post');
-                      isDeletingRef.current = false;
-                    }
-                  }
-                }}
-                className="text-red-400 hover:text-red-500 ml-4"
+                onClick={handleDelete}
+                className={`relative w-9 h-9 ${
+                  deleteConfirm 
+                    ? 'bg-red-100 hover:bg-red-200 text-red-600 w-[70px]' 
+                    : 'text-red-400 hover:text-red-500'
+                } ml-4 transition-all duration-200`}
               >
-                <X className="h-4 w-4" />
+                {deleteConfirm ? (
+                  <span className="text-xs font-medium">Delete?</span>
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
               </Button>
             </div>
 
