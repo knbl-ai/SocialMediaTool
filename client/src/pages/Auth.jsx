@@ -6,7 +6,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Alert, AlertDescription } from '../components/ui/alert';
-import { AlertTriangle, InfoIcon } from "lucide-react";
+import { AlertTriangle, InfoIcon, ArrowLeft } from "lucide-react";
 import HyperText from '@/components/ui/hyper-text';
 import Testimonials from '@/components/Testimonials';
 import WordRotate from '@/components/ui/word-rotate';
@@ -73,7 +73,15 @@ const Auth = () => {
 
   return (
     <div className="flex-1 flex items-center justify-center flex-col relative">
-    
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        className="absolute top-5 right-5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+        onClick={() => navigate('/')}
+      >
+        <ArrowLeft className="h-6 w-6" />
+      </Button>
+      
       {/* <HyperText className="text-4xl">iGentity</HyperText> */}
       <img 
         src={theme === 'dark' ? "/logo_01.png" : "/logo_02.png"} 

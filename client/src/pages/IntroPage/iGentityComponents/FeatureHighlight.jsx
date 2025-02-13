@@ -1,6 +1,6 @@
 import React from "react";
 
-const ImpactMetric = ({ imageSrc, title, description }) => {
+const FeatureHighlight = ({ imageSrc, title, description }) => {
   return (
     <div className="flex flex-col h-[320px] px-8 py-10 rounded-2xl border border-solid bg-black bg-opacity-50 border-purple-400 border-opacity-50 min-w-[300px] max-w-[400px]">
       <div className="h-[64px] flex items-center">
@@ -23,4 +23,4 @@ const ImpactMetric = ({ imageSrc, title, description }) => {
   );
 };
 
-export default ImpactMetric;
+export default FeatureHighlight;
