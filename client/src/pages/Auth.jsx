@@ -76,7 +76,7 @@ const Auth = () => {
       <Button 
         variant="ghost" 
         size="icon" 
-        className="absolute top-5 right-5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+        className="absolute top-4 right-4 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 bg-white dark:bg-gray-900 shadow-md"
         onClick={() => navigate('/')}
       >
         <ArrowLeft className="h-6 w-6" />

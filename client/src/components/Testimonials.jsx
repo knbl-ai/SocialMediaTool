@@ -60,7 +60,7 @@ const MarqueeRow = ({ items, reverse = false }) => {
   const [isPaused, setIsPaused] = useState(false);
 
   return (
-    <div className="group relative flex w-full overflow-hidden w-[90vw]">
+    <div className="group relative flex w-full overflow-hidden w-[70vw]">
       <div 
         className="animate-marquee flex min-w-full gap-4 py-2"
         onMouseEnter={() => setIsPaused(true)}

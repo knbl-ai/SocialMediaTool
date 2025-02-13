@@ -158,7 +158,7 @@ const IGentityLandingPage = () => {
         <div className="w-full relative">
           <BackgroundImage />
           <div className="relative z-10">
-            <div className="mt-32 text-4xl font-semibold tracking-tight leading-none text-center text-[#ffffff] max-md:mt-10 max-md:max-w-full">
+            <div className="mt-16 text-4xl font-semibold tracking-tight leading-none text-center text-[#ffffff] max-md:mt-10 max-md:max-w-full">
               Why iGentitY Stands Out
             </div>
             <div className="flex flex-wrap justify-center gap-8 items-start mt-16 w-full text-base tracking-normal text-[#ffffff] max-w-[1440px] mx-auto px-4 max-md:mt-10">
@@ -166,7 +166,7 @@ const IGentityLandingPage = () => {
                 <FeatureHighlight key={index} {...feature} />
               ))}
             </div>
-            <div className="mt-56 text-4xl font-semibold tracking-tight leading-none text-center text-[#ffffff] max-md:mt-10">
+            <div className="mt-24 text-4xl font-semibold tracking-tight leading-none text-center text-[#ffffff] max-md:mt-10">
               Impact Metrics
             </div>
             <div className="flex flex-wrap justify-center gap-8 items-start mt-16 w-full text-base tracking-normal text-[#ffffff] max-w-[1440px] mx-auto px-4 max-md:mt-10">
@@ -178,7 +178,7 @@ const IGentityLandingPage = () => {
         </div>
 
         <div className="w-full flex flex-col items-center">
-          <div className="mt-32 text-4xl font-semibold tracking-tight leading-snug text-center text-[#9333ea] max-md:mt-10 max-md:max-w-full">
+          <div className="mt-16 text-4xl font-semibold tracking-tight leading-snug text-center text-[#9333ea] max-md:mt-10 max-md:max-w-full">
             <span className="text-[#ffffff]">The Future</span> of Content Creation Awaits
           </div>
           <div className="mt-5 text-lg tracking-normal text-center text-[#ffffff] opacity-60 w-[625px] max-md:max-w-full">

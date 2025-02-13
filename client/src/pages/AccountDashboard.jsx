@@ -106,7 +106,7 @@ const AccountDashboard = () => {
           onMonthChange={handleMonthChange}
         />
       </div>
-      <div className="mt-8 pb-8">
+      <div className="mt-4">
         <DownloadContentPlan currentMonth={currentMonth} accountId={accountId} />
       </div>
      
