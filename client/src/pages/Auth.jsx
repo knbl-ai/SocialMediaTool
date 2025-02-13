@@ -25,12 +25,6 @@ const Auth = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      navigate('/');
-    }
-  }, [user, navigate]);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -41,9 +35,7 @@ const Auth = () => {
       } else {
         await login(formData.email, formData.password);
       }
-      setTimeout(() => {
-        navigate('/');
-      }, 0);
+      navigate('/main');
     } catch (error) {
       console.error('Authentication failed:', error);
       setError(error.message || 'Authentication failed. Please check your credentials.');
@@ -57,9 +49,7 @@ const Auth = () => {
     setIsLoading(true);
     try {
       await googleLogin(response.credential);
-      setTimeout(() => {
-        navigate('/');
-      }, 0);
+      navigate('/main');
     } catch (error) {
       console.error('Google login failed:', error);
       setError(error.message || 'Google authentication failed');

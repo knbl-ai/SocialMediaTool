@@ -22,6 +22,16 @@ const Main = () => {
   const { accounts, loading, error, deleteAccount, updateAccountPosition, fetchAccounts } = useAccounts();
   const [isAuthorized, setIsAuthorized] = useState(false);
 
+  // Check auth status and redirect if not authenticated
+  useEffect(() => {
+    const checkAuth = async () => {
+      if (!user && !authLoading) {
+        navigate('/auth');
+      }
+    };
+    checkAuth();
+  }, [user, authLoading, navigate]);
+
   // Check authorization status
   useEffect(() => {
     const checkAuthorization = async () => {
@@ -38,29 +48,12 @@ const Main = () => {
     checkAuthorization();
   }, [user]);
 
-  // Check auth status on mount and when user changes
-  useEffect(() => {
-    const initializeAuth = async () => {
-      if (!user) {
-        await checkAuthStatus();
-      }
-    };
-    initializeAuth();
-  }, [user, checkAuthStatus]);
-
   // Fetch accounts only when we have a valid user
   useEffect(() => {
     if (!authLoading && user) {
       fetchAccounts();
     }
   }, [user, authLoading, fetchAccounts]);
-
-  // Redirect to auth if not authenticated
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/auth');
-    }
-  }, [user, authLoading, navigate]);
 
   // Add effect to load Vimeo script
   useEffect(() => {

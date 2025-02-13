@@ -9,8 +9,11 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Only check auth if we're not on the auth page
-    if (!window.location.pathname.includes('/auth')) {
+    // Only check auth for protected routes
+    const publicRoutes = ['/', '/auth'];
+    const currentPath = window.location.pathname;
+    
+    if (!publicRoutes.includes(currentPath)) {
       checkAuthStatus();
     } else {
       setLoading(false);
@@ -26,8 +29,11 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
       console.error('Auth check error:', error);
       
-      // Don't redirect on network errors or other non-auth errors
-      if (error.status === 401 || error.status === 403) {
+      // Only redirect to auth for protected routes
+      const publicRoutes = ['/', '/auth'];
+      const currentPath = window.location.pathname;
+      
+      if (!publicRoutes.includes(currentPath) && (error.status === 401 || error.status === 403)) {
         window.location.href = '/auth';
       }
     } finally {
