@@ -50,7 +50,7 @@ const AccountDashboard = () => {
   };
 
   const handleBack = () => {
-    navigate('/accounts');
+    navigate('/main');
   };
 
   const handleMonthChange = (date) => {
