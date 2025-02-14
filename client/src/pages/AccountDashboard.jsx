@@ -100,13 +100,13 @@ const AccountDashboard = () => {
         <ContentPlanner />
       </div>
       {/* Posts Dashboard */}
-      <div className="mt-8">
+      <div className="mt-8 ">
         <PostsDashboard 
           accountId={accountId} 
           onMonthChange={handleMonthChange}
         />
       </div>
-      <div className="mt-4">
+      <div className="mt-4 ">
         <DownloadContentPlan currentMonth={currentMonth} accountId={accountId} />
       </div>
      

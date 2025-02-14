@@ -135,8 +135,8 @@ const DownloadContentPlan = ({ currentMonth = new Date(), accountId }) => {
   };
 
   return (
-    <Card className="w-full mt-8">
-      <CardContent className="p-6">
+    <Card className="w-full mt-8 h-[200px] ">
+      <CardContent className="p-6 mt-8">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="flex flex-col gap-2">
