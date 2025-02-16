@@ -18,8 +18,7 @@ export const DimensionsSelector = ({ value, onChange }) => {
   const handleChange = (selectedName) => {
     const selectedDimension = dimensions.find(d => d.name === selectedName);
     if (selectedDimension) {
-      console.log('DimensionsSelector - Selected dimension:', selectedDimension.name);
-      console.log('DimensionsSelector - Selected size:', selectedDimension.size);
+     
       onChange(selectedDimension.name, selectedDimension.size);
     }
   };

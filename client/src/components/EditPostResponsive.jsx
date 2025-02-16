@@ -228,7 +228,6 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
       }
     };
 
-    console.log('Updating post with new dimensions:', newSize);
 
     try {
       const savedPost = await updatePost(postId, updatedPostData);
@@ -369,7 +368,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
     }
   };
 
-  const onGenerate = async () => {
+  const onGenerateVideo = async () => {
     try {
       if (!videoPrompt || !selectedVideoModel) {
         setLocalError('Please provide a prompt and select a model');
@@ -400,14 +399,16 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
         params.imageUrl = currentPost.image.url;
       }
 
+    
       const response = await api.generateVideo(params);
-      
-      // Update the post with the new video URL
-      const updatedPost = await updatePost(postId, {
+
+      // Create a new post object with updated video URL
+      const updatedPostData = {
         ...currentPost,
         image: {
           ...currentPost.image,
-          video: response.videoUrl
+          video: response.videoUrl,
+          showVideo: true // Force video display
         },
         prompts: {
           ...currentPost.prompts,
@@ -417,9 +418,12 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
           ...currentPost.models,
           video: selectedVideoModel
         }
-      });
-
-      setCurrentPost(updatedPost);
+      };
+      
+      // Update the post and state
+      const updatedPost = await updatePost(postId, updatedPostData);
+      setCurrentPost(null); // Force a rerender by clearing the state
+      setTimeout(() => setCurrentPost(updatedPost), 0); // Set the new state in the next tick
       setLocalError(null);
     } catch (error) {
       console.error('Error generating video:', error);
@@ -696,7 +700,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                   value={videoPrompt}
                   onChange={setVideoPrompt}
                   isLoading={isGeneratingVideo}
-                  onGenerate={onGenerate}
+                  onGenerate={onGenerateVideo}
                 />
 
                 {/* Text Generation */}

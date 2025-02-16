@@ -25,13 +25,11 @@ const calculateAspectRatio = (size) => {
   const ratio = size.width / size.height;
   
   // Round to common aspect ratios
-  if (Math.abs(ratio - 1) < 0.1) return '1:1';
-  if (Math.abs(ratio - 16/9) < 0.1) return '16:9';
-  if (Math.abs(ratio - 9/16) < 0.1) return '9:16';
+  if (Math.abs(ratio - 1) < 0.1) return '1:1'; 
+  else if (size.width > size.height && size.height === 720) return '16:9';
+  else if (size.width > size.height && size.height === 960) return '4:3';
+  else if (Math.abs(ratio - 9/16) < 0.1) return '9:16';
   
-  // Default to closest standard ratio
-  if (ratio > 1) return '16:9';
-  if (ratio < 1) return '9:16';
   return '1:1';
 };
 
@@ -58,7 +56,15 @@ export const textToVideo = async (prompt, model, options = {}) => {
     }
 
     const duration = DURATIONS.includes(options.duration) ? options.duration : '5';
-    const aspect_ratio = calculateAspectRatio(options.size);
+    let aspect_ratio = calculateAspectRatio(options.size);
+    if (model === 'fal-ai/luma-dream-machine/ray-2' && aspect_ratio === '1:1') aspect_ratio = '16:9';
+
+    console.log('model', model);
+    console.log('prompt', prompt);
+    console.log('duration', duration);
+    console.log('aspect_ratio', aspect_ratio);
+    console.log('width', options.size.width);
+    console.log('height', options.size.height);
 
     const result = await fal.subscribe(model, {
       input: {
@@ -71,6 +77,8 @@ export const textToVideo = async (prompt, model, options = {}) => {
       logs: options.logs || false,
       onQueueUpdate: options.onQueueUpdate
     });
+
+    console.log('result', result);
 
     return result;
   } catch (error) {
@@ -91,6 +99,8 @@ export const textToVideo = async (prompt, model, options = {}) => {
  * @returns {Promise<{data: {video: {url: string}}, requestId: string}>}
  */
 export const imageToVideo = async (prompt, model, imageUrl, options = {}) => {
+
+
   try {
     if (!prompt) {
       throw new ApiError(400, 'Prompt is required');
@@ -105,8 +115,11 @@ export const imageToVideo = async (prompt, model, imageUrl, options = {}) => {
       throw new ApiError(400, 'Size is required');
     }
 
-    const duration = DURATIONS.includes(options.duration) ? options.duration : '5';
-    const aspect_ratio = calculateAspectRatio(options.size);
+    let duration = DURATIONS.includes(options.duration) ? options.duration : '5';
+    if (model === 'fal-ai/luma-dream-machine/ray-2') duration = '5s'
+
+    let aspect_ratio = calculateAspectRatio(options.size);
+    if (model === 'fal-ai/luma-dream-machine/ray-2' && aspect_ratio === '1:1') aspect_ratio = '16:9';
 
     const result = await fal.subscribe(`${model}/image-to-video`, {
       input: {
@@ -114,6 +127,8 @@ export const imageToVideo = async (prompt, model, imageUrl, options = {}) => {
         image_url: imageUrl,
         duration,
         aspect_ratio,
+        loop: true,
+        resolution: '720p'
       },
       logs: options.logs || false,
       onQueueUpdate: options.onQueueUpdate

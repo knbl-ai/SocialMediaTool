@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useDrop, useDrag } from 'react-dnd';
+import { Video } from 'lucide-react';
 import EditPostResponsive from './EditPostResponsive';
 import { usePosts } from '../hooks/usePosts';
 
@@ -205,6 +206,14 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
                             alt="Post preview"
                             className="w-full h-full object-cover rounded-xl"
                           />
+                          {/* Video icon overlay */}
+                          {currentPost.image?.showVideo && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="bg-black/30 p-2 rounded-full">
+                                <Video className="w-6 h-6 text-white opacity-80" />
+                              </div>
+                            </div>
+                          )}
                           {/* Gray overlay for published posts */}
                           {currentPost.status === 'published' && (
                             <div className="absolute inset-0 bg-gray-900/40 rounded-xl" />

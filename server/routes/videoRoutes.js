@@ -9,7 +9,6 @@ router.post('/generate', async (req, res, next) => {
   try {
     const { prompt, model, imageUrl, size, postId } = req.body;
 
-    // Validate each required field individually for better error messages
     if (!prompt) {
       throw new ApiError(400, 'Prompt is required');
     }
