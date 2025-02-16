@@ -52,7 +52,7 @@ const contentPlannerSchema = new mongoose.Schema({
   }],
   imageModel: {
     type: String,
-    default: 'fal-ai/flux/schnell'
+    default: 'fal-ai/flux/dev'
   },
   language: {
     type: String,
@@ -83,12 +83,7 @@ const contentPlannerSchema = new mongoose.Schema({
   },
   utcOffset: {
     type: Number,
-    default: () => {
-      // Get current timezone offset in hours
-      const offset = -new Date().getTimezoneOffset() / 60;
-      // Ensure the offset is within valid range (-12 to +12)
-      return Math.max(-12, Math.min(12, offset));
-    },
+    default: 2,
     min: -12,
     max: 12
   },

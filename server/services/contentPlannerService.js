@@ -44,7 +44,7 @@ export const updateContentPlanner = async (accountId, updates) => {
   );
 };
 
-const generatePostContent = async (topic, contentPlanner, platform) => {
+const generatePostContent = async (topic, contentPlanner, platform, { size }) => {
   // Generate post text with platform-specific prompt
   const textPromptData = {
     topic,
@@ -77,9 +77,12 @@ const generatePostContent = async (topic, contentPlanner, platform) => {
   // Generate image if image model is specified
   let imageUrl = '';
   if (contentPlanner.imageModel !== 'no_images') {
+    console.log('Generating image with size:', size);
     imageUrl = await generateImage({
       prompt: imagePromptResult,
-      model: contentPlanner.imageModel
+      model: contentPlanner.imageModel,
+      width: size.width,
+      height: size.height
     });
   }
 
@@ -134,6 +137,8 @@ const createPost = async (date, topic, contentPlanner, generatedContent, platfor
         video: ''
       }
     });
+
+   
 
     const savedPost = await post.save();
 
@@ -236,11 +241,11 @@ export const generateContentPlan = async (accountId) => {
                 dimensions = 'Square';
                 break;
               case 'Facebook':
-                size = { width: 1200, height: 630 };
+                size = { width: 1200, height: 960 };
                 dimensions = 'Horizontal';
                 break;
               case 'LinkedIn':
-                size = { width: 1200, height: 627 };
+                size = { width: 1200, height: 960 };
                 dimensions = 'Horizontal';
                 break;
               case 'TikTok':
@@ -248,7 +253,7 @@ export const generateContentPlan = async (accountId) => {
                 dimensions = 'Story';
                 break;
               case 'X':
-                size = { width: 1200, height: 675 };
+                size = { width: 1200, height: 960 };
                 dimensions = 'Horizontal';
                 break;
               default:
@@ -257,7 +262,12 @@ export const generateContentPlan = async (accountId) => {
             }
 
             // Generate platform-specific content
-            const generatedContent = await generatePostContent(topic, contentPlanner, platform);
+            const generatedContent = await generatePostContent(
+              topic, 
+              contentPlanner, 
+              platform,
+              { size }
+            );
            
             // Create post with platform-specific settings
             const post = await createPost(

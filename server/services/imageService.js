@@ -21,8 +21,8 @@ const calculateAspectRatio = (width, height) => {
 
 export const generateImage = async ({
     prompt,
-    width,
-    height,
+    width = 1024,
+    height = 1024,
     model
 }) => {
     if (!width || !height) {
