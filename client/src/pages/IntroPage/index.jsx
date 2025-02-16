@@ -43,7 +43,7 @@ const IGentityLandingPage = () => {
     {
       imageSrc: "https://cdn.builder.io/api/v1/image/assets/TEMP/ff3a30e2f79af14299ac8df29e169add3feca8cb501adfda43ffcc0df7bf7b89?placeholderIfAbsent=true&apiKey=0a41617f0e1745a1b88c87027d30e88c",
       title: "Flexible and Customizable",
-      description: "adaptation to unique user's needs with seamlessly integrations to various content sources such as: Testimonials videos, Website blog and in-dept articles."
+      description: "Adaptation to unique user's needs with seamlessly integrations to various content sources such as: Testimonials videos, Website blog and in-dept articles."
     }
   ];
 
@@ -84,7 +84,8 @@ const IGentityLandingPage = () => {
               Go to App
             </button>
             <div className="mt-36 text-6xl font-semibold tracking-tighter text-center text-[#ffffff] leading-[80px] max-md:mt-10 max-md:max-w-full max-md:text-4xl max-md:leading-[55px]">
-              <span className="text-[#9333ea]">iGentitY</span> One Stop AI Platform
+              {/* <span className="text-[#9333ea]">iGentitY</span>  */}
+              One Stop AI Platform
               <br />
               for Social Media Content Creation
             </div>
@@ -97,8 +98,8 @@ const IGentityLandingPage = () => {
             <div className="flex flex-col self-end mt-5 w-full text-lg tracking-normal max-md:max-w-full bg-black">
               <div className="flex items-center px-[13vw] max-md:flex-col">
                 <div className="w-[300px] max-md:w-full shrink-0 flex flex-col justify-center text-[#ffffff] opacity-60">
-                  iGentitY is an AI-powered social media content platform that generated
-                  tailored authentic content for all Social platforms in one-stop-shop
+                  iGentitY is an AI-powered social media content platform that generates
+                  tailored authentic content for all social media platforms in one-stop-shop
                   dashboard.
                   <br />
                   <span className="text-[#9333ea] opacity-100">
@@ -110,13 +111,15 @@ const IGentityLandingPage = () => {
                   scheduling, and publishing across multiple platforms.
                 </div>
                 <div className="flex-1 aspect-video ms-20">
-                  <iframe 
-                    src="https://player.vimeo.com/video/1056134661?title=0&byline=0&portrait=0&badge=0&autopause=0&player_id=0&app_id=58479" 
-                    className="w-full h-full rounded-lg"
-                    frameBorder="0" 
-                    allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" 
-                    title="iGentitY - Your new social presence"
-                  />
+                  <div className="relative w-full h-full rounded-lg shadow-[0_0_80px_rgba(147,51,234,0.3)] overflow-hidden">
+                    <iframe 
+                      src="https://player.vimeo.com/video/1056134661?title=0&byline=0&portrait=0&badge=0&autopause=0&player_id=0&app_id=58479" 
+                      className="w-full h-full"
+                      frameBorder="0" 
+                      allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" 
+                      title="iGentitY - Your new social presence"
+                    />
+                  </div>
                 </div>
               </div>
               <img
@@ -180,7 +183,7 @@ const IGentityLandingPage = () => {
 
           <div className="w-full flex flex-col items-center">
             <div className="mt-16 text-4xl font-semibold tracking-tight leading-snug text-center text-[#9333ea] max-md:mt-10 max-md:max-w-full">
-              <span className="text-[#ffffff]">The Future</span> of Content Creation Awaits
+              <span className="text-[#ffffff]">Step into the</span> Future of Content Creation
             </div>
             <div className="mt-5 text-lg tracking-normal text-center text-[#ffffff] opacity-60 w-[625px] max-md:max-w-full">
               iGentitY empowers businesses and content creators worldwide. Join us and
