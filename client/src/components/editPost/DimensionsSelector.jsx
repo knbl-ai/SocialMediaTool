@@ -18,9 +18,18 @@ export const DimensionsSelector = ({ value, onChange }) => {
   const handleChange = (selectedName) => {
     const selectedDimension = dimensions.find(d => d.name === selectedName);
     if (selectedDimension) {
-      onChange(selectedName, selectedDimension.size);
+      console.log('DimensionsSelector - Selected dimension:', selectedDimension.name);
+      console.log('DimensionsSelector - Selected size:', selectedDimension.size);
+      onChange(selectedDimension.name, selectedDimension.size);
     }
   };
+
+  // Log initial value
+  React.useEffect(() => {
+    const currentDimension = dimensions.find(d => d.name === value);
+    console.log('DimensionsSelector - Current dimension:', value);
+    console.log('DimensionsSelector - Current size:', currentDimension?.size);
+  }, [value]);
 
   return (
     <Select value={value} onValueChange={handleChange}>

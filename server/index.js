@@ -37,7 +37,11 @@ if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, 'public')));
   // Configure CORS for production
   app.use(cors({
-    origin: process.env.CLIENT_URL || 'https://social-media-tool-wrmhrvgkjq-uc.a.run.app',
+    origin: [
+      'https://igentity.ai',
+      'https://www.igentity.ai',
+      process.env.CLIENT_URL || 'https://igentity.ai'
+    ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']

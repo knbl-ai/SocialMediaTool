@@ -145,7 +145,7 @@ export const generateImage = async (req, res) => {
     if (!process.env.FAL_KEY) {
       throw new ApiError(500, 'FAL_KEY is not configured');
     }
-    
+   
     const imageUrl = await generateImageService({
       prompt,
       model,

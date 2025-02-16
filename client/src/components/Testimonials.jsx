@@ -10,14 +10,14 @@ const reviews = [
   {
     name: "GetStarted",
     username: "getstarted.co.il",
-    body: "Say goodbye to content stress—this app creates, you shine! 🚀📲 #GameChanger",
-    img: "https://res.cloudinary.com/dbajenfxp/image/upload/v1739274864/3_ek5ygr.png"
+    body: "We are never dry on ideas a anymore, the app creates, you shine! 🚀📲 #GameChanger",
+    img: "https://res.cloudinary.com/dp27eiduf/image/upload/v1739694858/Screenshot_2025-02-16_at_10.31.40_r8znek.png"
   },
   {
     name: "Genesis Tours",
     username: "genesis-tours.co.il",
-    body: "It increases our Social Media conversion rate and liberates us from the stress of creating content.",
-    img: "../../public/tourist.jpeg"
+    body: "This app increases our Social Media conversion rate while liberates us from the stress of creating content.",
+    img: "https://res.cloudinary.com/dp27eiduf/image/upload/v1739694606/tourist_kqhvxa.png"
   },
   {
     name: "Company",

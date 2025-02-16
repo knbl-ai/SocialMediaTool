@@ -80,14 +80,14 @@ gcloud auth configure-docker
 ENV_VARS=$(format_env_vars "server/.env")
 
 # Add required environment variables (removed PORT as it's reserved)
-ENV_VARS="${ENV_VARS},NODE_ENV=production"
+ENV_VARS="${ENV_VARS},NODE_ENV=production,CLIENT_URL=https://igentity.ai"
 
 # Build the container
 echo -e "${BLUE}Building container...${NC}"
 docker build \
     --platform linux/amd64 \
     -t ${IMAGE_NAME} \
-    --build-arg VITE_API_URL="https://${SERVICE_NAME}-wrmhrvgkjq-uc.a.run.app" \
+    --build-arg VITE_API_URL="https://igentity.ai" \
     .
 
 # Push to Container Registry
@@ -104,11 +104,30 @@ gcloud run deploy ${SERVICE_NAME} \
     --set-env-vars="${ENV_VARS}" \
     --memory 1Gi \
     --cpu 1 \
-    --min-instances 0 \
+    --min-instances 1 \
     --max-instances 10
 
+# Set up custom domain mapping
+echo -e "${BLUE}Setting up custom domain mapping...${NC}"
+gcloud beta run domain-mappings create \
+    --service=${SERVICE_NAME} \
+    --domain=igentity.ai \
+    --region=${REGION} \
+    --platform=managed
+
+# Wait for domain mapping to be ready
+echo -e "${BLUE}Waiting for domain mapping to be ready...${NC}"
+sleep 30  # Give time for the domain mapping to propagate
+
+# Verify domain mapping
+echo -e "${BLUE}Verifying domain mapping...${NC}"
+gcloud beta run domain-mappings describe \
+    --domain=igentity.ai \
+    --region=${REGION} \
+    --platform=managed
+
 # Get the service URL
-SERVICE_URL=$(gcloud run services describe ${SERVICE_NAME} --platform managed --region ${REGION} --format 'value(status.url)')
+SERVICE_URL="https://igentity.ai"
 
 # Update environment variables with the actual service URL
 ENV_VARS="${ENV_VARS},CLIENT_URL=${SERVICE_URL}"

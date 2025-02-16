@@ -52,7 +52,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
   const currentPostRef = useRef(currentPost);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
 
-  console.log('currentPost', currentPost);
+
 
   // Update ref when currentPost changes
   useEffect(() => {
@@ -116,8 +116,8 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
       setSelectedVideoModel(initialPost.models?.video || DEFAULT_STATE.selectedVideoModel);
       setSelectedLLMModel(initialPost.models?.text || DEFAULT_STATE.selectedLLMModel);
       setImageSize(initialPost.image?.size || DEFAULT_STATE.imageSize);
-      setImageTemplate(initialPost.image?.template || '');
       setDimensions(initialPost.image?.dimensions || 'Square');
+      setImageTemplate(initialPost.image?.template || '');
     }
   }, []); // Empty dependency array as we only want this to run once
 
@@ -215,43 +215,27 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
     updatePost
   ]);
 
-  const handleDimensionsChange = async (newDimensions) => {
+  const handleDimensionsChange = async (newDimensions, newSize) => {
     setDimensions(newDimensions);
-    
-    // Set image size based on dimensions
-    let newSize;
-    switch (newDimensions) {
-      case 'Square':
-        newSize = { width: 1280, height: 1280 };
-        break;
-      case 'Portrait':
-        newSize = { width: 1080, height: 1350 };
-        break;
-      case 'Landscape':
-        newSize = { width: 1350, height: 1080 };
-        break;
-      default:
-        newSize = { width: 1280, height: 1280 };
-    }
-    
     setImageSize(newSize);
-
-    // Update post if it exists
-    if (currentPost) {
-      try {
-        const updatedPost = await updatePost(postId, {
-          ...currentPost,
-          image: {
-            ...currentPost.image,
-            dimensions: newDimensions,
-            size: newSize
-          }
-        });
-        setCurrentPost(updatedPost);
-      } catch (error) {
-        console.error('Error updating dimensions:', error);
-        setLocalError('Failed to update dimensions');
+    
+    const updatedPostData = {
+      ...currentPost,
+      image: {
+        ...currentPost.image,
+        dimensions: newDimensions,
+        size: newSize
       }
+    };
+
+    console.log('Updating post with new dimensions:', newSize);
+
+    try {
+      const savedPost = await updatePost(postId, updatedPostData);
+      setCurrentPost(savedPost);
+    } catch (error) {
+      console.error('Error updating dimensions:', error);
+      setLocalError('Failed to update dimensions');
     }
   };
 
@@ -625,10 +609,16 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                   isLoading={isGeneratingImage}
                   onGenerate={async () => {
                     if (!imagePrompt || !selectedImageModel || !imageSize.width || !imageSize.height) {
+                      console.log('Missing fields for image generation:', {
+                        hasPrompt: !!imagePrompt,
+                        hasModel: !!selectedImageModel,
+                        imageSize
+                      });
                       setLocalError('Please provide all required fields for image generation');
                       return;
                     }
                     try {
+                      console.log('Starting image generation with size:', imageSize);
                       setIsGeneratingImage(true);
                       // Generate the main image first
                       const { url } = await api.generateImage({
@@ -649,6 +639,8 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                         await api.deleteFiles([currentPost.image.url]);
                       }
 
+                      console.log('Updating post with new image and size:', imageSize);
+                      
                       // Update post with new image URL and set it as template initially
                       const updatedPost = await updatePost(postId, {
                         ...currentPost,
@@ -656,18 +648,18 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                           ...currentPost?.image,
                           url: url,
                           template: url, // Set template to the same URL initially
-                          size: imageSize,
+                          size: imageSize, // Make sure we're using the current imageSize
                           dimensions: dimensions
                         },
                         prompts: {
                           ...currentPost?.prompts,
-                          image: imagePrompt // Save the image prompt
+                          image: imagePrompt
                         },
                         models: {
                           ...currentPost?.models,
-                          image: selectedImageModel // Save the selected model
+                          image: selectedImageModel
                         },
-                        templatesUrls: [] // Clear existing templates
+                        templatesUrls: []
                       });
                       
                       setCurrentPost(updatedPost);
