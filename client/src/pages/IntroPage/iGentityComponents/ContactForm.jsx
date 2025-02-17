@@ -3,7 +3,7 @@ import React from "react";
 function ContactForm() {
   return (
     <div className="mt-16 w-full max-w-[1080px] max-md:mt-10 max-md:max-w-full">
-      <div className="flex gap-5 max-md:flex-col">
+      <div className="flex gap-5 max-md:flex-col max-md:px-8">
         <div className="flex flex-col w-[38%] max-md:ml-0 max-md:w-full">
           <div className="text-4xl font-semibold tracking-tight leading-10 text-white max-md:mt-10">
             Questions? Live

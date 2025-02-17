@@ -8,7 +8,7 @@ const ImpactMetric = ({ imageSrc, title, description }) => {
           loading="lazy"
           src={imageSrc}
           alt={title}
-          className="w-[2.5vw] aspect-square object-contain"
+          className="w-[2.5vw] max-md:w-[8vw] aspect-square object-contain"
         />
       </div>
       <div className="flex flex-col mt-8">
