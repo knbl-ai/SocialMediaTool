@@ -30,7 +30,7 @@ const auth = new google.auth.GoogleAuth({
   },
   scopes: [
     'https://www.googleapis.com/auth/documents.readonly',
-    'https://www.googleapis.com/auth/spreadsheets.readonly'
+    'https://www.googleapis.com/auth/spreadsheets'
   ]
 });
 
@@ -247,5 +247,34 @@ export const saveGoogleDocContent = async (accountId, text, isContentPlanner = t
   } catch (error) {
     console.error('Error saving Google Doc content:', error);
     throw error;
+  }
+};
+
+export const saveFormToSpreadSheet = async ({ name, email, message }) => {
+  try {
+    // Use the sheets instance already initialized at the top of the file
+    // Get the next empty row
+    const response = await sheets.spreadsheets.values.get({
+      auth,
+      spreadsheetId: process.env.SPREADSHEET_ID,
+      range: 'A:C',
+    });
+    const nextRow = (response.data.values?.length || 0) + 1;
+
+    // Append the new row
+    await sheets.spreadsheets.values.update({
+      auth,
+      spreadsheetId: process.env.SPREADSHEET_ID,
+      range: `A${nextRow}:C${nextRow}`,
+      valueInputOption: 'RAW',
+      requestBody: {
+        values: [[name, email, message]]
+      }
+    });
+
+    return true;
+  } catch (error) {
+    console.error('Error saving form data to spreadsheet:', error);
+    throw new ApiError(500, 'Failed to save form data');
   }
 }; 

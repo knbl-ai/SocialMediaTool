@@ -19,6 +19,7 @@ import initScheduler from './cron/scheduler.js';
 import googleDocsRoutes from './routes/googleDocsRoutes.js';
 import videoRoutes from './routes/videoRoutes.js';
 import webRoutes from './routes/webRoutes.js';
+import contactRoutes from './routes/contactRoutes.js';
 
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
@@ -75,6 +76,7 @@ app.use('/api/pdf', pdfRoutes);
 app.use('/api/google-docs', googleDocsRoutes);
 app.use('/api/video', videoRoutes);
 app.use('/api/web', webRoutes);
+app.use('/api/contact', contactRoutes);
 
 // Rate limiting
 const limiter = rateLimit({
