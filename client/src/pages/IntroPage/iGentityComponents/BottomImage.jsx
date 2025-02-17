@@ -10,13 +10,25 @@ const BottomImage = () => {
           className="absolute inset-0 w-full h-full object-cover object-top"
           alt="Background waves"
         />
-        <div className="absolute bottom-0 left-0 right-0 z-10 flex justify-between items-center w-full max-w-[1440px] px-4 md:px-8 pb-4 md:pb-8 mx-auto">
+        {/* Desktop version */}
+        <div className="absolute bottom-0 left-0 right-0 z-10 hidden md:flex justify-between items-center w-full max-w-[1440px] px-8 pb-8 mx-auto">
           <img
             src="https://cdn.builder.io/api/v1/image/assets/TEMP/562bf34b83003a8ce04c840e76c6e97751c0a7468bd6889a019fbddc39971588?placeholderIfAbsent=true&apiKey=0a41617f0e1745a1b88c87027d30e88c"
             alt="iGentitY logo"
-            className="h-8 md:h-12 lg:h-16 object-contain"
+            className="h-12 lg:h-16 object-contain"
           />
-          <div className="text-white text-opacity-60 text-sm md:text-base lg:text-lg">
+          <div className="text-white text-opacity-60 text-base lg:text-lg">
+            Powered by KNBL.
+          </div>
+        </div>
+        {/* Mobile version */}
+        <div className="absolute bottom-0 left-0 right-0 z-10 md:hidden flex flex-col items-center justify-center w-full pb-8">
+          <img
+            src="https://cdn.builder.io/api/v1/image/assets/TEMP/562bf34b83003a8ce04c840e76c6e97751c0a7468bd6889a019fbddc39971588?placeholderIfAbsent=true&apiKey=0a41617f0e1745a1b88c87027d30e88c"
+            alt="iGentitY logo"
+            className="h-12 object-contain mb-4"
+          />
+          <div className="text-white text-opacity-60 text-base">
             Powered by KNBL.
           </div>
         </div>

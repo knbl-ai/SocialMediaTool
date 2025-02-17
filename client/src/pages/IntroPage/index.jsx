@@ -104,13 +104,20 @@ const IGentityLandingPage = () => {
               `}
             </style>
             <div className="mt-36 md:text-6xl text-4xl font-semibold tracking-tighter text-center text-[#ffffff] md:leading-[80px] leading-[55px] px-4 md:px-0 max-md:mt-16">
-              One Stop
-        
-              AI Platform for
-              <br  />
-              Social Media
-      
-              Content Creation
+              <div className="md:block hidden">
+                One Stop
+                AI Platform for
+                <br />
+                Social Media
+                Content Creation
+              </div>
+              <div className="md:hidden block">
+                One Stop AI Platform
+                <br />
+                For Social Media
+                <br />
+                Content Creation
+              </div>
             </div>
             {/* Desktop Image */}
             <div className="hidden md:block">
