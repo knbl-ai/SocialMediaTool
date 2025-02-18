@@ -208,7 +208,10 @@ router.post('/:accountId/update-image-description', auth, async (req, res) => {
       uploadedImages: contentPlanner.uploadedImages
     });
   } catch (error) {
-    next(error);
+    console.error('Error updating image description:', error);
+    res.status(error.status || 500).json({ 
+      error: error.message || 'Failed to update image description'
+    });
   }
 });
 
@@ -226,13 +229,11 @@ router.post('/:accountId/generate-from-uploaded', auth, async (req, res) => {
 router.post('/:accountId/generate-background', auth, async (req, res, next) => {
   try {
     const { accountId } = req.params;
-    const { imageUrl, prompt, index } = req.body;
+    const { imageUrl, prompt, index, imageDescription } = req.body;
 
     if (!imageUrl || !prompt || typeof index !== 'number') {
       throw new ApiError(400, 'Image URL, prompt, and index are required');
     }
-
-    console.log('Generating background for image:', { imageUrl, prompt });
 
     // Get the content planner
     const contentPlanner = await ContentPlanner.findOne({ accountId });
@@ -243,16 +244,18 @@ router.post('/:accountId/generate-background', auth, async (req, res, next) => {
     // Generate the new background
     const result = await generateBackground({
       prompt,
-      imageUrl
+      imageUrl,
+      imageDescription
     });
 
-   
+   console.log("result", result);
 
     // Update the image URL and description in the uploadedImages array
     contentPlanner.uploadedImages[index] = {
       imageUrl: result.url,
-      imageDescription: prompt
+      imageDescription: result.prompt
     };
+    
 
     // Save the updated content planner
     await contentPlanner.save();

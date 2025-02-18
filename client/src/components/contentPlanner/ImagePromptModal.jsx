@@ -11,79 +11,92 @@ import { useToast } from "@/components/ui/use-toast"
 import { Textarea } from "@/components/ui/textarea"
 import api from "@/lib/api"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import debounce from 'lodash/debounce'
 import UploadedImageMenu from './UploadedImageMenu'
 
 export default function ImagePromptModal({ isOpen, onClose, contentPlanner, onUpdate }) {
   const [isUploading, setIsUploading] = useState(false)
-  const [uploadedImages, setUploadedImages] = useState(contentPlanner?.uploadedImages || [])
   const [isDeleting, setIsDeleting] = useState(false)
-  const [descriptions, setDescriptions] = useState({})
+  const [loadingImageIndex, setLoadingImageIndex] = useState(null)
+  const [state, setState] = useState({
+    images: contentPlanner?.uploadedImages || [],
+    descriptions: {}
+  })
+  
   const fileInputRef = useRef(null)
+  const saveTimeoutRef = useRef(null)
   const { toast } = useToast()
-  const debouncedSaveRef = useRef({})
 
-  // Initialize descriptions from uploadedImages
+  // Initialize descriptions when contentPlanner changes
   useEffect(() => {
-    const initialDescriptions = {}
-    uploadedImages.forEach((image, index) => {
-      initialDescriptions[index] = image.imageDescription || ''
-    })
-    setDescriptions(initialDescriptions)
-  }, [uploadedImages])
+    if (contentPlanner?.uploadedImages) {
+      setState(prev => ({
+        ...prev,
+        images: contentPlanner.uploadedImages,
+        descriptions: contentPlanner.uploadedImages.reduce((acc, img, idx) => {
+          acc[idx] = img.imageDescription || '';
+          return acc;
+        }, {})
+      }));
+    }
+  }, [contentPlanner?.uploadedImages]);
 
-  // Cleanup debounced functions on unmount
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      Object.values(debouncedSaveRef.current).forEach(debouncedFn => {
-        if (debouncedFn?.cancel) {
-          debouncedFn.cancel()
-        }
-      })
-    }
-  }, [])
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
 
-  // Create a debounced save function for each image
-  const getDebouncedSave = useCallback((index) => {
-    if (!debouncedSaveRef.current[index]) {
-      debouncedSaveRef.current[index] = debounce(async (description) => {
-        try {
-          const response = await api.post(`/content-planner/${contentPlanner.accountId}/update-image-description`, {
-            index,
-            description
-          })
-          
-          // Update local state with the response
-          setUploadedImages(response.uploadedImages)
-          onUpdate?.(response.uploadedImages)
-        } catch (error) {
-          console.error('Error updating description:', error)
-          toast({
-            title: "Error",
-            description: "Failed to update image description",
-            variant: "destructive",
-          })
-          // Revert to the last known good state
-          setDescriptions(prev => ({
-            ...prev,
-            [index]: uploadedImages[index]?.imageDescription || ''
-          }))
-        }
-      }, 1000)
-    }
-    return debouncedSaveRef.current[index]
-  }, [contentPlanner?.accountId, onUpdate, toast, uploadedImages])
-
-  const handleDescriptionChange = (index, newDescription) => {
-    // Update local state immediately for responsive UI
-    setDescriptions(prev => ({
-      ...prev,
-      [index]: newDescription
-    }))
+  const saveChanges = useCallback(async (newState) => {
+    if (!contentPlanner?._id) return;
     
-    // Trigger debounced save
-    getDebouncedSave(index)(newDescription)
-  }
+    try {
+      const response = await api.post(
+        `/content-planner/${contentPlanner.accountId}/update-image-description`,
+        { 
+          index: newState.currentIndex,
+          description: newState.images[newState.currentIndex].imageDescription
+        }
+      );
+
+      if (response?.uploadedImages) {
+        onUpdate(response.uploadedImages);
+      }
+    } catch (error) {
+      console.error('Error saving changes:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save changes. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [contentPlanner?._id, contentPlanner?.accountId, onUpdate, toast]);
+
+  const handleDescriptionChange = useCallback((index, newDescription) => {
+    // Update local state immediately
+    setState(prev => {
+      const newImages = prev.images.map((img, i) => 
+        i === index ? { ...img, imageDescription: newDescription } : img
+      );
+
+      // Clear existing timeout
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+
+      // Set new timeout for API call
+      saveTimeoutRef.current = setTimeout(() => {
+        saveChanges({ ...prev, images: newImages, currentIndex: index });
+      }, 1000);
+
+      return {
+        images: newImages,
+        descriptions: { ...prev.descriptions, [index]: newDescription }
+      };
+    });
+  }, [saveChanges]);
 
   const handleFileSelect = async (e) => {
     const files = Array.from(e.target.files)
@@ -106,8 +119,12 @@ export default function ImagePromptModal({ isOpen, onClose, contentPlanner, onUp
         }
       )
 
-      setUploadedImages(response.uploadedImages)
+      setState(prev => ({
+        ...prev,
+        images: response.uploadedImages
+      }));
       onUpdate?.(response.uploadedImages)
+      
       toast({
         title: "Success",
         description: `${files.length} images uploaded and analyzed successfully`,
@@ -121,7 +138,6 @@ export default function ImagePromptModal({ isOpen, onClose, contentPlanner, onUp
       })
     } finally {
       setIsUploading(false)
-      // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
@@ -132,16 +148,20 @@ export default function ImagePromptModal({ isOpen, onClose, contentPlanner, onUp
     try {
       setIsDeleting(true)
       
-      // Delete image from storage and update content planner
       await api.post(`/content-planner/${contentPlanner.accountId}/delete-image`, {
         imageUrl,
         index
       })
 
-      // Update local state
-      const newImages = uploadedImages.filter((_, i) => i !== index)
-      setUploadedImages(newImages)
-      onUpdate?.(newImages)
+      setState(prev => {
+        const newImages = prev.images.filter((_, i) => i !== index);
+        return {
+          ...prev,
+          images: newImages
+        };
+      });
+      
+      onUpdate?.(state.images.filter((_, i) => i !== index))
 
       toast({
         title: "Success",
@@ -159,56 +179,33 @@ export default function ImagePromptModal({ isOpen, onClose, contentPlanner, onUp
     }
   }
 
-  const handleBackgroundUpdate = (responseData) => {
-    console.log("ImagePromptModal received update:", responseData);
-    
+  const handleBackgroundUpdate = useCallback((responseData) => {
     const { uploadedImages, index, prompt, imageUrl } = responseData;
     
-    // Create a new array to trigger re-render
-    const newUploadedImages = [...uploadedImages];
+    setLoadingImageIndex(index);
     
-    // Ensure the specific image is updated
-    if (imageUrl && typeof index === 'number') {
-      console.log("Updating image at index:", index, "with new URL:", imageUrl);
-      
-      // Update the specific image with new data
-      newUploadedImages[index] = {
-        ...newUploadedImages[index],
-        imageUrl,
-        imageDescription: prompt
-      };
-    }
-    
-    console.log("New uploaded images array:", newUploadedImages);
-    
-    // Force a re-render by creating new state references
-    setUploadedImages([...newUploadedImages]);
-    
-    // Update descriptions state with a new reference
-    if (prompt && typeof index === 'number') {
-      setDescriptions(prev => {
-        const newDescriptions = {
-          ...prev,
-          [index]: prompt
+    setState(prev => {
+      const newImages = [...uploadedImages];
+      if (imageUrl && typeof index === 'number') {
+        newImages[index] = {
+          ...newImages[index],
+          imageUrl,
+          imageDescription: prompt
         };
-        console.log("New descriptions state:", newDescriptions);
-        return newDescriptions;
-      });
-    }
+      }
+      
+      return {
+        ...prev,
+        images: newImages,
+        descriptions: prompt && typeof index === 'number' 
+          ? { ...prev.descriptions, [index]: prompt }
+          : prev.descriptions
+      };
+    });
     
-    // Pass the updated images to parent component
-    console.log("Passing updated images to parent");
-    onUpdate?.([...newUploadedImages]);
-  };
-
-  // Add effect to log state changes
-  useEffect(() => {
-    console.log("uploadedImages state updated:", uploadedImages);
-  }, [uploadedImages]);
-
-  useEffect(() => {
-    console.log("descriptions state updated:", descriptions);
-  }, [descriptions]);
+    onUpdate?.(uploadedImages);
+    setLoadingImageIndex(null);
+  }, [onUpdate]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -217,7 +214,6 @@ export default function ImagePromptModal({ isOpen, onClose, contentPlanner, onUp
           <DialogTitle>Upload Images</DialogTitle>
         </DialogHeader>
 
-        {/* Upload button */}
         <div className="flex justify-center">
           <Button
             variant="outline"
@@ -247,56 +243,56 @@ export default function ImagePromptModal({ isOpen, onClose, contentPlanner, onUp
           />
         </div>
 
-        {/* Scrollable content */}
         <ScrollArea className="flex-1 w-full">
           <div className="grid grid-cols-2 gap-6 p-4">
-            {uploadedImages.map((image, index) => (
+            {state.images.map((image, index) => (
               <div 
                 key={index} 
                 className="flex flex-col gap-3"
               >
-                {/* Image container */}
-                <div className="relative aspect-square rounded-lg overflow-hidden border bg-background">
-                  <div className="relative">
+                <div className="relative aspect-square rounded-lg overflow-hidden border bg-background flex items-center justify-center">
+                  <div className="relative w-full h-full flex items-center justify-center">
                     <img
-                      key={`${index}-${image.imageUrl}`}
                       src={image.imageUrl}
                       alt={image.imageDescription || 'Uploaded image'}
-                      className="w-full h-full object-cover rounded-lg"
+                      className="max-w-full max-h-full object-contain"
                     />
+                    {loadingImageIndex === index && (
+                      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                        <Loader2 className="w-8 h-8 text-white animate-spin" />
+                      </div>
+                    )}
                     <UploadedImageMenu
-                      key={`menu-${index}-${image.imageUrl}`}
                       contentPlanner={contentPlanner}
                       imageUrl={image.imageUrl}
                       index={index}
+                      imageDescription={image.imageDescription}
                       onUpdate={handleBackgroundUpdate}
                     />
                   </div>
-                  {/* Delete button */}
                   <Button
                     variant="destructive"
                     size="icon"
                     className="absolute top-2 right-2 h-6 w-6 rounded-full opacity-80 hover:opacity-100"
                     onClick={() => handleDeleteImage(image.imageUrl, index)}
-                    disabled={isDeleting}
+                    disabled={isDeleting || loadingImageIndex === index}
                   >
                     <Trash2 className="h-3 w-3" />
                   </Button>
                 </div>
-                {/* Description */}
                 <Textarea
-                  value={descriptions[index] || image.imageDescription || ''}
+                  value={state.descriptions[index] || state.images[index].imageDescription || ''}
                   onChange={(e) => handleDescriptionChange(index, e.target.value)}
                   placeholder="Image description..."
                   className="text-sm min-h-[100px] max-h-[150px] resize-none bg-muted"
+                  disabled={loadingImageIndex === index}
                 />
               </div>
             ))}
           </div>
         </ScrollArea>
 
-        {/* Empty state */}
-        {uploadedImages.length === 0 && (
+        {state.images.length === 0 && (
           <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
             <ImageIcon className="h-12 w-12 mb-2" />
             <p>No images uploaded yet</p>

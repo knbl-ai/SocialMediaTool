@@ -110,6 +110,7 @@ export const generateImage = async ({
 export const generateBackground = async ({
     prompt,
     imageUrl,
+    imageDescription,
     width,
     height,
     guidanceScale = 5,
@@ -117,7 +118,7 @@ export const generateBackground = async ({
     maskImageUrl = null
 }) => {
     try {
-        console.log(`Generating background with prompt: ${prompt}`);
+       
 
         // Calculate image size
         const imageSize = await calculateImageSize(imageUrl, width, height);
@@ -150,11 +151,11 @@ export const generateBackground = async ({
         if (!result.data.images?.[0]?.url) {
             throw new Error('No image generated');
         }
-        console.log('Background generation successful:', result.data.images[0].url);
+        
         return {
             url: result.data.images[0].url,
             seed: result.data.seed,
-            prompt: result.data.prompt
+            prompt: `${imageDescription}. On background: ${result.data.prompt}`
         };
     } catch (error) {
         console.error('Background generation error:', error);
