@@ -7,6 +7,7 @@ import { optimizeGuidelinesPrompt } from '../services/promptsService.js';
 import { uploadImage, deleteFile } from '../config/storage.js';
 import { ApiError } from '../utils/ApiError.js';
 import ContentPlanner from '../models/ContentPlanner.js';
+import { generateBackground } from '../services/imageService.js';
 
 const router = express.Router();
 
@@ -218,6 +219,52 @@ router.post('/:accountId/generate-from-uploaded', auth, async (req, res) => {
     res.json(result);
   } catch (error) {
     res.status(500).json({ message: 'Error generating content plan from uploaded images', error: error.message });
+  }
+});
+
+// Generate background for an image
+router.post('/:accountId/generate-background', auth, async (req, res, next) => {
+  try {
+    const { accountId } = req.params;
+    const { imageUrl, prompt, index } = req.body;
+
+    if (!imageUrl || !prompt || typeof index !== 'number') {
+      throw new ApiError(400, 'Image URL, prompt, and index are required');
+    }
+
+    console.log('Generating background for image:', { imageUrl, prompt });
+
+    // Get the content planner
+    const contentPlanner = await ContentPlanner.findOne({ accountId });
+    if (!contentPlanner) {
+      throw new ApiError(404, 'Content planner not found');
+    }
+
+    // Generate the new background
+    const result = await generateBackground({
+      prompt,
+      imageUrl
+    });
+
+   
+
+    // Update the image URL and description in the uploadedImages array
+    contentPlanner.uploadedImages[index] = {
+      imageUrl: result.url,
+      imageDescription: prompt
+    };
+
+    // Save the updated content planner
+    await contentPlanner.save();
+
+    res.json({
+      imageUrl: result.url,
+      prompt: result.prompt,
+      uploadedImages: contentPlanner.uploadedImages
+    });
+  } catch (error) {
+    console.error('Background generation failed:', error);
+    next(error instanceof ApiError ? error : new ApiError(500, error.message));
   }
 });
 

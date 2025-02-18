@@ -1,5 +1,8 @@
 import { fal } from "@fal-ai/client";
 import dotenv from 'dotenv';
+import axios from 'axios';
+import probe from 'probe-image-size';
+import { ApiError } from '../utils/ApiError.js';
 
 dotenv.config();
 
@@ -13,11 +16,51 @@ fal.config({
 });
 
 const calculateAspectRatio = (width, height) => {
-    if (width === height) return "1:1"
-    if (width > height && height === 720) return "16:9"
-    if (width > height && height === 960) return "4:3"
-    if (height > width) return "9:16"
-}
+    const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+    const divisor = gcd(width, height);
+    return `${width / divisor}:${height / divisor}`;
+};
+
+const calculateImageSize = async (imageUrl, providedWidth, providedHeight) => {
+    // If both dimensions are provided, use them
+    if (providedWidth && providedHeight) {
+        return {
+            width: parseInt(providedWidth),
+            height: parseInt(providedHeight)
+        };
+    }
+
+    try {
+        // Get the image dimensions using probe-image-size
+        const dimensions = await probe(imageUrl);
+        const originalWidth = dimensions.width;
+        const originalHeight = dimensions.height;
+
+        // If one dimension is provided, maintain aspect ratio
+        if (providedWidth) {
+            const aspectRatio = originalHeight / originalWidth;
+            return {
+                width: parseInt(providedWidth),
+                height: parseInt(providedWidth * aspectRatio)
+            };
+        } else if (providedHeight) {
+            const aspectRatio = originalWidth / originalHeight;
+            return {
+                width: parseInt(providedHeight * aspectRatio),
+                height: parseInt(providedHeight)
+            };
+        }
+
+        // Use original dimensions if no dimensions are provided
+        return {
+            width: originalWidth,
+            height: originalHeight
+        };
+    } catch (error) {
+        console.error('Error calculating image size:', error);
+        throw new Error(`Failed to calculate image size: ${error.message}`);
+    }
+};
 
 export const generateImage = async ({
     prompt,
@@ -61,5 +104,60 @@ export const generateImage = async ({
     } catch (error) {
         console.error('Image generation error:', error);
         throw new Error(`Failed to generate image: ${error.message}`);
+    }
+};
+
+export const generateBackground = async ({
+    prompt,
+    imageUrl,
+    width,
+    height,
+    guidanceScale = 5,
+    numInferenceSteps = 28,
+    maskImageUrl = null
+}) => {
+    try {
+        console.log(`Generating background with prompt: ${prompt}`);
+
+        // Calculate image size
+        const imageSize = await calculateImageSize(imageUrl, width, height);
+        console.log(`Using dimensions: ${imageSize.width}x${imageSize.height}`);
+
+        const input = {
+            prompt,
+            image_url: imageUrl,
+            guidance_scale: guidanceScale,
+            num_inference_steps: numInferenceSteps,
+            enable_safety_checker: false,
+            output_format: "png",
+            image_size: imageSize
+        };
+
+        if (maskImageUrl) {
+            input.mask_image_url = maskImageUrl;
+        }
+
+        const result = await fal.subscribe("fal-ai/iclight-v2", {
+            input,
+            logs: true,
+            onQueueUpdate: (update) => {
+                if (update.status === "IN_PROGRESS") {
+                    update.logs?.map((log) => log.message).forEach(console.log);
+                }
+            },
+        });
+
+        if (!result.data.images?.[0]?.url) {
+            throw new Error('No image generated');
+        }
+        console.log('Background generation successful:', result.data.images[0].url);
+        return {
+            url: result.data.images[0].url,
+            seed: result.data.seed,
+            prompt: result.data.prompt
+        };
+    } catch (error) {
+        console.error('Background generation error:', error);
+        throw new Error(`Failed to generate background: ${error.message}`);
     }
 };

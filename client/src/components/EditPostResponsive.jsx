@@ -29,9 +29,9 @@ const DEFAULT_STATE = {
   textPrompt: '',
   imageSize: { width: 1280, height: 1280 },
   imageTemplate: '',
-  selectedImageModel: MODELS.image[0]?.value,
-  selectedVideoModel: MODELS.video[0]?.value,
-  selectedLLMModel: MODELS.llm[0]?.value
+  selectedImageModel: MODELS.image[1]?.value,
+  selectedVideoModel: MODELS.video[3]?.value,
+  selectedLLMModel: MODELS.llm[1]?.value
 };
 
 

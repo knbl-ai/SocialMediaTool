@@ -6,12 +6,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { ImageIcon, Upload, X } from "lucide-react"
+import { ImageIcon, Upload, X, Trash2, Loader2 } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { Textarea } from "@/components/ui/textarea"
 import api from "@/lib/api"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import debounce from 'lodash/debounce'
+import UploadedImageMenu from './UploadedImageMenu'
 
 export default function ImagePromptModal({ isOpen, onClose, contentPlanner, onUpdate }) {
   const [isUploading, setIsUploading] = useState(false)
@@ -158,22 +159,83 @@ export default function ImagePromptModal({ isOpen, onClose, contentPlanner, onUp
     }
   }
 
+  const handleBackgroundUpdate = (responseData) => {
+    console.log("ImagePromptModal received update:", responseData);
+    
+    const { uploadedImages, index, prompt, imageUrl } = responseData;
+    
+    // Create a new array to trigger re-render
+    const newUploadedImages = [...uploadedImages];
+    
+    // Ensure the specific image is updated
+    if (imageUrl && typeof index === 'number') {
+      console.log("Updating image at index:", index, "with new URL:", imageUrl);
+      
+      // Update the specific image with new data
+      newUploadedImages[index] = {
+        ...newUploadedImages[index],
+        imageUrl,
+        imageDescription: prompt
+      };
+    }
+    
+    console.log("New uploaded images array:", newUploadedImages);
+    
+    // Force a re-render by creating new state references
+    setUploadedImages([...newUploadedImages]);
+    
+    // Update descriptions state with a new reference
+    if (prompt && typeof index === 'number') {
+      setDescriptions(prev => {
+        const newDescriptions = {
+          ...prev,
+          [index]: prompt
+        };
+        console.log("New descriptions state:", newDescriptions);
+        return newDescriptions;
+      });
+    }
+    
+    // Pass the updated images to parent component
+    console.log("Passing updated images to parent");
+    onUpdate?.([...newUploadedImages]);
+  };
+
+  // Add effect to log state changes
+  useEffect(() => {
+    console.log("uploadedImages state updated:", uploadedImages);
+  }, [uploadedImages]);
+
+  useEffect(() => {
+    console.log("descriptions state updated:", descriptions);
+  }, [descriptions]);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[800px] h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Upload Images</DialogTitle>
         </DialogHeader>
-        
+
         {/* Upload button */}
-        <div className="flex justify-center mb-4">
+        <div className="flex justify-center">
           <Button
+            variant="outline"
             onClick={() => fileInputRef.current?.click()}
-            disabled={isUploading || isDeleting}
-            className="gap-2"
+            disabled={isUploading}
+            className="relative"
           >
-            <Upload className="h-4 w-4" />
-            {isUploading ? 'Uploading & Analyzing...' : 'Upload Images'}
+            {isUploading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="ml-2">Uploading...</span>
+              </>
+            ) : (
+              <>
+                <Upload className="h-4 w-4" />
+                <span className="ml-2">Upload Images</span>
+              </>
+            )}
           </Button>
           <input
             ref={fileInputRef}
@@ -195,11 +257,21 @@ export default function ImagePromptModal({ isOpen, onClose, contentPlanner, onUp
               >
                 {/* Image container */}
                 <div className="relative aspect-square rounded-lg overflow-hidden border bg-background">
-                  <img
-                    src={image.imageUrl}
-                    alt={`Uploaded image ${index + 1}`}
-                    className="object-cover w-full h-full"
-                  />
+                  <div className="relative">
+                    <img
+                      key={`${index}-${image.imageUrl}`}
+                      src={image.imageUrl}
+                      alt={image.imageDescription || 'Uploaded image'}
+                      className="w-full h-full object-cover rounded-lg"
+                    />
+                    <UploadedImageMenu
+                      key={`menu-${index}-${image.imageUrl}`}
+                      contentPlanner={contentPlanner}
+                      imageUrl={image.imageUrl}
+                      index={index}
+                      onUpdate={handleBackgroundUpdate}
+                    />
+                  </div>
                   {/* Delete button */}
                   <Button
                     variant="destructive"
@@ -208,12 +280,12 @@ export default function ImagePromptModal({ isOpen, onClose, contentPlanner, onUp
                     onClick={() => handleDeleteImage(image.imageUrl, index)}
                     disabled={isDeleting}
                   >
-                    <X className="h-4 w-4" />
+                    <Trash2 className="h-3 w-3" />
                   </Button>
                 </div>
                 {/* Description */}
                 <Textarea
-                  value={descriptions[index] || ''}
+                  value={descriptions[index] || image.imageDescription || ''}
                   onChange={(e) => handleDescriptionChange(index, e.target.value)}
                   placeholder="Image description..."
                   className="text-sm min-h-[100px] max-h-[150px] resize-none bg-muted"

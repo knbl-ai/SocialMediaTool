@@ -35,7 +35,8 @@
     "node-poppler": "^7.2.4",
     "oauth-1.0a": "^2.2.6",
     "pdf-lib": "^1.17.1",
-    "pdf2json": "^3.1.5"
+    "pdf2json": "^3.1.5",
+    "probe-image-size": "^7.2.3"
   },
   "devDependencies": {
     "nodemon": "^3.1.9"
