@@ -64,12 +64,13 @@ const PostsDashboard = ({ accountId, onMonthChange }) => {
   const fetchMonthPosts = useCallback(async () => {
     if (!currentPlatform || !isInitialized) return;
     
-    const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-    const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+    // Create dates at the start of the first day and end of the last day
+    const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1, 0, 0, 0);
+    const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59);
     
     await fetchPosts({
-      startDate: firstDay.toISOString().split('T')[0],
-      endDate: lastDay.toISOString().split('T')[0],
+      startDate: firstDay.toISOString(),
+      endDate: lastDay.toISOString(),
       platform: currentPlatform,
       forceRefresh: true
     });
@@ -77,30 +78,22 @@ const PostsDashboard = ({ accountId, onMonthChange }) => {
 
   const handlePostDrop = useCallback(async (postId, targetDate) => {
     try {
-      // For positive UTC offset, we need to add a day to the UTC date
-      // because when we want to display on the 20th local time,
-      // we need to save it as the 20th in UTC
-      const adjustedDate = new Date(
+      // Create a Date object at the start of the target day
+      const newDate = new Date(
         targetDate.getFullYear(),
         targetDate.getMonth(),
-        targetDate.getDate()
+        targetDate.getDate(),
+        0, 0, 0, 0
       );
 
-      // Create UTC date at midnight
-      const utcDate = new Date(Date.UTC(
-        adjustedDate.getFullYear(),
-        adjustedDate.getMonth(),
-        adjustedDate.getDate()
-      ));
-
       await updatePost(postId, {
-        datePost: utcDate.toISOString().split('T')[0]
+        datePost: newDate.toISOString()
       });
       await fetchMonthPosts();
     } catch (error) {
       console.error('Error updating post date:', error);
     }
-  }, [updatePost, fetchMonthPosts, utcOffset]);
+  }, [updatePost, fetchMonthPosts]);
 
   const getPostsForDay = useCallback((day) => {
     if (!day) return [];
@@ -108,36 +101,20 @@ const PostsDashboard = ({ accountId, onMonthChange }) => {
     // Create a date object for the current day at local midnight
     const localDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
     
-    // Convert local date to UTC for fetching posts
-    const utcDate = new Date(Date.UTC(
-      localDate.getFullYear(),
-      localDate.getMonth(),
-      localDate.getDate()
-    ));
+    // Get posts for this date
+    const posts = getPostsByDate(localDate);
 
-    // Get posts for the UTC date
-    let allPosts = getPostsByDate(utcDate);
-
-    // If we're near a day boundary, also check the adjacent day
-    if (utcOffset !== 0) {
-      const adjacentDate = new Date(utcDate);
-      adjacentDate.setDate(adjacentDate.getDate() - 1);
-      const adjacentPosts = getPostsByDate(adjacentDate);
-      allPosts = [...allPosts, ...adjacentPosts];
-    }
-
-    // Filter posts to only include those that should appear on this local day
-    return allPosts.filter(post => {
+    // Filter posts to only include those that match the day
+    return posts.filter(post => {
       if (!post.datePost) return false;
       const postDate = new Date(post.datePost);
-      const localPostDate = new Date(postDate.getTime() + (utcOffset * 60 * 60 * 1000));
       return (
-        localPostDate.getFullYear() === localDate.getFullYear() &&
-        localPostDate.getMonth() === localDate.getMonth() &&
-        localPostDate.getDate() === localDate.getDate()
+        postDate.getFullYear() === localDate.getFullYear() &&
+        postDate.getMonth() === localDate.getMonth() &&
+        postDate.getDate() === localDate.getDate()
       );
     });
-  }, [currentDate, getPostsByDate, utcOffset]);
+  }, [currentDate, getPostsByDate]);
 
   // All useEffect hooks
   useEffect(() => {

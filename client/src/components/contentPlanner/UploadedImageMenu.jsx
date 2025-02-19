@@ -42,9 +42,6 @@ const UploadedImageMenu = ({ contentPlanner, imageUrl, index, imageDescription, 
         index,
         imageDescription
       });
-
-      console.log("Full response:", response);
-      console.log("Server response data:", response?.data);
       
       if (response?.uploadedImages) {
         const updateData = {

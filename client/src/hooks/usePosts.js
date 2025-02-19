@@ -76,10 +76,25 @@ export const usePosts = (accountId) => {
   }, []);
 
   const getPostsByDate = useCallback((date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    if (!date) return [];
+    
+    // Create start and end of the day for comparison
+    const startOfDay = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate()
+    );
+    const endOfDay = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+      23, 59, 59, 999
+    );
+
     return posts.filter(post => {
+      if (!post.datePost) return false;
       const postDate = new Date(post.datePost);
-      return postDate.toISOString().split('T')[0] === dateStr;
+      return postDate >= startOfDay && postDate <= endOfDay;
     });
   }, [posts]);
 
