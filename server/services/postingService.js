@@ -174,6 +174,8 @@ class PostingService {
         status: { $ne: 'published' } // Don't republish already published posts
       });
 
+     
+      console.log("scheduledPosts", scheduledPosts);
       console.log(`Found ${scheduledPosts.length} posts to publish`);
 
       const results = [];
@@ -190,8 +192,11 @@ class PostingService {
 
           // Prepare post data
           const postData = {
+            _id: post._id, // Include the post ID
             imageUrl: post.image.template,
-            content: post.text.post
+            content: post.text.post,
+            videoUrl: post.image.video,
+            showVideo: post.image.showVideo
           };
 
           // Try to publish to each platform
