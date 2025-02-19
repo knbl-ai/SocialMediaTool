@@ -23,12 +23,6 @@ export const DimensionsSelector = ({ value, onChange }) => {
     }
   };
 
-  // Log initial value
-  React.useEffect(() => {
-    const currentDimension = dimensions.find(d => d.name === value);
-    console.log('DimensionsSelector - Current dimension:', value);
-    console.log('DimensionsSelector - Current size:', currentDimension?.size);
-  }, [value]);
 
   return (
     <Select value={value} onValueChange={handleChange}>

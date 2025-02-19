@@ -188,7 +188,10 @@ class ApiClient {
 
   // Post publishing
   async publishPost(accountId, post) {
-    return this.client.post(`/posting/${accountId}/publish`, { post });
+    return this.client.post(`/posting/${accountId}/publish`, { 
+      post,
+      postId: post._id
+    });
   }
 
   // Download content plan PDF

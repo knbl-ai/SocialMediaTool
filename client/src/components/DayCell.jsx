@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useDrop, useDrag } from 'react-dnd';
-import { Video } from 'lucide-react';
+import { Video, Check } from 'lucide-react';
 import EditPostResponsive from './EditPostResponsive';
 import { usePosts } from '../hooks/usePosts';
 
@@ -197,6 +197,15 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
                   onDragStart={setActivePostIndex}
                 >
                   <>
+                    {/* Published Status Icon */}
+                    {currentPost.status === 'published' && (
+                      <div className="absolute top-2 left-2 z-30">
+                        <div className="bg-green-100 dark:bg-green-900/30 p-1 rounded-full">
+                          <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+                        </div>
+                      </div>
+                    )}
+                    
                     {/* Image Container - Full size */}
                     <div className="absolute inset-0">
                       {currentPost.image?.url ? (

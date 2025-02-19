@@ -1,8 +1,8 @@
 const parseEnvModels = (envVar, defaultValue = []) => {
   try {
-    console.log('Parsing env var:', envVar);
+ 
     const parsed = JSON.parse(envVar || '[]');
-    console.log('Parsed models:', parsed);
+ 
     return parsed;
   } catch (error) {
     console.error(`Error parsing models from environment variable:`, error);

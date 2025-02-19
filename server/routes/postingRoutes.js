@@ -10,8 +10,7 @@ const router = express.Router();
 router.post('/:accountId/publish', async (req, res) => {
   try {
     const { accountId } = req.params;
-    const { post } = req.body;
-
+    const { post, postId } = req.body;
 
     if (!post) {
       return res.status(400).json({ error: 'Post data is required' });
@@ -20,6 +19,8 @@ router.post('/:accountId/publish', async (req, res) => {
     const result = await postingService.publishToAllPlatforms(accountId, post);
     
     if (result.success) {
+      // Update post status to published
+      await Post.findByIdAndUpdate(postId, { status: 'published' });
       res.json(result);
     } else {
       res.status(500).json({

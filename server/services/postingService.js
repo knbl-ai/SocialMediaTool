@@ -121,6 +121,7 @@ class PostingService {
 
     // Prepare post data
     const postData = {
+      _id: post._id, // Include the post ID
       imageUrl: post.image.template,
       content: post.text.post,
       videoUrl: post.image.video,
@@ -138,6 +139,14 @@ class PostingService {
           error: error.message
         });
       }
+    }
+
+    // Update post status if all platforms were successful
+    if (errors.length === 0 && post._id) {
+      await Post.findByIdAndUpdate(post._id, {
+        status: 'published',
+        publishedAt: new Date()
+      });
     }
 
     return {

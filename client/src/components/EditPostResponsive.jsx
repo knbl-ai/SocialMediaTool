@@ -52,7 +52,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
   const currentPostRef = useRef(currentPost);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
 
-
+  console.log("currentPost", currentPost);
 
   // Update ref when currentPost changes
   useEffect(() => {

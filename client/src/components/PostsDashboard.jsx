@@ -145,8 +145,7 @@ const PostsDashboard = ({ accountId, onMonthChange }) => {
       if (!accountId) return;
 
       const savedPlatform = localStorage.getItem(PLATFORM_STORAGE_KEY);
-      console.log('Saved platform from localStorage:', savedPlatform);
-      console.log('Current platform:', currentPlatform);
+    
 
       if (savedPlatform) {
         // Always set the platform from localStorage on initial load
@@ -166,7 +165,6 @@ const PostsDashboard = ({ accountId, onMonthChange }) => {
 
   useEffect(() => {
     if (accountId && currentPlatform && isInitialized) {
-      console.log('Fetching posts after initialization. Platform:', currentPlatform);
       fetchMonthPosts();
     }
   }, [accountId, currentPlatform, fetchMonthPosts, refreshTrigger, isInitialized]);
