@@ -60,7 +60,11 @@ const calculateImageSize = async (imageUrl, providedWidth, providedHeight) => {
         };
     } catch (error) {
         console.error('Error calculating image size:', error);
-        throw new Error(`Failed to calculate image size: ${error.message}`);
+        // throw new Error(`Failed to calculate image size: ${error.message}`);
+        return {
+            width: 1024,
+            height: 1024
+        };
     }
 };
 

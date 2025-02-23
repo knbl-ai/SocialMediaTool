@@ -21,7 +21,7 @@ export const uploadImage = async (file) => {
   }
 
   try {
-    const fileName = `accounts/${Date.now()}-${file.originalname}`;
+    const fileName = `accounts/${Date.now()}-iGentity_upload`;
     const fileOptions = {
       destination: fileName,
       metadata: {
