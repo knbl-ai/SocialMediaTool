@@ -174,9 +174,8 @@ class PostingService {
         status: { $ne: 'published' } // Don't republish already published posts
       });
 
-     
-      console.log("scheduledPosts", scheduledPosts);
       console.log(`Found ${scheduledPosts.length} posts to publish`);
+      console.log("scheduledPosts", scheduledPosts);
 
       const results = [];
       const errors = [];

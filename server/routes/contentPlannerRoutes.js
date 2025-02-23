@@ -7,7 +7,7 @@ import { optimizeGuidelinesPrompt } from '../services/promptsService.js';
 import { uploadImage, deleteFile } from '../config/storage.js';
 import { ApiError } from '../utils/ApiError.js';
 import ContentPlanner from '../models/ContentPlanner.js';
-import { generateBackground } from '../services/imageService.js';
+import { generateBackground, generateFashionLook } from '../services/imageService.js';
 
 const router = express.Router();
 
@@ -248,8 +248,6 @@ router.post('/:accountId/generate-background', auth, async (req, res, next) => {
       imageDescription
     });
 
-   console.log("result", result);
-
     // Update the image URL and description in the uploadedImages array
     contentPlanner.uploadedImages[index] = {
       imageUrl: result.url,
@@ -268,6 +266,53 @@ router.post('/:accountId/generate-background', auth, async (req, res, next) => {
   } catch (error) {
     console.error('Background generation failed:', error);
     next(error instanceof ApiError ? error : new ApiError(500, error.message));
+  }
+});
+
+// Generate fashion look
+router.post('/:accountId/generate-fashion', async (req, res, next) => {
+  try {
+    const { accountId } = req.params;
+    const { modelPrompt, gender, garmentImage, imageIndex, imageDescription } = req.body;
+
+    if (!accountId || !gender || !garmentImage || imageIndex === undefined) {
+      throw new Error('Missing required parameters');
+    }
+
+    // Generate fashion look
+    const result = await generateFashionLook({
+      modelPrompt: modelPrompt || '',  // Ensure empty string if modelPrompt is undefined
+      gender,
+      garmentImage,
+      imageDescription
+    });
+
+    // Update the ContentPlanner with new image and description
+    const contentPlanner = await ContentPlanner.findOne({ accountId });
+    if (!contentPlanner) {
+      throw new Error('Content planner not found');
+    }
+
+    // Update the specific image in the uploadedImages array
+    contentPlanner.uploadedImages[imageIndex] = {
+      ...contentPlanner.uploadedImages[imageIndex],
+      imageUrl: result.url,
+      imageDescription: result.description
+    };
+
+    await contentPlanner.save();
+
+    res.json({
+      success: true,
+      imageUrl: result.url,
+      description: result.description,
+      modelImageUrl: result.modelImageUrl,
+      uploadedImages: contentPlanner.uploadedImages
+    });
+
+  } catch (error) {
+    console.error('Error in generate-fashion:', error);
+    next(error);
   }
 });
 
