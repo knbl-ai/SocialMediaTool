@@ -3,6 +3,8 @@ import dotenv from 'dotenv';
 import axios from 'axios';
 import probe from 'probe-image-size';
 import { ApiError } from '../utils/ApiError.js';
+import { generateText, generateCategoryName } from './llmService.js';
+import { fashionCategoryPrompt } from './promptsService.js';
 
 dotenv.config();
 
@@ -163,12 +165,26 @@ export const generateBackground = async ({
     }
 };
 
+const identifyFashionCategory = async (imageDescription) => {
+  try {
+    const prompt = fashionCategoryPrompt({ imageDescription });
+    const category = await generateCategoryName({
+      system: prompt.system,
+      prompt: prompt.prompt
+    });
+    return category; // generateCategoryName already handles validation and defaults
+    
+  } catch (error) {
+    console.error('Error identifying fashion category:', error);
+    return 'tops'; // Default to tops if there's an error
+  }
+};
+
 export const generateFashionLook = async ({
   modelPrompt = '',
   gender,
   garmentImage,
   imageDescription,
-  category = 'tops',
   garmentPhotoType = 'auto',
   guidanceScale = 2,
   timesteps = 50,
@@ -180,65 +196,70 @@ export const generateFashionLook = async ({
   restoreClothes = false,
   longTop = false
 }) => {
-
     const description = modelPrompt.trim() 
       ? `A fashion photo of a ${modelPrompt} ${gender} model in natural light and neutral studio background, wearing ${imageDescription}`
       : `A fashion photo of a ${gender} model in natural light and neutral studio background, wearing ${imageDescription}`;
 
-  try {
-    // First, generate the model image using generateImage
-    console.log('Generating model image from prompt...');
-    const modelImageResult = await generateImage({
-      prompt: description,
-      width: 1080,
-      height: 1920,
-      model: 'fal-ai/flux/dev'
-    });
+    try {
+        // First identify the category
+        console.log('Identifying fashion category...');
+        const category = await identifyFashionCategory(imageDescription);
+        console.log(`Identified category: ${category}`);
 
-    if (!modelImageResult) {
-      throw new Error('Failed to generate model image');
-    }
+        // Generate the model image
+        console.log('Generating model image from prompt...');
+        const modelImageResult = await generateImage({
+            prompt: description,
+            width: 1080,
+            height: 1920,
+            model: 'fal-ai/flux/dev'
+        });
 
-    console.log('Model image generated successfully, proceeding with try-on...');
-
-    // Now proceed with the fashion try-on using the generated model image
-    const result = await fal.subscribe('fashn/tryon', {
-      input: {
-        model_image: modelImageResult,
-        garment_image: garmentImage,
-        category,
-        garment_photo_type: garmentPhotoType,
-        guidance_scale: guidanceScale,
-        timesteps,
-        seed,
-        num_samples: numSamples,
-        cover_feet: coverFeet,
-        adjust_hands: adjustHands,
-        restore_background: restoreBackground,
-        restore_clothes: restoreClothes,
-        long_top: longTop
-      },
-      logs: true,
-      onQueueUpdate: (update) => {
-        if (update.status === "IN_PROGRESS") {
-          update.logs?.map((log) => log.message).forEach(console.log);
+        if (!modelImageResult) {
+            throw new Error('Failed to generate model image');
         }
-      }
-    });
 
-    if (!result?.data?.images?.[0]?.url) {
-      throw new Error('Failed to generate fashion look: No image URL in response');
+        console.log('Model image generated successfully, proceeding with try-on...');
+
+        // Now proceed with the fashion try-on using the generated model image
+        const result = await fal.subscribe('fashn/tryon', {
+            input: {
+                model_image: modelImageResult,
+                garment_image: garmentImage,
+                category,  // Use the identified category
+                garment_photo_type: garmentPhotoType,
+                guidance_scale: guidanceScale,
+                timesteps,
+                seed,
+                num_samples: numSamples,
+                cover_feet: coverFeet,
+                adjust_hands: adjustHands,
+                restore_background: restoreBackground,
+                restore_clothes: restoreClothes,
+                long_top: longTop
+            },
+            logs: true,
+            onQueueUpdate: (update) => {
+                if (update.status === "IN_PROGRESS") {
+                    update.logs?.map((log) => log.message).forEach(console.log);
+                }
+            }
+        });
+
+        if (!result?.data?.images?.[0]?.url) {
+            throw new Error('Failed to generate fashion look: No image URL in response');
+        }
+
+        return {
+            url: result.data.images[0].url,
+            width: result.data.images[0].width,
+            height: result.data.images[0].height,
+            modelImageUrl: modelImageResult,
+            description: description,
+            category  // Include the identified category in the response
+        };
+    } catch (error) {
+        console.error('Error generating fashion look:', error);
+        throw new Error(`Failed to generate fashion look: ${error.message}`);
     }
-
-    return {
-      url: result.data.images[0].url,
-      width: result.data.images[0].width,
-      height: result.data.images[0].height,
-      modelImageUrl: modelImageResult,
-      description: description
-    };
-  } catch (error) {
-    console.error('Error generating fashion look:', error);
-    throw new Error(`Failed to generate fashion look: ${error.message}`);
-  }
 };

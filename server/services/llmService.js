@@ -115,12 +115,9 @@ export const generateText = async ({ topic, model = 'claude-3-5-haiku-20241022',
         
         if (responseFormat === 'json') {
             try {
-                console.log('Raw LLM response:', text);
-                
-                // Use the new validation and fixing function with isContentPlan flag
+   
                 const parsedResponse = validateAndFixJson(text, isContentPlan);
                 
-                console.log('Validated response:', parsedResponse);
                 return parsedResponse;
             } catch (parseError) {
                 console.error('Failed to parse or fix LLM response:', parseError);
@@ -199,3 +196,35 @@ export const analyzeImage = async ({ imageUrl, textPrompt }) => {
     throw error;
   }
 }
+
+export const generateCategoryName = async ({ system, prompt }) => {
+  try {
+    const response = await client.messages.create({
+      model: 'claude-3-haiku-20240307',
+      max_tokens: 10,
+      temperature: 0,
+      system: system,
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ]
+    });
+
+    // Extract the category name from the response
+    const categoryName = response.content[0].text.trim().toLowerCase();
+    
+    // Validate against allowed categories
+    const validCategories = ['tops', 'bottoms', 'one-pieces'];
+    if (!validCategories.includes(categoryName)) {
+      console.warn(`Invalid category received: ${categoryName}, defaulting to "tops"`);
+      return 'tops';
+    }
+
+    return categoryName;
+  } catch (error) {
+    console.error('Error generating category name:', error);
+    return 'tops'; // Default fallback
+  }
+};

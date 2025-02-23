@@ -263,3 +263,13 @@ export const textToMatchUploadedImagePrompt = ({ imageDescription, guidelines, t
             Omit preamble and postamble.`
     }
 }
+
+export const fashionCategoryPrompt = ({ imageDescription }) => ({
+  system: `You are a fashion category classifier. You must classify clothing descriptions into exactly one of these three categories: "tops", "bottoms", or "one-pieces". 
+  - tops: includes shirts, t-shirts, blouses, sweaters, jackets, coats
+  - bottoms: includes pants, shorts, skirts, jeans
+  - one-pieces: includes dresses, jumpsuits, suits, full outfits
+
+  You must respond with ONLY ONE of these three words: "tops", "bottoms", or "one-pieces". No other response is acceptable.`,
+  prompt: `Based on this clothing description, classify it into one category: "${imageDescription}"`
+});
