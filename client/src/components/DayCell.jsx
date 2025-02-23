@@ -88,7 +88,8 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
     
     setIsLoading(true);
     try {
-      const date = new Date(year, month, day);
+      // Create date in UTC to avoid timezone issues
+      const date = new Date(Date.UTC(year, month, day));
       const post = await createPost({
         platforms: [currentPlatform],
         datePost: date.toISOString().split('T')[0],
