@@ -121,7 +121,7 @@ const AccountTemplates = ({ accountId, logoUrl }) => {
 
   return (
     <div className="w-full h-full flex flex-col">
-      <div className="flex items-center justify-center gap-6 mb-4">
+      <div className="flex items-center justify-between gap-6 mb-4 ms-14 me-14">
         {colorEntries.map(([key, value]) => (
           <Dialog.Root 
             key={key} 

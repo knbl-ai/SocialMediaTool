@@ -40,11 +40,11 @@ const OptimizeGuidelines = ({ accountId, onOptimize }) => {
           <Button
             variant="ghost"
             size="icon"
-            className="w-6 h-6 p-0.5 hover:bg-accent hover:text-accent-foreground"
+            className="w-6 h-6 p-0.5 bg-gray-800 hover:bg-gray-700 border border-gray-700"
             onClick={handleOptimize}
             disabled={isLoading}
           >
-            <Sparkles className={`h-4 w-4 ${isLoading ? 'animate-pulse' : ''}`} />
+            <Sparkles className={`h-4 w-4 text-white ${isLoading ? 'animate-pulse' : ''}`} />
           </Button>
         </TooltipTrigger>
         <TooltipContent>

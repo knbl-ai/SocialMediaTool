@@ -71,7 +71,7 @@ const AccountOverview = ({ account, onUpdate }) => {
 
   return (
     <div className="flex flex-col gap-4 w-full bg-background pt-4">
-      <div className="flex justify-end gap-2">
+      <div className="flex justify-center gap-10">
         <WebButton 
           accountId={account?._id}
           onSuccess={handleDocSuccess}

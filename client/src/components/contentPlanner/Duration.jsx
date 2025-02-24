@@ -51,6 +51,7 @@ export default function Duration({ date, duration, onDateChange, onDurationChang
                 selected={date ? new Date(date) : undefined}
                 onSelect={handleSelect}
                 initialFocus
+                className="rounded-md border bg-gray-800 text-white [&_.rdp-day]:text-white [&_.rdp-day_button:hover]:bg-gray-700 [&_.rdp-day_button:focus]:bg-gray-700 [&_.rdp-day_button:focus]:text-white [&_.rdp-day_button:hover]:text-white [&_.rdp-caption]:text-white [&_.rdp-head_cell]:text-white [&_.rdp-nav_button]:text-white [&_.rdp-nav_button:hover]:bg-gray-700"
               />
             </PopoverContent>
           </Popover>

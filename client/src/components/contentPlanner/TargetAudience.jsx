@@ -17,7 +17,7 @@ const TargetAudience = memo(({ value, onChange, tooltip }) => {
       </TooltipLabel>
       <Textarea
         placeholder="Describe your target audience..."
-        className=""
+        className="h-[20vh]"
         value={value}
         onChange={handleChange}
       />

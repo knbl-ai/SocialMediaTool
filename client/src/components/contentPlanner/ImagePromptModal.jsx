@@ -209,7 +209,7 @@ export default function ImagePromptModal({ isOpen, onClose, contentPlanner, onUp
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[800px] h-[80vh] flex flex-col">
+      <DialogContent className="sm:max-w-[1200px] h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Upload Images</DialogTitle>
         </DialogHeader>
@@ -244,7 +244,7 @@ export default function ImagePromptModal({ isOpen, onClose, contentPlanner, onUp
         </div>
 
         <ScrollArea className="flex-1 w-full">
-          <div className="grid grid-cols-2 gap-6 p-4">
+          <div className="grid grid-cols-3 gap-6 p-4">
             {state.images.map((image, index) => (
               <div 
                 key={index} 

@@ -5,6 +5,7 @@ import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 import { ImageIcon } from "lucide-react"
 import ImagePromptModal from './ImagePromptModal'
+import SmallImagesPreview from './SmallImagesPreview'
 
 export default function ImageGuidelines({ contentPlanner, contentPlannerTooltips, handleFieldChange }) {
   const [isUploadMode, setIsUploadMode] = useState(contentPlanner?.generateUploaded || false)
@@ -57,15 +58,19 @@ export default function ImageGuidelines({ contentPlanner, contentPlannerTooltips
         {isUploadMode ? (
           <div 
             onClick={() => setIsModalOpen(true)}
-            className="min-h-[60px] mt-2 border rounded-md bg-background flex items-center justify-center gap-2 text-muted-foreground hover:bg-accent hover:cursor-pointer transition-colors"
+            className="min-h-[20vh] mt-2 border rounded-md bg-background flex flex-col items-center justify-center gap-2 text-muted-foreground hover:bg-accent hover:cursor-pointer transition-colors"
           >
-            <ImageIcon className="h-5 w-5" />
-            <span>{uploadedImages.length} {uploadedImages.length === 1 ? 'image' : 'images'} uploaded</span>
+              <SmallImagesPreview images={uploadedImages} />
+            <div className="flex items-center gap-2 mt-2">
+              <ImageIcon className="h-5 w-5" />
+              <span>{uploadedImages.length} {uploadedImages.length === 1 ? 'image' : 'images'} uploaded</span>
+            </div>
+          
           </div>
         ) : (
           <Textarea
             placeholder="Enter image generation guidelines..."
-            className="min-h-[38px] mt-2"
+            className="min-h-[20vh] mt-2"
             value={contentPlanner.imageGuidelines}
             onChange={(e) => handleFieldChange('imageGuidelines', e.target.value)}
           />

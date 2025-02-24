@@ -24,9 +24,9 @@ export default function ContentGuidelinesAdvanced({ contentPlanner, contentPlann
           className="text-lime-500" 
           tooltip={contentPlannerTooltips.contentGuidelines}
         >
-          Guidelines
+          Content Guidelines
         </TooltipLabel>
-        <div className="absolute left-[92px] -top-[9px]">
+        <div className="absolute left-[150px] -top-[9px]">
           <OptimizeGuidelines 
             accountId={contentPlanner.accountId}
             onOptimize={handleOptimize}
@@ -49,7 +49,7 @@ export default function ContentGuidelinesAdvanced({ contentPlanner, contentPlann
       </div>
       <Textarea
         placeholder="Describe the content you want to generate"
-        className="h-full mt-2"
+        className="h-[20vh] mt-2"
         value={contentPlanner.textGuidelines || ''}
         onChange={(e) => handleFieldChange('textGuidelines', e.target.value)}
       />

@@ -26,6 +26,17 @@ import ContentGuidelinesAdvanced from './contentPlanner/ContentGuidelinesAdvance
 import ImageGuidelines from './contentPlanner/ImageGuidelines';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Switch } from "./ui/switch";
+import { ChevronDown, Bot } from 'lucide-react';
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 
 export default function ContentPlanner() {
   const { accountId } = useParams();
@@ -39,6 +50,8 @@ export default function ContentPlanner() {
 
   const { fetchPosts } = usePostsHook(accountId);
   const { triggerRefresh } = usePostsContext();
+
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const handleGenerateContent = async () => {
     try {
@@ -141,79 +154,31 @@ export default function ContentPlanner() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="w-full">
-                <ContentGuidelinesAdvanced 
-                  contentPlanner={contentPlanner} 
-                  contentPlannerTooltips={contentPlannerTooltips} 
-                  handleFieldChange={handleFieldChange}
-                />
-              </div>
-              <div className="w-full">
+            <div className="grid grid-cols-12 gap-4">
+            <div className="col-span-3">
                 <ImageGuidelines 
                   contentPlanner={contentPlanner}
                   contentPlannerTooltips={contentPlannerTooltips}
                   handleFieldChange={handleFieldChange}
                 />
               </div>
-              <div className="w-full">
+              <div className="col-span-6">
+                <ContentGuidelinesAdvanced 
+                  contentPlanner={contentPlanner} 
+                  contentPlannerTooltips={contentPlannerTooltips} 
+                  handleFieldChange={handleFieldChange}
+                />
+              </div>
+           
+              <div className="col-span-3">
                 <TargetAudience
                   value={contentPlanner.audience}
                   onChange={(value) => handleFieldChange('audience', value)}
                   tooltip={contentPlannerTooltips.audience}
                 />
               </div>
-              <div className="w-full">
-                <CreativitySlider
-                  value={contentPlanner.creativity}
-                  onChange={(value) => handleFieldChange('creativity', value)}
-                  tooltip={contentPlannerTooltips.creativity}
-                />
-              </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-         
-              <SelectField
-                label="LLM"
-                options={MODELS.llm}
-                placeholder="Select LLM model"
-                labelClass="text-lime-500"
-                value={contentPlanner.llm}
-                onChange={(value) => handleFieldChange('llm', value)}
-                tooltip={contentPlannerTooltips.llm}
-              />
-              <SelectField
-                label="Image Model"
-                options={imageModelOptions}
-                placeholder="Select image model"
-                labelClass={cn(
-                  "text-lime-500",
-                  contentPlanner.generateUploaded && "text-gray-400"
-                )}
-                value={contentPlanner.imageModel}
-                onChange={(value) => handleFieldChange('imageModel', value)}
-                tooltip={contentPlannerTooltips.imageModel}
-                disabled={contentPlanner.generateUploaded}
-              />
-              <SelectField
-                label="Voice"
-                options={toneOptions}
-                placeholder="Select tone"
-                labelClass="text-lime-500"
-                value={contentPlanner.voice}
-                onChange={(value) => handleFieldChange('voice', value)}
-                tooltip={contentPlannerTooltips.voice}
-              />
-              <SelectField
-                label="Template"
-                options={templateOptions}
-                placeholder="Select template option"
-                labelClass="text-lime-500"
-                value={contentPlanner.template}
-                onChange={(value) => handleFieldChange('template', value)}
-                tooltip={contentPlannerTooltips.template}
-              />
-            </div>
+        
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="w-full col-span-2">
@@ -265,6 +230,86 @@ export default function ContentPlanner() {
                   tooltip={contentPlannerTooltips.postingTime}
                 />
               </div>
+            </div>
+
+            <div className="flex justify-center">
+              <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+                <DrawerTrigger asChild>
+                  <button className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 transition-colors border border-gray-700 rounded-md">
+                    <Bot className="w-4 h-4 text-white" />
+                    <ChevronDown className={cn(
+                      "w-4 h-4 text-white transition-transform duration-200",
+                      isDrawerOpen && "transform rotate-180"
+                    )} />
+                  </button>
+                </DrawerTrigger>
+                <DrawerContent>
+                  <div className="mx-auto w-full max-w-4xl">
+                    <DrawerHeader>
+                      <DrawerTitle>Additional Settings</DrawerTitle>
+                      <DrawerDescription>Configure advanced content generation settings</DrawerDescription>
+                    </DrawerHeader>
+                    <div className="p-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <SelectField
+                          label="LLM"
+                          options={MODELS.llm}
+                          placeholder="Select LLM model"
+                          labelClass="text-lime-500"
+                          value={contentPlanner.llm}
+                          onChange={(value) => handleFieldChange('llm', value)}
+                          tooltip={contentPlannerTooltips.llm}
+                        />
+                        <SelectField
+                          label="Image Model"
+                          options={imageModelOptions}
+                          placeholder="Select image model"
+                          labelClass={cn(
+                            "text-lime-500",
+                            contentPlanner.generateUploaded && "text-gray-400"
+                          )}
+                          value={contentPlanner.imageModel}
+                          onChange={(value) => handleFieldChange('imageModel', value)}
+                          tooltip={contentPlannerTooltips.imageModel}
+                          disabled={contentPlanner.generateUploaded}
+                        />
+                        <SelectField
+                          label="Voice"
+                          options={toneOptions}
+                          placeholder="Select tone"
+                          labelClass="text-lime-500"
+                          value={contentPlanner.voice}
+                          onChange={(value) => handleFieldChange('voice', value)}
+                          tooltip={contentPlannerTooltips.voice}
+                        />
+                        <SelectField
+                          label="Template"
+                          options={templateOptions}
+                          placeholder="Select template option"
+                          labelClass="text-lime-500"
+                          value={contentPlanner.template}
+                          onChange={(value) => handleFieldChange('template', value)}
+                          tooltip={contentPlannerTooltips.template}
+                        />
+                      </div>
+                      <div className="mt-4">
+                        <CreativitySlider
+                          value={contentPlanner.creativity}
+                          onChange={(value) => handleFieldChange('creativity', value)}
+                          tooltip={contentPlannerTooltips.creativity}
+                        />
+                      </div>
+                    </div>
+                    <DrawerFooter>
+                      <DrawerClose asChild>
+                        <button className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors">
+                          Close
+                        </button>
+                      </DrawerClose>
+                    </DrawerFooter>
+                  </div>
+                </DrawerContent>
+              </Drawer>
             </div>
 
             <div className="relative">
