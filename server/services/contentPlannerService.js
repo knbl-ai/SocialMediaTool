@@ -5,9 +5,13 @@ import { contentPlanPrompt, singlePostPrompt, imagePrompt, textToMatchUploadedIm
 import { generateText } from './llmService.js';
 import { generateImage } from './imageService.js';
 import { generateTemplates } from './templateService.js';
+import { resizeForPlatform, determineImageDimensions } from '../utils/imageProcessor.js';
+import { uploadImage } from '../config/storage.js';
 
 const getEndDate = (startDate, duration) => {
   const start = new Date(startDate);
+  // Adjust for timezone offset (subtract instead of add to move forward)
+  start.setMinutes(start.getMinutes() - start.getTimezoneOffset());
   
   if (duration === 'week') {
     return new Date(start.setDate(start.getDate() + 7));
@@ -44,13 +48,13 @@ export const updateContentPlanner = async (accountId, updates) => {
   );
 };
 
-const generatePostContent = async (topic, contentPlanner, platform, { size }) => {
+const generatePostContent = async (topic, contentPlanner, platforms, { size }) => {
   // Generate post text with platform-specific prompt
   const textPromptData = {
     topic,
     targetAudience: contentPlanner.audience,
     style: contentPlanner.voice,
-    platform,
+    platform: platforms[0], // Use first platform for text generation
     language: contentPlanner.language || 'English'
   };
   const { prompt: textPrompt, system: textSystem } = singlePostPrompt(textPromptData);
@@ -74,11 +78,10 @@ const generatePostContent = async (topic, contentPlanner, platform, { size }) =>
     responseFormat: 'text'
   });
 
-  // Generate image if image model is specified
-  let imageUrl = '';
+  // Generate base image if image model is specified
+  let baseImageUrl = '';
   if (contentPlanner.imageModel !== 'no_images') {
-    console.log('Generating image with size:', size);
-    imageUrl = await generateImage({
+    baseImageUrl = await generateImage({
       prompt: imagePromptResult,
       model: contentPlanner.imageModel,
       width: size.width,
@@ -89,82 +92,109 @@ const generatePostContent = async (topic, contentPlanner, platform, { size }) =>
   return {
     textContent,
     imagePromptResult,
-    imageUrl
+    baseImageUrl
   };
 };
 
-const createPost = async (date, topic, contentPlanner, generatedContent, platforms, { size, dimensions }) => {
+const createPosts = async (date, topic, contentPlanner, generatedContent, platforms) => {
   try {
-    // Ensure date is valid
-    if (!(date instanceof Date) || isNaN(date.getTime())) {
-      throw new Error('Invalid date provided');
-    }
+    const posts = [];
+    const { baseImageUrl } = generatedContent;
 
-    // Validate size
-    if (!size || !size.width || !size.height) {
-      throw new Error('Invalid image size provided');
-    }
-
-    // Create the post
-    const post = new Post({
-      accountId: contentPlanner.accountId,
-      platforms,
-      templatesUrls: [],
-      datePost: date,
-      timePost: `${contentPlanner.postingTime.toString().padStart(2, '0')}`,
-      image: {
-        url: generatedContent.imageUrl,
-        template: generatedContent.imageUrl,
-        size: {
-          width: size.width,
-          height: size.height
-        },
-        dimensions: dimensions || 'Square'
-      },
-      text: {
-        post: generatedContent.textContent.post,
-        title: generatedContent.textContent.title,
-        subtitle: generatedContent.textContent.subtitle
-      },
-      prompts: {
-        image: generatedContent.imagePromptResult,
-        video: '',
-        text: topic
-      },
-      models: {
-        image: contentPlanner.imageModel,
-        text: contentPlanner.llm,
-        video: ''
-      }
-    });
-
-   
-
-    const savedPost = await post.save();
-
-    // Generate templates if we have an image
-    if (savedPost.image?.url) {
+    // Process each platform
+    for (const platform of platforms) {
       try {
-        const templates = await generateTemplates({
-          post: savedPost,
-          accountId: contentPlanner.accountId
+        let imageUrl = baseImageUrl;
+        let dimensions;
+
+        // Resize image for specific platform if needed
+        if (baseImageUrl) {
+          const resizedImage = await resizeForPlatform(baseImageUrl, platform);
+          
+          // Create a unique filename for this image
+          const fileName = `${Date.now()}-${platform}-${Math.random().toString(36).substring(7)}.jpg`;
+          
+          // Upload resized image directly using the buffer
+          imageUrl = await uploadImage({
+            buffer: resizedImage.buffer,
+            originalname: fileName,
+            mimetype: resizedImage.contentType
+          });
+        }
+
+        // Set dimensions based on platform
+        switch (platform) {
+          case 'Instagram':
+            dimensions = { width: 1080, height: 1080, type: 'Square' };
+            break;
+          case 'TikTok':
+            dimensions = { width: 1080, height: 1920, type: 'Story' };
+            break;
+          default:
+            dimensions = { width: 1200, height: 960, type: 'Horizontal' };
+        }
+
+        // Create post for this platform
+        const post = new Post({
+          accountId: contentPlanner.accountId,
+          platforms: [platform],
+          templatesUrls: [],
+          datePost: date,
+          timePost: `${contentPlanner.postingTime.toString().padStart(2, '0')}`,
+          image: {
+            url: imageUrl,
+            template: imageUrl,
+            size: {
+              width: dimensions.width,
+              height: dimensions.height
+            },
+            dimensions: dimensions.type
+          },
+          text: {
+            post: generatedContent.textContent.post,
+            title: generatedContent.textContent.title,
+            subtitle: generatedContent.textContent.subtitle
+          },
+          prompts: {
+            image: generatedContent.imagePromptResult,
+            video: '',
+            text: topic
+          },
+          models: {
+            image: contentPlanner.imageModel,
+            text: contentPlanner.llm,
+            video: ''
+          }
         });
 
-        // Update post with template URLs
-        if (templates?.results) {
-          const templateUrls = templates.results.map(template => template.imageUrl);
-          savedPost.templatesUrls = templateUrls;
-          await savedPost.save();
+        const savedPost = await post.save();
+
+        // Generate templates if we have an image
+        if (savedPost.image?.url) {
+          try {
+            const templates = await generateTemplates({
+              post: savedPost,
+              accountId: contentPlanner.accountId
+            });
+
+            if (templates?.results) {
+              savedPost.templatesUrls = templates.results.map(template => template.imageUrl);
+              await savedPost.save();
+            }
+          } catch (error) {
+            console.error('Error generating templates for post:', error);
+          }
         }
-      } catch (error) {
-        console.error('Error generating templates for post:', error);
-        // Continue with post creation even if template generation fails
+
+        posts.push(savedPost);
+      } catch (platformError) {
+        console.error(`Error creating post for platform ${platform}:`, platformError);
       }
     }
 
-    return savedPost;
+    return posts;
   } catch (error) {
-    console.error('Error creating post:', error);
+    console.error('Error creating posts:', error);
     throw error;
   }
 };
@@ -184,12 +214,16 @@ export const generateContentPlan = async (accountId) => {
     const endDate = getEndDate(contentPlanner.date, contentPlanner.duration);
 
     // Prepare prompt data
+    const startDate = new Date(contentPlanner.date);
+    // Adjust for timezone offset (subtract instead of add to move forward)
+    startDate.setMinutes(startDate.getMinutes() - startDate.getTimezoneOffset());
+    
     const promptData = {
       accountName: account.name,
       accountReview: account.accountReview,
       audience: contentPlanner.audience,
       guidelines: contentPlanner.textGuidelines,
-      startDate: contentPlanner.date.toISOString().split('T')[0],
+      startDate: startDate.toISOString().split('T')[0],
       endDate: endDate.toISOString().split('T')[0],
       frequency: contentPlanner.frequency,
       voice: contentPlanner.voice
@@ -205,97 +239,60 @@ export const generateContentPlan = async (accountId) => {
       isContentPlan: true
     });
 
-    // Validate that we got a valid content plan
+    // Validate content plan
     if (!contentPlan || Object.keys(contentPlan).length === 0) {
       throw new Error('Failed to generate valid content plan');
     }
 
-    // Save content plan to database
+    // Save content plan
     await ContentPlanner.findOneAndUpdate(
       { accountId },
       { contentPlanJSON: JSON.stringify(contentPlan) },
       { new: true }
     );
 
-    // Generate posts for each date and platform in the content plan
+    // Generate posts for each date in the content plan
     const generatedPosts = [];
     for (const [dateStr, topic] of Object.entries(contentPlan)) {
       try {
-        // Validate date format
         const date = new Date(dateStr);
         if (isNaN(date.getTime())) {
           console.error(`Invalid date format for: ${dateStr}, skipping...`);
           continue;
         }
-        
-        // Generate posts for each platform
-        for (const platform of contentPlanner.platforms) {
-          try {
-            // Set platform-specific image dimensions
-            let size;
-            let dimensions;
 
-            switch (platform) {
-              case 'Instagram':
-                size = { width: 1080, height: 1080 };
-                dimensions = 'Square';
-                break;
-              case 'Facebook':
-                size = { width: 1200, height: 960 };
-                dimensions = 'Horizontal';
-                break;
-              case 'LinkedIn':
-                size = { width: 1200, height: 960 };
-                dimensions = 'Horizontal';
-                break;
-              case 'TikTok':
-                size = { width: 1080, height: 1920 };
-                dimensions = 'Story';
-                break;
-              case 'X':
-                size = { width: 1200, height: 960 };
-                dimensions = 'Horizontal';
-                break;
-              default:
-                size = { width: 1080, height: 1080 };
-                dimensions = 'Square';
-            }
+        // Adjust date for local timezone (subtract instead of add to move forward)
+        date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
 
-            // Generate platform-specific content
-            const generatedContent = await generatePostContent(
-              topic, 
-              contentPlanner, 
-              platform,
-              { size }
-            );
-           
-            // Create post with platform-specific settings
-            const post = await createPost(
-              date, 
-              topic, 
-              contentPlanner, 
-              generatedContent,
-              [platform],
-              { size, dimensions }
-            );
-            
-            if (post) {
-              generatedPosts.push(post);
-            }
-          } catch (platformError) {
-            console.error(`Error generating post for platform ${platform}:`, platformError);
-            // Continue with next platform
-          }
-        }
+        // Determine optimal image dimensions based on platforms
+        const size = determineImageDimensions(contentPlanner.platforms);
+
+        // Generate content once for all platforms
+        const generatedContent = await generatePostContent(
+          topic,
+          contentPlanner,
+          contentPlanner.platforms,
+          { size }
+        );
+
+        // Create posts for all platforms
+        const posts = await createPosts(
+          date,
+          topic,
+          contentPlanner,
+          generatedContent,
+          contentPlanner.platforms
+        );
+
+        generatedPosts.push(...posts);
       } catch (dateError) {
         console.error(`Error processing date ${dateStr}:`, dateError);
-        // Continue with next date
       }
     }
 
-    return { 
+    return {
       message: 'ContentPlanSaved:ok',
-      posts: generatedPosts 
+      posts: generatedPosts
     };
   } catch (error) {
     console.error('Error generating content plan:', error);
@@ -319,6 +316,9 @@ export const generateContentPlanFromUploadedImages = async (accountId) => {
     // Calculate dates based on the number of images and platforms
     const dates = [];
     const startDate = new Date(contentPlanner.date);
+    // Adjust for timezone offset
+    startDate.setMinutes(startDate.getMinutes() - startDate.getTimezoneOffset());
+    
     const frequency = contentPlanner.frequency;
 
     // Calculate how many dates we need based on images and platforms
@@ -327,7 +327,8 @@ export const generateContentPlanFromUploadedImages = async (accountId) => {
 
     // Generate enough dates for all posts
     while (dates.length < totalPosts) {
-      dates.push(new Date(currentDate));
+      const newDate = new Date(currentDate);
+      dates.push(newDate);
       currentDate.setDate(currentDate.getDate() + frequency);
     }
 

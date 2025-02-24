@@ -15,24 +15,53 @@ const storage = new Storage({
 const bucketName = process.env.GOOGLE_CLOUD_BUCKET_NAME;
 const bucket = storage.bucket(bucketName);
 
-export const uploadImage = async (file) => {
-  if (!file) {
-    throw new Error('No file provided');
+export const uploadImage = async (input) => {
+  if (!input) {
+    throw new Error('No input provided');
   }
 
   try {
-    const fileName = `accounts/${Date.now()}-iGentity_upload`;
-    const fileOptions = {
-      destination: fileName,
-      metadata: {
-        contentType: file.mimetype,
-      },
-      public: true
-    };
+    let fileName;
+    let buffer;
+    let contentType;
 
-    await bucket.file(fileName).save(file.buffer, {
-      contentType: file.mimetype,
-      public: true
+    // Handle both file upload from form and direct buffer upload
+    if (input.buffer) {
+      // Direct buffer upload
+      buffer = input.buffer;
+      fileName = `accounts/${input.originalname}`;
+      contentType = input.mimetype;
+    } else {
+      // Form upload
+      buffer = input.buffer;
+      fileName = `accounts/${Date.now()}-${input.originalname}`;
+      contentType = input.mimetype;
+    }
+
+    const file = bucket.file(fileName);
+
+    // Create write stream
+    const stream = file.createWriteStream({
+      metadata: {
+        contentType: contentType,
+      },
+      public: true,
+      resumable: false
+    });
+
+    // Handle stream events
+    await new Promise((resolve, reject) => {
+      stream.on('error', (error) => {
+        console.error('Upload stream error:', error);
+        reject(error);
+      });
+
+      stream.on('finish', () => {
+        resolve();
+      });
+
+      // Write buffer to stream
+      stream.end(buffer);
     });
 
     const publicUrl = `https://storage.googleapis.com/${bucketName}/${fileName}`;

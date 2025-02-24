@@ -10,6 +10,7 @@ import PostPlatformSelector from "./editPost/PostPlatformSelector";
 import PostSelectItems from "./editPost/PostSelectItems";
 import DimensionsSelector from "./editPost/DimensionsSelector";
 import DisplayImage from "./editPost/DisplayImage";
+import PostStatus from "./editPost/PostStatus";
 import { usePosts } from '../hooks/usePosts';
 import api from '../lib/api';
 import MODELS from '../config/models';
@@ -451,6 +452,18 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
     }
   };
 
+  const handleStatusChange = async (newStatus) => {
+    try {
+      const updatedPost = await updatePost(postId, { status: newStatus });
+      setCurrentPost(prev => ({ ...prev, status: newStatus }));
+      onUpdate?.();
+      return updatedPost;
+    } catch (error) {
+      console.error('Error updating post status:', error);
+      throw error;
+    }
+  };
+
   return (
     <Modal show={show} onClose={handleClose}>
       <div className="flex flex-col h-[90vh] w-full">
@@ -463,10 +476,16 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
         {/* Main Content */}
         <div className="flex-1 grid grid-cols-12 gap-4 p-4 min-h-0">
           {/* Left Column - Templates */}
-          <div className="col-span-2 h-full ">
-          <div className="mt-3.5">
-          <DimensionsSelector value={dimensions} onChange={handleDimensionsChange}/>
-          </div>
+          <div className="col-span-2 h-full">
+            <div className="flex items-center justify-end gap-2 h-16">
+              <PostStatus 
+                className="w-[40px]" 
+                currentStatus={currentPost?.status || 'pending'}
+                onStatusChange={handleStatusChange}
+                disabled={isGeneratingTemplates}
+              />
+              <DimensionsSelector value={dimensions} onChange={handleDimensionsChange}/>
+            </div>
             <div className="rounded-lg overflow-hidden h-full">
               <SelectTemplate 
                 templatesUrls={currentPost?.templatesUrls || []}

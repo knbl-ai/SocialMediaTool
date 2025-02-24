@@ -18,15 +18,13 @@ export const DimensionsSelector = ({ value, onChange }) => {
   const handleChange = (selectedName) => {
     const selectedDimension = dimensions.find(d => d.name === selectedName);
     if (selectedDimension) {
-     
       onChange(selectedDimension.name, selectedDimension.size);
     }
   };
 
-
   return (
     <Select value={value} onValueChange={handleChange}>
-      <SelectTrigger className="w-[160px] bg-background">
+      <SelectTrigger className="h-[40px] bg-background">
         <SelectValue placeholder="Select format" />
       </SelectTrigger>
       <SelectContent>

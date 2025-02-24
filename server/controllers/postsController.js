@@ -74,7 +74,8 @@ export const updatePost = async (req, res) => {
         prompts: req.body.prompts,
         models: req.body.models,
         templatesUrls: req.body.templatesUrls,
-        updatedAt: new Date()
+        updatedAt: new Date(),
+        status: req.body.status
       }
     },
     { new: true, runValidators: true }

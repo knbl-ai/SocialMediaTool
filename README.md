@@ -56,7 +56,60 @@ client/
    }
    ```
 
-2. **State Management**
+2. **Date and UTC Handling**
+   ```javascript
+   // Date Management
+   - All dates are stored in UTC in the database
+   - Frontend displays dates in local timezone
+   - Backend adjusts dates for content generation:
+     ├── Adjusts for timezone offset when generating content plan
+     ├── Maintains consistent dates across platforms
+     └── Uses formula: date.setMinutes(date.getMinutes() - date.getTimezoneOffset())
+
+   // UTC Offset Handling
+   - Content generation respects selected date regardless of timezone
+   - Post scheduling maintains consistent timing across regions
+   - Prevents date shifting when generating content across midnight UTC
+   ```
+
+3. **Platform-Specific Image Generation**
+   ```javascript
+   // Image Dimensions by Platform
+   Instagram: {
+     dimensions: { width: 1080, height: 1080 },
+     type: 'Square'
+   },
+   Facebook: {
+     dimensions: { width: 1200, height: 630 },
+     type: 'Horizontal'
+   },
+   LinkedIn: {
+     dimensions: { width: 1200, height: 627 },
+     type: 'Horizontal'
+   },
+   TikTok: {
+     dimensions: { width: 1080, height: 1920 },
+     type: 'Story'
+   },
+   X: {
+     dimensions: { width: 1200, height: 675 },
+     type: 'Horizontal'
+   }
+
+   // Image Processing Flow
+   1. Generate base image with optimal dimensions
+   2. Resize for each platform using Sharp
+   3. Upload platform-specific versions
+   4. Store URLs and dimensions in post model
+
+   // Image Quality Management
+   - JPEG format for consistency
+   - 90% quality preservation
+   - Maintains aspect ratios
+   - Handles both AI-generated and uploaded images
+   ```
+
+4. **State Management**
    - Uses `useContentPlanner` hook for state management
    - Implements optimistic updates with error rollback
    - Debounced API calls (500ms) for better performance
