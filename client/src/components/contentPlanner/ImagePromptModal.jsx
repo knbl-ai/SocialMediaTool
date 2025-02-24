@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import api from "@/lib/api"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import UploadedImageMenu from './UploadedImageMenu'
+import { resizeImage } from "@/lib/imageUtils"
 
 export default function ImagePromptModal({ isOpen, onClose, contentPlanner, onUpdate }) {
   const [isUploading, setIsUploading] = useState(false)
@@ -102,13 +103,24 @@ export default function ImagePromptModal({ isOpen, onClose, contentPlanner, onUp
     const files = Array.from(e.target.files)
     if (files.length === 0) return
 
-    const formData = new FormData()
-    files.forEach(file => {
-      formData.append('images', file)
-    })
-
     try {
       setIsUploading(true)
+
+      // Process each file - resize if needed
+      const processedFiles = await Promise.all(
+        files.map(file => {
+          if (!file.type.startsWith('image/')) {
+            throw new Error(`File "${file.name}" is not an image`)
+          }
+          return resizeImage(file, 5)
+        })
+      )
+
+      const formData = new FormData()
+      processedFiles.forEach(file => {
+        formData.append('images', file)
+      })
+
       const response = await api.post(
         `/content-planner/${contentPlanner.accountId}/upload-images`,
         formData,
@@ -122,12 +134,12 @@ export default function ImagePromptModal({ isOpen, onClose, contentPlanner, onUp
       setState(prev => ({
         ...prev,
         images: response.uploadedImages
-      }));
+      }))
       onUpdate?.(response.uploadedImages)
       
       toast({
         title: "Success",
-        description: `${files.length} images uploaded and analyzed successfully`,
+        description: `${files.length} ${files.length === 1 ? 'image' : 'images'} uploaded and analyzed successfully`,
       })
     } catch (error) {
       console.error('Error uploading images:', error)

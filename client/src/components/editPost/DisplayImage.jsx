@@ -1,6 +1,8 @@
 import { ImagePlus, Video, Image as ImageIcon } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
 import api from "../../lib/api";
+import { resizeImage } from "../../lib/imageUtils";
+import { toast } from "sonner";
 
 const DisplayImage = ({ imageUrl, templateUrl, videoUrl, templatesUrls = [], onTemplateSelect, onImageUpload, postId, showVideo: initialShowVideo = false }) => {
   const displayUrl = templateUrl || imageUrl;
@@ -40,27 +42,26 @@ const DisplayImage = ({ imageUrl, templateUrl, videoUrl, templatesUrls = [], onT
   };
 
   const handleFileChange = async (event) => {
+
     const file = event.target.files?.[0];
+
     if (!file) return;
 
     // Check file type
     if (!file.type.startsWith('image/')) {
-      alert('Please upload an image file');
-      return;
-    }
-
-    // Check file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert('File size should be less than 5MB');
+      toast.error('Please upload an image file');
       return;
     }
 
     try {
       setIsUploading(true);
 
-      // Create FormData
+      // Resize image if needed (5MB limit)
+      const processedFile = await resizeImage(file, 5);
+      
+      // Create FormData with processed file
       const formData = new FormData();
-      formData.append('image', file);
+      formData.append('image', processedFile);
 
       // Upload image
       const response = await api.uploadImage(formData);
@@ -68,12 +69,13 @@ const DisplayImage = ({ imageUrl, templateUrl, videoUrl, templatesUrls = [], onT
       // Call the callback with the new image URL
       if (onImageUpload && response.url) {
         await onImageUpload(response.url, response.url);
+        toast.success('Image uploaded successfully');
       } else {
         throw new Error('No URL received from server');
       }
     } catch (error) {
       console.error('Error uploading image:', error);
-      alert(error.message || 'Failed to upload image. Please try again.');
+      toast.error(error.message || 'Failed to upload image. Please try again.');
     } finally {
       setIsUploading(false);
       // Clear the input value to allow uploading the same file again
