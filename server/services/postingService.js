@@ -171,7 +171,7 @@ class PostingService {
       const scheduledPosts = await Post.find({
         datePost: { $eq: now },
         timePost: time, // timePost is stored as string "00"-"23"
-        status: { $ne: 'published' } // Don't republish already published posts
+        status: 'scheduled' // Only publish posts with scheduled status
       });
 
       console.log(`Found ${scheduledPosts.length} posts to publish`);

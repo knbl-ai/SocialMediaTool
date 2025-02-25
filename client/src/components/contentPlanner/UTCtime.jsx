@@ -62,7 +62,7 @@ const UTCtime = ({ value, onChange, tooltip }) => {
         value={currentTimezone?.toString()} 
         onValueChange={handleSelect}
       >
-        <SelectTrigger className="w-[180px] bg-background">
+        <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="Select timezone">
             {getCurrentTimezoneLabel()}
           </SelectValue>

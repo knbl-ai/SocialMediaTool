@@ -37,7 +37,7 @@ export default function Duration({ date, duration, onDateChange, onDurationChang
               <Button
                 variant={"outline"}
                 className={cn(
-                  "w-full justify-start text-left font-normal mt-2",
+                  "w-full justify-start text-left font-normal mt-2 bg-gray-50 dark:bg-gray-800",
                   !date && "text-muted-foreground"
                 )}
               >
@@ -51,7 +51,7 @@ export default function Duration({ date, duration, onDateChange, onDurationChang
                 selected={date ? new Date(date) : undefined}
                 onSelect={handleSelect}
                 initialFocus
-                className="rounded-md border bg-gray-800 text-white [&_.rdp-day]:text-white [&_.rdp-day_button:hover]:bg-gray-700 [&_.rdp-day_button:focus]:bg-gray-700 [&_.rdp-day_button:focus]:text-white [&_.rdp-day_button:hover]:text-white [&_.rdp-caption]:text-white [&_.rdp-head_cell]:text-white [&_.rdp-nav_button]:text-white [&_.rdp-nav_button:hover]:bg-gray-700"
+                className="rounded-md border bg-gray-50 dark:bg-gray-800"
               />
             </PopoverContent>
           </Popover>

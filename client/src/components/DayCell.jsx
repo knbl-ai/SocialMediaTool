@@ -1,8 +1,9 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useDrop, useDrag } from 'react-dnd';
-import { Video, Check } from 'lucide-react';
+import { Video } from 'lucide-react';
 import EditPostResponsive from './EditPostResponsive';
 import { usePosts } from '../hooks/usePosts';
+import DayCellStatusChange from './editPost/DayCellStatusChange';
 
 const DraggablePost = ({ post, index, onDragStart, children }) => {
   const [{ isDragging }, drag] = useDrag(() => ({
@@ -45,7 +46,7 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
     postId: null
   });
   const [isLoading, setIsLoading] = useState(false);
-  const { createPost } = usePosts(accountId);
+  const { createPost, updatePost } = usePosts(accountId);
 
   // Reset active post index when posts change
   useEffect(() => {
@@ -133,6 +134,20 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
     }));
   }, []);
 
+  const handleStatusChange = async (newStatus) => {
+    try {
+      if (!currentPost?._id) return;
+      
+      const updatedPost = await updatePost(currentPost._id, { status: newStatus });
+      // Force a refresh of the calendar
+      onUpdate?.();
+      return updatedPost;
+    } catch (error) {
+      console.error('Error updating post status:', error);
+      throw error;
+    }
+  };
+
   if (!day) return <div className="aspect-square" />;
 
   const cellDate = new Date(year, month, day);
@@ -198,14 +213,12 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
                   onDragStart={setActivePostIndex}
                 >
                   <>
-                    {/* Published Status Icon */}
-                    {currentPost.status === 'published' && (
-                      <div className="absolute top-2 left-2 z-30">
-                        <div className="bg-green-100 dark:bg-green-900/30 p-1 rounded-full">
-                          <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
-                        </div>
-                      </div>
-                    )}
+                    {/* Status Icon */}
+                    <DayCellStatusChange 
+                      currentStatus={currentPost.status} 
+                      onStatusChange={handleStatusChange}
+                      disabled={isLoading}
+                    />
                     
                     {/* Image Container - Full size */}
                     <div className="absolute inset-0">
@@ -224,9 +237,15 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
                               </div>
                             </div>
                           )}
-                          {/* Gray overlay for published posts */}
-                          {currentPost.status === 'published' && (
-                            <div className="absolute inset-0 bg-gray-900/40 rounded-xl" />
+                          {/* Status overlay */}
+                          {currentPost.status && (
+                            <div className={`absolute inset-0 rounded-xl ${
+                              currentPost.status === 'published' ? 'bg-blue-900/20' :
+                              currentPost.status === 'scheduled' ? 'bg-green-900/20' :
+                              currentPost.status === 'failed' ? 'bg-red-900/20' :
+                              currentPost.status === 'pending' ? 'bg-orange-900/10' :
+                              ''
+                            }`} />
                           )}
                         </div>
                       ) : (
