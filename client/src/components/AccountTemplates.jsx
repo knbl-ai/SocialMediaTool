@@ -87,7 +87,7 @@ const AccountTemplates = ({ accountId, logoUrl }) => {
     try {
       const response = await axios.post(
         `${API_URL}/api/accounts/${accountId}/generate-templates`,
-        {},  // Server will use account data
+        { accountId },  // Explicitly include accountId in the request body
         { withCredentials: true }
       );
   

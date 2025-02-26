@@ -247,7 +247,8 @@ router.post('/:id/generate-templates', auth, async (req, res) => {
           titleColor: account.colors.title,
           subtitleColor: account.colors.text,
           logoURL: account.logoUrl
-        }
+        },
+        accountId: req.params.id
       }
     );
 

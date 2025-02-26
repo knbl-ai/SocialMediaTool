@@ -10,6 +10,11 @@ export const generateTemplates = async ({ post, accountId }) => {
       throw new ApiError(500, 'TEMPLATES_IMAGES_API is not configured');
     }
 
+    // Ensure accountId is provided
+    if (!accountId) {
+      throw new ApiError(400, 'Account ID is required');
+    }
+
     // Get account data
     const account = await Account.findById(accountId);
     if (!account) {
@@ -43,7 +48,8 @@ export const generateTemplates = async ({ post, accountId }) => {
         width: post.image.size.width,
         height: post.image.size.height
       },
-      outputFormat: 'png'
+      outputFormat: 'png',
+      accountId: accountId // Explicitly include accountId in the request to the templates API
     };
 
     // Make request to templates API
