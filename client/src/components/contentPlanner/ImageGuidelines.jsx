@@ -10,14 +10,14 @@ import SmallImagesPreview from './SmallImagesPreview'
 export default function ImageGuidelines({ contentPlanner, contentPlannerTooltips, handleFieldChange }) {
   const [isUploadMode, setIsUploadMode] = useState(contentPlanner?.generateUploaded || false)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [uploadedImages, setUploadedImages] = useState(contentPlanner?.uploadedImages || [])
+  const [uploadedImages, setUploadedImages] = useState(Array.isArray(contentPlanner?.uploadedImages) ? contentPlanner.uploadedImages : [])
 
   useEffect(() => {
     if (contentPlanner?.generateUploaded !== undefined) {
       setIsUploadMode(contentPlanner.generateUploaded)
     }
     if (contentPlanner?.uploadedImages) {
-      setUploadedImages(contentPlanner.uploadedImages)
+      setUploadedImages(Array.isArray(contentPlanner.uploadedImages) ? contentPlanner.uploadedImages : [])
     }
   }, [contentPlanner?.generateUploaded, contentPlanner?.uploadedImages])
 
@@ -27,8 +27,9 @@ export default function ImageGuidelines({ contentPlanner, contentPlannerTooltips
   }
 
   const handleImagesUpdate = (newImages) => {
-    setUploadedImages(newImages)
-    handleFieldChange('uploadedImages', newImages)
+    const safeImages = Array.isArray(newImages) ? newImages : []
+    setUploadedImages(safeImages)
+    handleFieldChange('uploadedImages', safeImages)
   }
 
   return (
@@ -73,6 +74,7 @@ export default function ImageGuidelines({ contentPlanner, contentPlannerTooltips
             className="min-h-[24vh] mt-2"
             value={contentPlanner.imageGuidelines}
             onChange={(e) => handleFieldChange('imageGuidelines', e.target.value)}
+            data-auto-dir="true"
           />
         )}
       </div>

@@ -106,12 +106,14 @@ export function SelectTemplate({
             className="w-full outline-none bg-background"
             value={title}
             onChange={(e) => onTitleChange?.(e.target.value)}
+            data-auto-dir="true"
           />
           <Textarea
             placeholder="Subtitle"
             className="w-full h-[11vh] outline-none bg-background"
             value={subtitle}
             onChange={(e) => onSubtitleChange?.(e.target.value)}
+            data-auto-dir="true"
           />
           <Button 
             className='w-full'

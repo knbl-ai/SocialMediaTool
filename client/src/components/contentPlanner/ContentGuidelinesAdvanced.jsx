@@ -52,6 +52,7 @@ export default function ContentGuidelinesAdvanced({ contentPlanner, contentPlann
         className="h-[24vh] mt-3"
         value={contentPlanner.textGuidelines || ''}
         onChange={(e) => handleFieldChange('textGuidelines', e.target.value)}
+        data-auto-dir="true"
       />
     </div>
   )

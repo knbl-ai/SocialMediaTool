@@ -1,13 +1,16 @@
 import React, { useMemo } from 'react';
 
 export default function SmallImagesPreview({ images = [] }) {
+  // Ensure images is always an array
+  const safeImages = Array.isArray(images) ? images : [];
+  
   const randomImages = useMemo(() => {
-    if (images.length <= 4) return images;
-    const shuffled = [...images].sort(() => 0.5 - Math.random());
+    if (safeImages.length <= 4) return safeImages;
+    const shuffled = [...safeImages].sort(() => 0.5 - Math.random());
     return shuffled.slice(0, 4);
-  }, [images]);
+  }, [safeImages]);
 
-  if (images.length === 0) return null;
+  if (safeImages.length === 0) return null;
 
   return (
     <div className="grid grid-cols-4 gap-1 mt-2 ps-2 pe-2">

@@ -185,18 +185,24 @@ router.post('/:accountId/update-image-description', auth, async (req, res) => {
     const { accountId } = req.params;
     const { index, description } = req.body;
 
-    if (typeof index !== 'number' || !description) {
-      throw new ApiError(400, 'Invalid request data');
+    // Validate input data more thoroughly
+    if (index === undefined || index === null || typeof index !== 'number') {
+      return res.status(400).json({ error: 'Invalid image index' });
+    }
+
+    // Allow empty descriptions (just validate it's a string)
+    if (description === undefined || typeof description !== 'string') {
+      return res.status(400).json({ error: 'Description must be a string' });
     }
 
     const contentPlanner = await ContentPlanner.findOne({ accountId });
     if (!contentPlanner) {
-      throw new ApiError(404, 'Content planner not found');
+      return res.status(404).json({ error: 'Content planner not found' });
     }
 
     // Check if the index is valid
     if (index < 0 || index >= contentPlanner.uploadedImages.length) {
-      throw new ApiError(400, 'Invalid image index');
+      return res.status(400).json({ error: 'Invalid image index' });
     }
 
     // Update the description
@@ -209,9 +215,12 @@ router.post('/:accountId/update-image-description', auth, async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating image description:', error);
-    res.status(error.status || 500).json({ 
-      error: error.message || 'Failed to update image description'
-    });
+    
+    // Safe error handling to prevent server crashes
+    const statusCode = error.statusCode || 500;
+    const errorMessage = error.message || 'Failed to update image description';
+    
+    res.status(statusCode).json({ error: errorMessage });
   }
 });
 

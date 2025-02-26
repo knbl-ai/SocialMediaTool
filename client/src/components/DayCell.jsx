@@ -250,7 +250,7 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
                         </div>
                       ) : (
                         <div className="w-full h-full bg-gray-100 dark:bg-gray-700 rounded-xl flex items-center justify-center">
-                          <span className="text-gray-400 dark:text-gray-500">No image</span>
+                          <span className="text-gray-400 dark:text-gray-500" data-auto-dir="true">No image</span>
                         </div>
                       )}
                     </div>
@@ -260,7 +260,7 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
                       <div className="absolute inset-x-0 bottom-0 z-10">
                         {/* Preview text */}
                         <div className={`p-2 bg-gradient-to-t from-white via-white/95 to-white/80 dark:from-gray-900 dark:via-gray-900/95 dark:to-gray-900/80 transition-opacity duration-300 group-hover:opacity-0 group-hover:invisible ${currentPost.status === 'published' ? 'from-gray-100 via-gray-100/95 to-gray-100/80 dark:from-gray-800 dark:via-gray-800/95 dark:to-gray-800/80' : ''}`}>
-                          <p className={`text-xs line-clamp-2 font-medium ${currentPost.status === 'published' ? 'text-gray-600 dark:text-gray-400' : 'text-gray-800 dark:text-gray-200'}`}>
+                          <p className={`text-xs line-clamp-2 font-medium ${currentPost.status === 'published' ? 'text-gray-600 dark:text-gray-400' : 'text-gray-800 dark:text-gray-200'}`} data-auto-dir="true">
                             {currentPost.text.post}
                           </p>
                         </div>
@@ -295,7 +295,7 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
             "
           >
             <div className="bg-white dark:bg-gray-900 shadow-xl p-3 rounded-b-xl border-t border-gray-100 dark:border-gray-700">
-              <p className="text-xs text-gray-800 dark:text-gray-200 font-medium">
+              <p className="text-xs text-gray-800 dark:text-gray-200 font-medium" data-auto-dir="true">
                 {currentPost.text.post}
               </p>
             </div>

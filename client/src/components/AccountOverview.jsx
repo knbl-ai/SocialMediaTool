@@ -93,6 +93,7 @@ const AccountOverview = ({ account, onUpdate }) => {
         onChange={handleReviewChange}
         placeholder="Write account overview here..."
         className="w-full h-48 px-4 py-2 rounded-md bg-gray-50 dark:bg-gray-900 dark:text-gray-100 focus:outline-none resize-none h-44 border dark:border-gray-700"
+        data-auto-dir="true"
       />
     </div>
   );

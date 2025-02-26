@@ -1,0 +1,44 @@
+/* Text direction utility classes */
+
+/* RTL text direction */
+.rtl-text {
+  direction: rtl;
+  text-align: right;
+}
+
+/* LTR text direction */
+.ltr-text {
+  direction: ltr;
+  text-align: left;
+}
+
+/* Auto text direction - applies RTL for Hebrew text */
+[data-auto-dir="true"] {
+  unicode-bidi: plaintext;
+}
+
+/* Apply RTL for elements with Hebrew content */
+[lang="he"],
+[dir="rtl"] {
+  direction: rtl;
+  text-align: right;
+}
+
+/* Ensure input placeholders follow the same direction */
+input::placeholder,
+textarea::placeholder {
+  direction: inherit;
+  text-align: inherit;
+}
+
+/* Ensure RTL text in contenteditable elements */
+[contenteditable][dir="rtl"] {
+  direction: rtl;
+  text-align: right;
+}
+
+/* Ensure LTR text in contenteditable elements */
+[contenteditable][dir="ltr"] {
+  direction: ltr;
+  text-align: left;
+} 

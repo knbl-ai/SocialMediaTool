@@ -20,6 +20,7 @@ const TargetAudience = memo(({ value, onChange, tooltip }) => {
         className="h-[20vh]"
         value={value}
         onChange={handleChange}
+        data-auto-dir="true"
       />
     </div>
   );

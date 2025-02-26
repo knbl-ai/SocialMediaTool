@@ -50,15 +50,15 @@ export default function ImagePromptModal({ isOpen, onClose, contentPlanner, onUp
     };
   }, []);
 
-  const saveChanges = useCallback(async (newState) => {
+  const saveChanges = useCallback(async (index, description) => {
     if (!contentPlanner?._id) return;
     
     try {
       const response = await api.post(
         `/content-planner/${contentPlanner.accountId}/update-image-description`,
         { 
-          index: newState.currentIndex,
-          description: newState.images[newState.currentIndex].imageDescription
+          index,
+          description
         }
       );
 
@@ -66,21 +66,36 @@ export default function ImagePromptModal({ isOpen, onClose, contentPlanner, onUp
         onUpdate(response.uploadedImages);
       }
     } catch (error) {
-      console.error('Error saving changes:', error);
+      console.error('Error saving description:', error);
+      
+      // Extract error message from response if available
+      const errorMessage = error.response?.data?.error || 
+                          error.message || 
+                          "Failed to save description. Please try again.";
+      
       toast({
         title: "Error",
-        description: "Failed to save changes. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     }
-  }, [contentPlanner?._id, contentPlanner?.accountId, onUpdate, toast]);
+  }, [contentPlanner, onUpdate, toast]);
 
   const handleDescriptionChange = useCallback((index, newDescription) => {
+    // Validate inputs
+    if (index === undefined || index === null || typeof index !== 'number') {
+      console.error('Invalid index provided to handleDescriptionChange:', index);
+      return;
+    }
+
     // Update local state immediately
     setState(prev => {
-      const newImages = prev.images.map((img, i) => 
-        i === index ? { ...img, imageDescription: newDescription } : img
-      );
+      // Create a safe copy of the images array
+      const newImages = Array.isArray(prev.images) 
+        ? prev.images.map((img, i) => 
+            i === index ? { ...img, imageDescription: newDescription } : img
+          )
+        : [];
 
       // Clear existing timeout
       if (saveTimeoutRef.current) {
@@ -89,7 +104,7 @@ export default function ImagePromptModal({ isOpen, onClose, contentPlanner, onUp
 
       // Set new timeout for API call
       saveTimeoutRef.current = setTimeout(() => {
-        saveChanges({ ...prev, images: newImages, currentIndex: index });
+        saveChanges(index, newDescription);
       }, 1000);
 
       return {
@@ -228,14 +243,16 @@ export default function ImagePromptModal({ isOpen, onClose, contentPlanner, onUp
 
       setState(prev => {
         const newImages = prev.images.filter((_, i) => i !== index);
+        
+        // Call onUpdate with the new images array
+        onUpdate?.(newImages);
+        
         return {
           ...prev,
           images: newImages
         };
       });
       
-      onUpdate?.(state.images.filter((_, i) => i !== index))
-
       toast({
         title: "Success",
         description: "Image deleted successfully",
@@ -359,6 +376,7 @@ export default function ImagePromptModal({ isOpen, onClose, contentPlanner, onUp
                   placeholder="Image description..."
                   className="text-sm min-h-[100px] max-h-[150px] resize-none bg-muted"
                   disabled={loadingImageIndex === index}
+                  data-auto-dir="true"
                 />
               </div>
             ))}

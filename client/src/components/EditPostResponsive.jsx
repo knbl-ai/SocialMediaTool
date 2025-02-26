@@ -587,6 +587,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                 className="h-full resize-none"
                 value={postText}
                 onChange={(e) => setPostText(e.target.value)}
+                data-auto-dir="true"
               />
             </div>
           </div>
