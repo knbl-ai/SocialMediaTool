@@ -154,33 +154,25 @@ export default function ContentPlanner() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-12 gap-4">
-            <div className="col-span-3">
-                <ImageGuidelines 
-                  contentPlanner={contentPlanner}
-                  contentPlannerTooltips={contentPlannerTooltips}
-                  handleFieldChange={handleFieldChange}
-                />
-              </div>
-              <div className="col-span-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="w-full h-full bg-gray-50 dark:bg-gray-800/30 p-4 rounded-lg">
                 <ContentGuidelinesAdvanced 
                   contentPlanner={contentPlanner} 
                   contentPlannerTooltips={contentPlannerTooltips} 
                   handleFieldChange={handleFieldChange}
                 />
               </div>
-           
-              <div className="col-span-3">
-                <TargetAudience
-                  value={contentPlanner.audience}
-                  onChange={(value) => handleFieldChange('audience', value)}
-                  tooltip={contentPlannerTooltips.audience}
+              <div className="w-full h-full bg-gray-50 dark:bg-gray-800/30 p-4 rounded-lg">
+                <ImageGuidelines 
+                  contentPlanner={contentPlanner}
+                  contentPlannerTooltips={contentPlannerTooltips}
+                  handleFieldChange={handleFieldChange}
                 />
               </div>
             </div>
         
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-8">
               <div className="w-full col-span-2">
                 <Duration
                   date={contentPlanner.date}
@@ -290,6 +282,13 @@ export default function ContentPlanner() {
                           value={contentPlanner.template}
                           onChange={(value) => handleFieldChange('template', value)}
                           tooltip={contentPlannerTooltips.template}
+                        />
+                      </div>
+                      <div className="mt-4 w-full">
+                        <TargetAudience
+                          value={contentPlanner.audience}
+                          onChange={(value) => handleFieldChange('audience', value)}
+                          tooltip={contentPlannerTooltips.audience}
                         />
                       </div>
                       <div className="mt-4">

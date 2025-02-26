@@ -10,6 +10,153 @@ The application follows a client-server architecture with:
 - Backend: Node.js + Express server
 - Database: MongoDB with Mongoose ODM
 
+## Recent Improvements
+
+### Enhanced Image and Video Processing
+
+#### 1. Standardized File Naming
+We've implemented a standardized file naming convention to prevent issues with special characters, spaces, and non-ASCII characters:
+
+```javascript
+// Standardized naming pattern
+`${Date.now()}-iGentityUploadFile${fileExtension}`
+
+// Implementation details:
+- Preserves original file extension for proper MIME type handling
+- Uses timestamp for uniqueness
+- Eliminates problematic characters from filenames
+- Consistent across all file upload services (Google Cloud Storage and FAL.ai)
+```
+
+**Modified Files:**
+- `server/config/storage.js`: Updated `uploadImage` function to use standardized filenames
+- `server/services/videoService.js`: Updated `uploadFile` function to use the same naming convention
+
+#### 2. Improved Video Generation from Images
+We've enhanced the image-to-video generation process to handle any image aspect ratio:
+
+```javascript
+// Video Generation Workflow
+1. Image Analysis
+   - Analyzes original image dimensions and aspect ratio
+   - Determines closest standard aspect ratio (1:1, 4:3, 16:9, 9:16)
+   - Logs detailed information about the conversion process
+
+2. Smart Image Processing
+   - Automatically crops and resizes to the optimal aspect ratio
+   - Uses center-focused cropping to preserve important content
+   - Maintains high image quality (90% JPEG quality)
+   - Warns about significant cropping for unusual aspect ratios
+
+3. Standardized Upload
+   - Uses consistent naming convention for processed images
+   - Uploads with appropriate content type
+   - Provides detailed logging throughout the process
+
+4. Video Generation
+   - Uses processed image with standard aspect ratio
+   - Configures video parameters based on processed image
+   - Ensures compatibility with video generation APIs
+```
+
+**Technical Implementation:**
+
+1. **New Image Processing Function**
+   ```javascript
+   // server/utils/imageProcessor.js
+   export const prepareImageForVideo = async (imageUrl) => {
+     // 1. Fetch and analyze the image
+     // 2. Find closest standard aspect ratio
+     // 3. Resize and crop to target dimensions
+     // 4. Return processed image with metadata
+   }
+   ```
+
+2. **Enhanced Video Generation**
+   ```javascript
+   // server/services/videoService.js
+   export const imageToVideo = async (prompt, model, imageUrl, options = {}) => {
+     // 1. Process image to standard aspect ratio
+     // 2. Upload with standardized filename
+     // 3. Configure video generation with processed image parameters
+     // 4. Generate and return video
+   }
+   ```
+
+3. **Standardized File Upload**
+   ```javascript
+   // server/services/videoService.js
+   export const uploadFile = async (fileOrBuffer, filename = `${Date.now()}-iGentityUploadFile.jpg`) => {
+     // 1. Handle both Buffer and File objects
+     // 2. Apply standardized naming
+     // 3. Upload to FAL.ai storage
+   }
+   ```
+
+**Modified Files:**
+- `server/utils/imageProcessor.js`: Added new `prepareImageForVideo` function
+- `server/services/videoService.js`: Updated `imageToVideo` and `uploadFile` functions
+- `server/config/storage.js`: Updated `uploadImage` function
+
+These improvements ensure:
+- Reliable file handling across all storage systems
+- Consistent video generation regardless of input image format
+- Prevention of errors caused by special characters in filenames
+- Better error handling and logging throughout the process
+
+#### 3. Benefits and Troubleshooting
+
+**Key Benefits:**
+- **Improved Reliability**: Eliminates failures due to non-standard filenames or unusual aspect ratios
+- **Better User Experience**: Users can upload any image and have it properly processed for video generation
+- **Reduced Support Issues**: Fewer errors related to file handling and video generation
+- **Enhanced Debugging**: Comprehensive logging throughout the process makes troubleshooting easier
+- **Consistent Quality**: Standardized approach ensures consistent results across different input types
+
+**Troubleshooting:**
+
+If you encounter issues with image processing or video generation:
+
+1. **Check Logs for Image Analysis**
+   ```
+   Original image dimensions: [width]x[height], ratio: [ratio]
+   Comparing to [aspect ratio] ([ratio value]): difference = [difference]
+   Selected aspect ratio: [name] ([width]x[height])
+   ```
+   These logs help identify if the system is correctly analyzing the image dimensions.
+
+2. **Verify Processed Image**
+   ```
+   Processed image: [width]x[height], size: [size]MB
+   ```
+   Confirms the image was successfully processed to a standard aspect ratio.
+
+3. **Check Upload Confirmation**
+   ```
+   Uploading file with standardized name: [filename]
+   ```
+   Ensures the file was uploaded with the correct standardized naming convention.
+
+4. **Video Generation Parameters**
+   ```
+   Generating video with aspect ratio: [aspect_ratio], dimensions: [width]x[height]
+   ```
+   Confirms the correct parameters are being passed to the video generation API.
+
+**Common Issues and Solutions:**
+
+1. **Issue**: Video generation fails with unusual aspect ratios
+   **Solution**: The new `prepareImageForVideo` function automatically converts to standard ratios
+
+2. **Issue**: Files with special characters in names cause errors
+   **Solution**: Standardized naming convention eliminates problematic characters
+
+3. **Issue**: Image processing fails for very large images
+   **Solution**: Check server memory limits and consider adding size restrictions if needed
+
+4. **Issue**: Video generation API returns errors
+   **Solution**: Check the detailed error logs which now include more information about the processed image and API parameters
+
 ## Frontend Architecture
 
 ### Core Structure

@@ -1,5 +1,6 @@
 import { fal } from '@fal-ai/client';
 import { ApiError } from '../utils/ApiError.js';
+import { prepareImageForVideo } from '../utils/imageProcessor.js';
 
 if (!process.env.FAL_KEY) {
   throw new ApiError(500, 'FAL_KEY environment variable is required');
@@ -59,13 +60,6 @@ export const textToVideo = async (prompt, model, options = {}) => {
     let aspect_ratio = calculateAspectRatio(options.size);
     if (model === 'fal-ai/luma-dream-machine/ray-2' && aspect_ratio === '1:1') aspect_ratio = '16:9';
 
-    console.log('model', model);
-    console.log('prompt', prompt);
-    console.log('duration', duration);
-    console.log('aspect_ratio', aspect_ratio);
-    console.log('width', options.size.width);
-    console.log('height', options.size.height);
-
     const result = await fal.subscribe(model, {
       input: {
         prompt,
@@ -99,8 +93,6 @@ export const textToVideo = async (prompt, model, options = {}) => {
  * @returns {Promise<{data: {video: {url: string}}, requestId: string}>}
  */
 export const imageToVideo = async (prompt, model, imageUrl, options = {}) => {
-
-
   try {
     if (!prompt) {
       throw new ApiError(400, 'Prompt is required');
@@ -111,20 +103,35 @@ export const imageToVideo = async (prompt, model, imageUrl, options = {}) => {
     if (!imageUrl) {
       throw new ApiError(400, 'Image URL is required');
     }
-    if (!options.size) {
-      throw new ApiError(400, 'Size is required');
-    }
+
+    // Process the image to ensure it has a standard aspect ratio
+    console.log(`Processing image for video generation: ${imageUrl}`);
+    const processedImage = await prepareImageForVideo(imageUrl);
+    
+    // Use the processed image dimensions and aspect ratio
+    const timestamp = Date.now();
+    const processedImageUrl = await uploadFile(processedImage.buffer, `${timestamp}-iGentityUploadFile.jpg`);
+    console.log(`Processed image uploaded with aspect ratio: ${processedImage.aspectRatio}`);
+    
+    // Set options.size based on the processed image
+    options.size = {
+      width: processedImage.width,
+      height: processedImage.height
+    };
 
     let duration = DURATIONS.includes(options.duration) ? options.duration : '5';
-    if (model === 'fal-ai/luma-dream-machine/ray-2') duration = '5s'
+    if (model === 'fal-ai/luma-dream-machine/ray-2') duration = '5s';
 
-    let aspect_ratio = calculateAspectRatio(options.size);
+    // Use the aspect ratio from the processed image
+    let aspect_ratio = processedImage.aspectRatio;
     if (model === 'fal-ai/luma-dream-machine/ray-2' && aspect_ratio === '1:1') aspect_ratio = '16:9';
+
+    console.log(`Generating video with aspect ratio: ${aspect_ratio}, dimensions: ${options.size.width}x${options.size.height}`);
 
     const result = await fal.subscribe(`${model}/image-to-video`, {
       input: {
         prompt,
-        image_url: imageUrl,
+        image_url: processedImageUrl,
         duration,
         aspect_ratio,
         loop: true,
@@ -142,13 +149,25 @@ export const imageToVideo = async (prompt, model, imageUrl, options = {}) => {
 };
 
 /**
- * Upload a file to fal.ai storage
- * @param {File} file - File to upload
+ * Upload a file or buffer to fal.ai storage
+ * @param {File|Buffer} fileOrBuffer - File or Buffer to upload
+ * @param {string} [filename] - Optional filename when uploading a buffer
  * @returns {Promise<string>} - URL of the uploaded file
  */
-export const uploadFile = async (file) => {
+export const uploadFile = async (fileOrBuffer, filename = `${Date.now()}-iGentityUploadFile.jpg`) => {
   try {
-    const url = await fal.storage.upload(file);
+    // If it's a buffer, create a File object
+    if (Buffer.isBuffer(fileOrBuffer) || fileOrBuffer instanceof Uint8Array) {
+      console.log(`Uploading buffer as ${filename}`);
+      const url = await fal.storage.upload(fileOrBuffer, { filename });
+      return url;
+    }
+    
+    // Otherwise, upload the file directly
+    // For File objects, we should also use standardized naming
+    const standardizedFilename = `${Date.now()}-iGentityUploadFile.jpg`;
+    console.log(`Uploading file with standardized name: ${standardizedFilename}`);
+    const url = await fal.storage.upload(fileOrBuffer, { filename: standardizedFilename });
     return url;
   } catch (error) {
     throw new ApiError(500, `File upload failed: ${error.message}`);

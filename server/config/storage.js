@@ -29,14 +29,30 @@ export const uploadImage = async (input) => {
     if (input.buffer) {
       // Direct buffer upload
       buffer = input.buffer;
-      fileName = `accounts/${input.originalname}`;
+      
+      // Get file extension from original filename or default to .jpg
+      const fileExtension = input.originalname 
+        ? '.' + input.originalname.split('.').pop().toLowerCase() 
+        : '.jpg';
+      
+      // Create standardized filename with timestamp
+      fileName = `accounts/${Date.now()}-iGentityUploadFile${fileExtension}`;
       contentType = input.mimetype;
     } else {
       // Form upload
       buffer = input.buffer;
-      fileName = `accounts/${Date.now()}-${input.originalname}`;
+      
+      // Get file extension from original filename or default to .jpg
+      const fileExtension = input.originalname 
+        ? '.' + input.originalname.split('.').pop().toLowerCase() 
+        : '.jpg';
+      
+      // Create standardized filename with timestamp
+      fileName = `accounts/${Date.now()}-iGentityUploadFile${fileExtension}`;
       contentType = input.mimetype;
     }
+
+    console.log(`Uploading file with standardized name: ${fileName}`);
 
     const file = bucket.file(fileName);
 

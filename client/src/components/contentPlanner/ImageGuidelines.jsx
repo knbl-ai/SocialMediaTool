@@ -58,7 +58,7 @@ export default function ImageGuidelines({ contentPlanner, contentPlannerTooltips
         {isUploadMode ? (
           <div 
             onClick={() => setIsModalOpen(true)}
-            className="min-h-[20vh] mt-2 border rounded-md bg-background flex flex-col items-center justify-center gap-2 text-muted-foreground hover:bg-accent hover:cursor-pointer transition-colors"
+            className="min-h-[20vh] mt-2  rounded-md flex flex-col items-center justify-center gap-2 text-muted-foreground hover:bg-accent hover:cursor-pointer transition-colors"
           >
               <SmallImagesPreview images={uploadedImages} />
             <div className="flex items-center gap-2 mt-2">
@@ -70,7 +70,7 @@ export default function ImageGuidelines({ contentPlanner, contentPlannerTooltips
         ) : (
           <Textarea
             placeholder="Enter image generation guidelines..."
-            className="min-h-[20vh] mt-2"
+            className="min-h-[24vh] mt-2"
             value={contentPlanner.imageGuidelines}
             onChange={(e) => handleFieldChange('imageGuidelines', e.target.value)}
           />

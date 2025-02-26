@@ -49,7 +49,7 @@ export default function ContentGuidelinesAdvanced({ contentPlanner, contentPlann
       </div>
       <Textarea
         placeholder="Describe the content you want to generate"
-        className="h-[20vh] mt-2"
+        className="h-[24vh] mt-3"
         value={contentPlanner.textGuidelines || ''}
         onChange={(e) => handleFieldChange('textGuidelines', e.target.value)}
       />

@@ -105,20 +105,69 @@ export default function ImagePromptModal({ isOpen, onClose, contentPlanner, onUp
 
     try {
       setIsUploading(true)
+      toast({
+        title: "Processing",
+        description: `Resizing ${files.length} ${files.length === 1 ? 'image' : 'images'}...`,
+      })
 
       // Process each file - resize if needed
       const processedFiles = await Promise.all(
-        files.map(file => {
+        files.map(async (file) => {
           if (!file.type.startsWith('image/')) {
             throw new Error(`File "${file.name}" is not an image`)
           }
-          return resizeImage(file, 5)
+          
+          // Use a more conservative limit (4.5MB) to ensure we're safely under the 5MB limit
+          const resizedFile = await resizeImage(file, 4.5)
+          
+          // Double check the file size
+          if (resizedFile.size > 4.75 * 1024 * 1024) {
+            console.error(`Warning: File ${file.name} is still too large (${(resizedFile.size / 1024 / 1024).toFixed(2)}MB)`)
+            
+            // If the file is still too large, try one more aggressive resize with a very low target size
+            try {
+              console.log(`Attempting emergency resize for ${file.name}...`);
+              // Force resize to a very small size (3MB)
+              const emergencyResized = await resizeImage(resizedFile, 3);
+              
+              if (emergencyResized.size > 4.75 * 1024 * 1024) {
+                // If still too large, warn the user
+                toast({
+                  title: "Warning",
+                  description: `File "${file.name}" could not be resized enough and may fail to upload.`,
+                  variant: "destructive",
+                });
+              } else {
+                toast({
+                  title: "Notice",
+                  description: `File "${file.name}" was significantly reduced in quality to meet size requirements.`,
+                  variant: "warning",
+                });
+                return emergencyResized;
+              }
+            } catch (resizeError) {
+              console.error('Emergency resize failed:', resizeError);
+            }
+          }
+          
+          return resizedFile
         })
       )
+
+      toast({
+        title: "Uploading",
+        description: `Uploading ${files.length} ${files.length === 1 ? 'image' : 'images'} to server...`,
+      })
 
       const formData = new FormData()
       processedFiles.forEach(file => {
         formData.append('images', file)
+        console.log(`Uploading: ${file.name}, Size: ${(file.size / 1024 / 1024).toFixed(2)}MB`)
+        
+        // Final check - reject any files that are still too large
+        if (file.size > 4.9 * 1024 * 1024) {
+          throw new Error(`File "${file.name}" is still too large (${(file.size / 1024 / 1024).toFixed(2)}MB) and cannot be uploaded.`);
+        }
       })
 
       const response = await api.post(
@@ -143,9 +192,21 @@ export default function ImagePromptModal({ isOpen, onClose, contentPlanner, onUp
       })
     } catch (error) {
       console.error('Error uploading images:', error)
+      
+      // Provide more specific error messages based on the error
+      let errorMessage = "Failed to upload images"
+      
+      if (error.message.includes("exceeds 5 MB maximum")) {
+        errorMessage = "Image exceeds 5MB limit. Please try a smaller image or a different format."
+      } else if (error.response?.status === 413) {
+        errorMessage = "Image is too large for the server to process. Please use a smaller image."
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
       toast({
         title: "Error",
-        description: error.message || "Failed to upload images",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {
