@@ -87,7 +87,9 @@ export const updatePost = async (req, res) => {
           size: image.size,
           template: image.template,
           video: image.video,
-          videoscreenshot: image.videoscreenshot
+          videoscreenshot: image.videoscreenshot,
+          showVideo: image.showVideo !== undefined ? image.showVideo : oldPost.image?.showVideo || false,
+          dimensions: image.dimensions
         },
         prompts: req.body.prompts,
         models: req.body.models,

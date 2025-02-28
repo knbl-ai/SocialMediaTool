@@ -11,6 +11,7 @@ const DisplayImage = ({ imageUrl, templateUrl, videoUrl, templatesUrls = [], onT
   const [showVideo, setShowVideo] = useState(initialShowVideo);
 
   useEffect(() => {
+    console.log("DisplayImage: initialShowVideo prop changed to:", initialShowVideo);
     setShowVideo(initialShowVideo);
   }, [initialShowVideo]);
 
@@ -22,12 +23,15 @@ const DisplayImage = ({ imageUrl, templateUrl, videoUrl, templatesUrls = [], onT
       }
 
       const newShowVideo = !showVideo;
+      console.log("DisplayImage: Toggling showVideo to:", newShowVideo);
       setShowVideo(newShowVideo);
       
       // Update showVideo in the database
+      console.log("DisplayImage: Updating showVideo in database for postId:", postId);
       await api.request('patch', `/posts/${postId}`, {
         image: { showVideo: newShowVideo }
       });
+      console.log("DisplayImage: Database update successful");
     } catch (error) {
       console.error('Error updating video state:', error);
       // Revert state on error

@@ -57,7 +57,10 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
 
   // Update ref when currentPost changes
   useEffect(() => {
-    currentPostRef.current = currentPost;
+    if (currentPost) {
+      currentPostRef.current = currentPost;
+      console.log("Updated currentPostRef with:", currentPost);
+    }
   }, [currentPost]);
 
   // Helper function for array comparison
@@ -99,6 +102,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
     if (initialPost && !initializationRef.current) {
       initializationRef.current = true;
       
+      // First set initial values from the provided initialPost
       setSelectedPlatforms(initialPost.platforms || []);
       // Handle time initialization more carefully
       const rawTime = initialPost.timePost || DEFAULT_STATE.selectedTime;
@@ -120,7 +124,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
       setDimensions(initialPost.image?.dimensions || 'Square');
       setImageTemplate(initialPost.image?.template || '');
       
-      // Make sure we preserve the showVideo property
+      // Set initial currentPost state
       setCurrentPost({
         ...initialPost,
         image: {
@@ -128,6 +132,30 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
           showVideo: initialPost.image?.showVideo || false
         }
       });
+      
+      // Then fetch the latest post data from the server to ensure we have the most up-to-date values
+      if (initialPost._id) {
+        const fetchLatestPostData = async () => {
+          try {
+            const latestPost = await api.getPost(initialPost._id);
+            if (latestPost) {
+              // Update currentPost with the latest data from the server
+              // Ensure we preserve the showVideo property
+              setCurrentPost({
+                ...latestPost,
+                image: {
+                  ...latestPost.image,
+                  showVideo: latestPost.image?.showVideo !== undefined ? latestPost.image.showVideo : initialPost.image?.showVideo || false
+                }
+              });
+            }
+          } catch (error) {
+            console.error('Error fetching latest post data:', error);
+          }
+        };
+        
+        fetchLatestPostData();
+      }
     }
   }, []); // Empty dependency array as we only want this to run once
 
@@ -171,11 +199,16 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
           0, 0, 0, 0
         ));
 
+        // Make sure we preserve the showVideo property and other image properties
+        const currentImage = currentPostRef.current?.image || {};
+
         const postData = {
           platforms: selectedPlatforms,
           datePost: utcDate.toISOString().split('T')[0], // Only use the date portion
           timePost: selectedTime,
-          image: currentPostRef.current?.image || {},
+          image: {
+            ...currentImage, // Preserve all image properties including showVideo
+          },
           text: {
             post: postText,
             title: postTitle,
@@ -253,6 +286,8 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
       await onUpdate();
     }
     clearError();
+    // Reset initialization flag so that the latest data is fetched when the modal is reopened
+    initializationRef.current = false;
     onClose();
   }, [onClose, onUpdate, clearError]);
 
@@ -472,6 +507,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
 
       const response = await api.generateVideo(params);
 
+      console.log("Video generation successful, setting showVideo to true");
 
       // Safely build the updated post data
       const updatedPostData = {
@@ -636,16 +672,20 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                       await api.deleteFiles([currentPost.image.url]);
                     }
 
-                    // Update post with new image URL and template
+                    // Get the current showVideo value
+                    const currentShowVideo = currentPost?.image?.showVideo;
+                    console.log("Current showVideo value before image generation:", currentShowVideo);
+
+                    // Update post with new image URL and set it as template initially
                     const updatedPost = await updatePost(postId, {
                       ...currentPost,
                       image: {
                         ...currentPost?.image,
                         url: imageUrl,
-                        template: templateUrl, // Set template to the same URL initially
-                        size: imageSize,
+                        template: url, // Set template to the same URL initially
+                        size: imageSize, // Make sure we're using the current imageSize
                         dimensions: dimensions,
-                        showVideo: currentPost?.image?.showVideo || false // Preserve showVideo property
+                        showVideo: currentShowVideo // Preserve the current showVideo value
                       },
                       templatesUrls: [] // Clear existing templates
                     });
@@ -757,6 +797,10 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
 
                       console.log('Updating post with new image and size:', imageSize);
                       
+                      // Get the current showVideo value
+                      const currentShowVideo = currentPost?.image?.showVideo;
+                      console.log("Current showVideo value before image generation:", currentShowVideo);
+                      
                       // Update post with new image URL and set it as template initially
                       const updatedPost = await updatePost(postId, {
                         ...currentPost,
@@ -766,7 +810,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                           template: url, // Set template to the same URL initially
                           size: imageSize, // Make sure we're using the current imageSize
                           dimensions: dimensions,
-                          showVideo: currentPost?.image?.showVideo || false // Preserve showVideo property
+                          showVideo: currentShowVideo // Preserve the current showVideo value
                         },
                         prompts: {
                           ...currentPost?.prompts,
