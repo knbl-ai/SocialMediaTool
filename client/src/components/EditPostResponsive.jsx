@@ -682,7 +682,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                       image: {
                         ...currentPost?.image,
                         url: imageUrl,
-                        template: url, // Set template to the same URL initially
+                        template: imageUrl, // Set template to the same URL initially
                         size: imageSize, // Make sure we're using the current imageSize
                         dimensions: dimensions,
                         showVideo: currentShowVideo // Preserve the current showVideo value
