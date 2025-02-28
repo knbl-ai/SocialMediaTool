@@ -23,7 +23,7 @@ const DURATIONS = ['5', '10'];
  * @param {string} videoUrl - URL of the video
  * @returns {Promise<string>} - URL of the screenshot
  */
-const getVideoScreenshot = async (videoUrl) => {
+export const getVideoScreenshot = async (videoUrl) => {
   try {
     if (!videoUrl) {
       throw new ApiError(400, 'Video URL is required');

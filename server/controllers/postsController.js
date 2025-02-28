@@ -52,11 +52,16 @@ export const createPost = async (req, res) => {
 export const updatePost = async (req, res) => {
   const { id } = req.params;
   
+  console.log('updatePost: Received request to update post:', id);
+  console.log('updatePost: Request body:', JSON.stringify(req.body, null, 2));
+  
   // Get the old post
   const oldPost = await Post.findById(id);
   if (!oldPost) {
     throw ApiError.notFound('Post not found');
   }
+  
+  console.log('updatePost: Found existing post:', JSON.stringify(oldPost, null, 2));
 
   // If datePost is provided, ensure it's a valid date
   let datePost = req.body.datePost;
@@ -70,9 +75,20 @@ export const updatePost = async (req, res) => {
     datePost = date.toISOString();
   }
 
-  // Prepare the image object with videoscreenshot if provided
-  const image = req.body.image || {};
+  // Prepare the image object for update
+  const imageUpdate = {};
+  if (req.body.image) {
+    if (req.body.image.url !== undefined) imageUpdate.url = req.body.image.url;
+    if (req.body.image.template !== undefined) imageUpdate.template = req.body.image.template;
+    if (req.body.image.size !== undefined) imageUpdate.size = req.body.image.size;
+    if (req.body.image.dimensions !== undefined) imageUpdate.dimensions = req.body.image.dimensions;
+    if (req.body.image.showVideo !== undefined) imageUpdate.showVideo = req.body.image.showVideo;
+    if (req.body.image.video !== undefined) imageUpdate.video = req.body.image.video;
+    if (req.body.image.videoscreenshot !== undefined) imageUpdate.videoscreenshot = req.body.image.videoscreenshot;
+  }
   
+  console.log('updatePost: Prepared image update:', JSON.stringify(imageUpdate, null, 2));
+
   // Update the post
   const updatedPost = await Post.findByIdAndUpdate(
     id,
@@ -83,13 +99,8 @@ export const updatePost = async (req, res) => {
         timePost: req.body.timePost,
         text: req.body.text,
         image: {
-          url: image.url,
-          size: image.size,
-          template: image.template,
-          video: image.video,
-          videoscreenshot: image.videoscreenshot,
-          showVideo: image.showVideo !== undefined ? image.showVideo : oldPost.image?.showVideo || false,
-          dimensions: image.dimensions
+          ...oldPost.image,
+          ...imageUpdate
         },
         prompts: req.body.prompts,
         models: req.body.models,
@@ -104,6 +115,8 @@ export const updatePost = async (req, res) => {
   if (!updatedPost) {
     throw ApiError.notFound('Post not found');
   }
+  
+  console.log('updatePost: Updated post:', JSON.stringify(updatedPost, null, 2));
 
   res.json(updatedPost);
 };

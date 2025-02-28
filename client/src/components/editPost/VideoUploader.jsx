@@ -1,22 +1,88 @@
 import { Video } from "lucide-react";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { toast } from "sonner";
+import api from "../../lib/api";
 
 const VideoUploader = ({ videoUrl, onVideoUpload, postId }) => {
   const fileInputRef = useRef(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [currentVideoUrl, setCurrentVideoUrl] = useState(videoUrl);
+
+  // Update internal state when videoUrl prop changes
+  useEffect(() => {
+    console.log("VideoUploader: videoUrl prop changed:", videoUrl);
+    setCurrentVideoUrl(videoUrl);
+  }, [videoUrl]);
 
   const handleVideoClick = () => {
     fileInputRef.current?.click();
   };
 
   const handleFileChange = async (event) => {
-    // This is just a placeholder for now - we'll implement the actual upload functionality later
-    toast.info("Video upload functionality will be implemented soon");
-    
-    // Clear the input value to allow uploading the same file again
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('video/')) {
+      toast.error('Please select a valid video file');
+      return;
+    }
+
+    // Validate file size (50MB max)
+    const maxSize = 50 * 1024 * 1024; // 50MB in bytes
+    if (file.size > maxSize) {
+      toast.error('Video file is too large. Maximum size is 50MB');
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      console.log('Starting video upload...');
+      
+      const formData = new FormData();
+      formData.append('video', file);
+      
+      if (postId) {
+        formData.append('postId', postId);
+        console.log('Added postId to formData:', postId);
+      }
+      
+      console.log('Sending video upload request...');
+      const response = await api.uploadVideo(formData);
+      console.log('Video upload response:', response);
+      
+      if (response.videoUrl && response.screenshotUrl) {
+        console.log('Video upload successful. URLs:', {
+          videoUrl: response.videoUrl,
+          screenshotUrl: response.screenshotUrl
+        });
+        
+        toast.success('Video uploaded successfully');
+        
+        // Update internal state immediately for a faster UI update
+        setCurrentVideoUrl(response.videoUrl);
+        
+        // Call the callback with both URLs
+        if (onVideoUpload) {
+          console.log('Calling onVideoUpload with:', response.videoUrl, response.screenshotUrl);
+          onVideoUpload(response.videoUrl, response.screenshotUrl);
+        } else {
+          console.warn('onVideoUpload callback is not defined');
+        }
+      } else {
+        console.error('Missing videoUrl or screenshotUrl in response:', response);
+        toast.error('Failed to upload video');
+      }
+    } catch (error) {
+      console.error('Error uploading video:', error);
+      toast.error(error.response?.data?.message || 'Failed to upload video');
+    } finally {
+      setIsUploading(false);
+      
+      // Clear the input value to allow uploading the same file again
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -38,7 +104,7 @@ const VideoUploader = ({ videoUrl, onVideoUpload, postId }) => {
           <div className="flex items-center justify-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-gray-100"></div>
           </div>
-        ) : videoUrl ? (
+        ) : currentVideoUrl ? (
           <div className="absolute inset-0 flex items-center justify-center p-4">
             <div className="relative w-full h-full">
               <video 
@@ -47,8 +113,9 @@ const VideoUploader = ({ videoUrl, onVideoUpload, postId }) => {
                 autoPlay
                 loop
                 style={{ maxWidth: '100%', maxHeight: '100%' }}
+                key={currentVideoUrl} // Add key to force re-render when URL changes
               >
-                <source src={videoUrl} type="video/mp4" />
+                <source src={currentVideoUrl} type="video/mp4" />
                 Your browser does not support the video tag.
               </video>
             </div>

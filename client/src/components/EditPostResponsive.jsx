@@ -660,8 +660,40 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                 onTemplateSelect={handleTemplateSelect}
                 showVideo={currentPost?.image?.showVideo}
                 postId={postId}
-                onImageUpload={async (imageUrl, templateUrl) => {
+                onImageUpload={async (imageUrl, additionalProps = {}) => {
                   try {
+                    // If this is a video upload (imageUrl is null), we only update video-related properties
+                    if (imageUrl === null && additionalProps.video) {
+                      console.log("EditPostResponsive: Handling video upload with:", additionalProps);
+                      
+                      // Update post with new video URL and screenshot
+                      console.log("EditPostResponsive: Current post before update:", currentPost);
+                      const updatedPostData = {
+                        ...currentPost,
+                        image: {
+                          ...currentPost?.image,
+                          video: additionalProps.video,
+                          videoscreenshot: additionalProps.videoscreenshot,
+                          showVideo: true // Ensure showVideo is true when uploading a video
+                        }
+                      };
+                      console.log("EditPostResponsive: Updated post data to send:", updatedPostData);
+                      
+                      const updatedPost = await updatePost(postId, updatedPostData);
+                      console.log("EditPostResponsive: Response from updatePost:", updatedPost);
+                      
+                      // Force a UI refresh by temporarily clearing the state
+                      setCurrentPost(null);
+                      // Use setTimeout to ensure the state update is processed
+                      setTimeout(() => {
+                        setCurrentPost(updatedPost);
+                        console.log("EditPostResponsive: UI refreshed with new video:", updatedPost.image?.video);
+                      }, 0);
+                      
+                      return;
+                    }
+                    
+                    // Regular image upload flow
                     // Delete old templates if they exist
                     if (currentPost?.templatesUrls?.length > 0) {
                       await api.deleteFiles(currentPost.templatesUrls);
@@ -691,7 +723,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                     });
                     
                     setCurrentPost(updatedPost);
-                    setImageTemplate(templateUrl); // Update template state
+                    setImageTemplate(imageUrl); // Update template state
 
                     // Generate new templates if we have all required fields
                     if (updatedPost.image?.url && postTitle && postSubtitle) {

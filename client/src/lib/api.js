@@ -93,11 +93,21 @@ class ApiClient {
   }
 
   async uploadImage(formData) {
-    return this.client.post('/storage/upload', formData, {
+    const options = {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
-    });
+    };
+    return this.client.post('/storage/upload', formData, options);
+  }
+
+  async uploadVideo(formData) {
+    const options = {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    };
+    return this.client.post('/storage/upload-video', formData, options);
   }
 
   // Account endpoints
