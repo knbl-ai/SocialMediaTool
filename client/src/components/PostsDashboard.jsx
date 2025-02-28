@@ -86,14 +86,33 @@ const PostsDashboard = ({ accountId, onMonthChange }) => {
         0, 0, 0, 0
       );
 
+      // Get the existing posts for this date to find the post we're updating
+      const existingPosts = getPostsByDate(targetDate);
+      const postToUpdate = existingPosts.find(post => post._id === postId);
+      
+      // If we can't find the post in our local state, fetch it from the API
+      let postData;
+      if (postToUpdate) {
+        postData = { ...postToUpdate };
+      } else {
+        const response = await api.getPost(postId);
+        if (!response) {
+          throw new Error('Post not found');
+        }
+        postData = response;
+      }
+
+      // Update only the date while preserving all other properties
       await updatePost(postId, {
+        ...postData,
         datePost: newDate.toISOString()
       });
+      
       await fetchMonthPosts();
     } catch (error) {
       console.error('Error updating post date:', error);
     }
-  }, [updatePost, fetchMonthPosts]);
+  }, [updatePost, fetchMonthPosts, getPostsByDate]);
 
   const getPostsForDay = useCallback((day) => {
     if (!day) return [];

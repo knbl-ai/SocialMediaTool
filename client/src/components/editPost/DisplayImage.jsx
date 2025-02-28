@@ -85,6 +85,12 @@ const DisplayImage = ({ imageUrl, templateUrl, videoUrl, templatesUrls = [], onT
     }
   };
 
+  // Determine if we should show content (either image or video)
+  const hasContent = displayUrl || videoUrl;
+  
+  // Determine if we should show video player
+  const shouldShowVideo = showVideo && videoUrl;
+
   return (
     <div className="absolute inset-0 flex flex-col">
       {/* Hidden file input */}
@@ -103,10 +109,10 @@ const DisplayImage = ({ imageUrl, templateUrl, videoUrl, templatesUrls = [], onT
           <div className="flex items-center justify-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-gray-100"></div>
           </div>
-        ) : displayUrl ? (
+        ) : hasContent ? (
           <div className="absolute inset-0 flex items-center justify-center p-4">
             <div className="relative w-full h-full">
-              {showVideo && videoUrl ? (
+              {shouldShowVideo ? (
                 <video 
                   className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 max-w-full max-h-full object-contain"
                   controls
@@ -117,13 +123,19 @@ const DisplayImage = ({ imageUrl, templateUrl, videoUrl, templatesUrls = [], onT
                   <source src={videoUrl} type="video/mp4" />
                   Your browser does not support the video tag.
                 </video>
-              ) : (
+              ) : displayUrl ? (
                 <img
                   src={displayUrl}
                   alt="Post preview"
                   className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 max-w-full max-h-full object-contain"
                   style={{ maxWidth: '100%', maxHeight: '100%' }}
                 />
+              ) : (
+                // Show upload image placeholder when in image mode but no image is available
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center gap-2">
+                  <ImagePlus className="h-12 w-12 text-gray-400 dark:text-gray-500" />
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Click to upload image</span>
+                </div>
               )}
             </div>
           </div>

@@ -1,9 +1,14 @@
 import { fal } from '@fal-ai/client';
 import { ApiError } from '../utils/ApiError.js';
 import { prepareImageForVideo } from '../utils/imageProcessor.js';
+import fetch from 'node-fetch';
 
 if (!process.env.FAL_KEY) {
   throw new ApiError(500, 'FAL_KEY environment variable is required');
+}
+
+if (!process.env.VIDEO_SCREENSHOT_API) {
+  throw new ApiError(500, 'VIDEO_SCREENSHOT_API environment variable is required');
 }
 
 // Initialize fal client with API key
@@ -14,21 +19,71 @@ fal.config({
 const DURATIONS = ['5', '10'];
 
 /**
+ * Get a screenshot from a video URL using the dedicated screenshot API
+ * @param {string} videoUrl - URL of the video
+ * @returns {Promise<string>} - URL of the screenshot
+ */
+const getVideoScreenshot = async (videoUrl) => {
+  try {
+    if (!videoUrl) {
+      throw new ApiError(400, 'Video URL is required');
+    }
+    
+    const response = await fetch(`${process.env.VIDEO_SCREENSHOT_API}/process-video`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ videoUrl }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Screenshot API error (${response.status}): ${errorText}`);
+    }
+
+    const data = await response.json();
+    
+    if (!data.imageUrl) {
+      throw new Error('Screenshot API did not return an image URL');
+    }
+    
+    return data.imageUrl;
+  } catch (error) {
+    console.error('Error getting video screenshot:', error);
+    // Return the original video URL as fallback
+    return videoUrl;
+  }
+};
+
+/**
  * Calculate aspect ratio from dimensions
  * @param {{ width: number, height: number }} size - Image dimensions
  * @returns {string} - Formatted aspect ratio for API
  */
 const calculateAspectRatio = (size) => {
-  if (!size?.width || !size?.height) {
-    throw new ApiError(400, 'Both width and height are required');
+  // Add defensive checks
+  if (!size || typeof size !== 'object') {
+    throw new ApiError(400, 'Size must be a valid object with width and height properties');
   }
 
-  const ratio = size.width / size.height;
+  const width = Number(size.width);
+  const height = Number(size.height);
+
+  if (isNaN(width) || isNaN(height)) {
+    throw new ApiError(400, 'Width and height must be valid numbers');
+  }
+
+  if (width <= 0 || height <= 0) {
+    throw new ApiError(400, 'Width and height must be positive numbers');
+  }
+
+  const ratio = width / height;
   
   // Round to common aspect ratios
   if (Math.abs(ratio - 1) < 0.1) return '1:1'; 
-  else if (size.width > size.height && size.height === 720) return '16:9';
-  else if (size.width > size.height && size.height === 960) return '4:3';
+  else if (width > height && height === 720) return '16:9';
+  else if (width > height && height === 960) return '4:3';
   else if (Math.abs(ratio - 9/16) < 0.1) return '9:16';
   
   return '1:1';
@@ -52,8 +107,10 @@ export const textToVideo = async (prompt, model, options = {}) => {
     if (!model) {
       throw new ApiError(400, 'Model ID is required');
     }
-    if (!options.size) {
-      throw new ApiError(400, 'Size is required');
+    
+    // Enhanced validation for options.size
+    if (!options || !options.size) {
+      throw new ApiError(400, 'Size option is required');
     }
 
     const duration = DURATIONS.includes(options.duration) ? options.duration : '5';
@@ -72,9 +129,16 @@ export const textToVideo = async (prompt, model, options = {}) => {
       onQueueUpdate: options.onQueueUpdate
     });
 
-    console.log('result', result);
-
-    return result;
+    // Assuming the function returns a videoUrl
+    const videoUrl = result.data.video.url;
+    
+    // Get a screenshot of the video using the dedicated API
+    const screenshotUrl = await getVideoScreenshot(videoUrl);
+    
+    return {
+      videoUrl,
+      screenshotUrl
+    };
   } catch (error) {
     if (error instanceof ApiError) throw error;
     throw new ApiError(500, `Video generation failed: ${error.message}`);
@@ -105,13 +169,14 @@ export const imageToVideo = async (prompt, model, imageUrl, options = {}) => {
     }
 
     // Process the image to ensure it has a standard aspect ratio
-    console.log(`Processing image for video generation: ${imageUrl}`);
+  
     const processedImage = await prepareImageForVideo(imageUrl);
     
     // Use the processed image dimensions and aspect ratio
     const timestamp = Date.now();
-    const processedImageUrl = await uploadFile(processedImage.buffer, `${timestamp}-iGentityUploadFile.jpg`);
-    console.log(`Processed image uploaded with aspect ratio: ${processedImage.aspectRatio}`);
+    const processedImageUrl = await fal.storage.upload(processedImage.buffer, { 
+      filename: `${timestamp}-iGentityUploadFile.jpg` 
+    });
     
     // Set options.size based on the processed image
     options.size = {
@@ -126,8 +191,6 @@ export const imageToVideo = async (prompt, model, imageUrl, options = {}) => {
     let aspect_ratio = processedImage.aspectRatio;
     if (model === 'fal-ai/luma-dream-machine/ray-2' && aspect_ratio === '1:1') aspect_ratio = '16:9';
 
-    console.log(`Generating video with aspect ratio: ${aspect_ratio}, dimensions: ${options.size.width}x${options.size.height}`);
-
     const result = await fal.subscribe(`${model}/image-to-video`, {
       input: {
         prompt,
@@ -141,35 +204,17 @@ export const imageToVideo = async (prompt, model, imageUrl, options = {}) => {
       onQueueUpdate: options.onQueueUpdate
     });
 
-    return result;
+    // Get a screenshot of the video using the dedicated API
+    const videoUrl = result.data.video.url;
+    const screenshotUrl = await getVideoScreenshot(videoUrl);
+    
+    return {
+      videoUrl,
+      screenshotUrl,
+      requestId: result.requestId
+    };
   } catch (error) {
     if (error instanceof ApiError) throw error;
     throw new ApiError(500, `Video generation failed: ${error.message}`);
-  }
-};
-
-/**
- * Upload a file or buffer to fal.ai storage
- * @param {File|Buffer} fileOrBuffer - File or Buffer to upload
- * @param {string} [filename] - Optional filename when uploading a buffer
- * @returns {Promise<string>} - URL of the uploaded file
- */
-export const uploadFile = async (fileOrBuffer, filename = `${Date.now()}-iGentityUploadFile.jpg`) => {
-  try {
-    // If it's a buffer, create a File object
-    if (Buffer.isBuffer(fileOrBuffer) || fileOrBuffer instanceof Uint8Array) {
-      console.log(`Uploading buffer as ${filename}`);
-      const url = await fal.storage.upload(fileOrBuffer, { filename });
-      return url;
-    }
-    
-    // Otherwise, upload the file directly
-    // For File objects, we should also use standardized naming
-    const standardizedFilename = `${Date.now()}-iGentityUploadFile.jpg`;
-    console.log(`Uploading file with standardized name: ${standardizedFilename}`);
-    const url = await fal.storage.upload(fileOrBuffer, { filename: standardizedFilename });
-    return url;
-  } catch (error) {
-    throw new ApiError(500, `File upload failed: ${error.message}`);
   }
 }; 

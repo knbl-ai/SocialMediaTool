@@ -119,6 +119,15 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
       setImageSize(initialPost.image?.size || DEFAULT_STATE.imageSize);
       setDimensions(initialPost.image?.dimensions || 'Square');
       setImageTemplate(initialPost.image?.template || '');
+      
+      // Make sure we preserve the showVideo property
+      setCurrentPost({
+        ...initialPost,
+        image: {
+          ...initialPost.image,
+          showVideo: initialPost.image?.showVideo || false
+        }
+      });
     }
   }, []); // Empty dependency array as we only want this to run once
 
@@ -379,19 +388,80 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
       setIsGeneratingVideo(true);
       setLocalError(null);
 
-      // Ensure we have valid dimensions
-      if (!imageSize?.width || !imageSize?.height) {
+      // Ensure we have valid dimensions and convert to numbers
+      if (!imageSize?.width || !imageSize?.height || 
+          isNaN(parseInt(imageSize.width)) || isNaN(parseInt(imageSize.height))) {
         setLocalError('Invalid image dimensions');
+        setIsGeneratingVideo(false);
         return;
+      }
+
+      // Ensure dimensions are positive numbers
+      const width = parseInt(imageSize.width);
+      const height = parseInt(imageSize.height);
+      
+      if (width <= 0 || height <= 0) {
+        setLocalError('Width and height must be positive numbers');
+        setIsGeneratingVideo(false);
+        return;
+      }
+
+      // First, ensure we have a post to update
+      let currentPostId = postId;
+      if (!currentPostId) {
+        // Create a new post if it doesn't exist yet
+        try {
+          // Create a date at UTC midnight
+          const utcDate = new Date(Date.UTC(
+            new Date(selectedDate).getFullYear(),
+            new Date(selectedDate).getMonth(),
+            new Date(selectedDate).getDate(),
+            0, 0, 0, 0
+          ));
+
+          // Create the new post with basic data
+          const newPostData = {
+            accountId,
+            platforms: selectedPlatforms,
+            datePost: utcDate.toISOString().split('T')[0],
+            timePost: selectedTime,
+            text: {
+              post: postText,
+              title: postTitle,
+              subtitle: postSubtitle
+            },
+            image: {
+              size: { width, height },
+              dimensions: dimensions
+            },
+            prompts: {
+              video: videoPrompt
+            },
+            models: {
+              video: selectedVideoModel
+            }
+          };
+
+          // Create the post
+          const newPost = await api.createPost(newPostData);
+          setPostId(newPost._id);
+          setCurrentPost(newPost);
+          currentPostId = newPost._id;
+        } catch (createError) {
+          console.error('Error creating new post:', createError);
+          setLocalError('Failed to create post for video generation');
+          setIsGeneratingVideo(false);
+          return;
+        }
       }
 
       const params = {
         prompt: videoPrompt,
         model: selectedVideoModel,
-        postId,
+        postId: currentPostId,
         size: {
-          width: parseInt(imageSize.width),
-          height: parseInt(imageSize.height)
+          width,
+          height
         }
       };
 
@@ -400,29 +470,36 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
         params.imageUrl = currentPost.image.url;
       }
 
-    
       const response = await api.generateVideo(params);
 
-      // Create a new post object with updated video URL
+
+      // Safely build the updated post data
       const updatedPostData = {
-        ...currentPost,
+        // Only spread if currentPost exists
+        ...(currentPost || {}),
         image: {
-          ...currentPost.image,
+          // Safely spread image properties if they exist
+          ...(currentPost?.image || {}),
           video: response.videoUrl,
-          showVideo: true // Force video display
+          videoscreenshot: response.screenshotUrl,
+          showVideo: true, // Explicitly set showVideo to true when generating a video
+          // Ensure size is properly set
+          size: { width, height }
         },
         prompts: {
-          ...currentPost.prompts,
+          // Safely spread prompts if they exist
+          ...(currentPost?.prompts || {}),
           video: videoPrompt
         },
         models: {
-          ...currentPost.models,
+          // Safely spread models if they exist
+          ...(currentPost?.models || {}),
           video: selectedVideoModel
         }
       };
       
       // Update the post and state
-      const updatedPost = await updatePost(postId, updatedPostData);
+      const updatedPost = await updatePost(currentPostId, updatedPostData);
       setCurrentPost(null); // Force a rerender by clearing the state
       setTimeout(() => setCurrentPost(updatedPost), 0); // Set the new state in the next tick
       setLocalError(null);
@@ -454,7 +531,20 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
 
   const handleStatusChange = async (newStatus) => {
     try {
-      const updatedPost = await updatePost(postId, { status: newStatus });
+      // Get the current post data to ensure we don't lose any fields
+      const currentPostData = await api.getPost(postId);
+      
+      if (!currentPostData) {
+        console.error('Could not fetch current post data');
+        return;
+      }
+      
+      // Update only the status while preserving all other fields
+      const updatedPost = await updatePost(postId, { 
+        ...currentPostData,
+        status: newStatus 
+      });
+      
       setCurrentPost(prev => ({ ...prev, status: newStatus }));
       onUpdate?.();
       return updatedPost;
@@ -483,6 +573,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                 currentStatus={currentPost?.status || 'pending'}
                 onStatusChange={handleStatusChange}
                 disabled={isGeneratingTemplates}
+                postId={postId}
               />
               <DimensionsSelector value={dimensions} onChange={handleDimensionsChange}/>
             </div>
@@ -553,7 +644,8 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                         url: imageUrl,
                         template: templateUrl, // Set template to the same URL initially
                         size: imageSize,
-                        dimensions: dimensions
+                        dimensions: dimensions,
+                        showVideo: currentPost?.image?.showVideo || false // Preserve showVideo property
                       },
                       templatesUrls: [] // Clear existing templates
                     });
@@ -673,7 +765,8 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                           url: url,
                           template: url, // Set template to the same URL initially
                           size: imageSize, // Make sure we're using the current imageSize
-                          dimensions: dimensions
+                          dimensions: dimensions,
+                          showVideo: currentPost?.image?.showVideo || false // Preserve showVideo property
                         },
                         prompts: {
                           ...currentPost?.prompts,

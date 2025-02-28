@@ -3,10 +3,14 @@ import { Clock, CalendarCheck, Check, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { Button } from "@/components/ui/button";
+import api from '@/lib/api';
 
-const PostStatus = ({ className, currentStatus = 'pending', onStatusChange, disabled }) => {
-  const handleClick = async () => {
-    if (disabled) return;
+const PostStatus = ({ className, currentStatus = 'pending', onStatusChange, disabled, postId }) => {
+  const handleClick = async (e) => {
+    // Prevent the click from bubbling up to parent elements (which would open the edit modal)
+    e.stopPropagation();
+    
+    if (disabled || !postId) return;
     
     try {
       // Only toggle between pending and scheduled
@@ -16,8 +20,12 @@ const PostStatus = ({ className, currentStatus = 'pending', onStatusChange, disa
         currentStatus === 'scheduled' ? 'pending' : 
         'scheduled'; // Default to scheduled for published/failed
       
-      await onStatusChange(newStatus);
-      toast.success(`Post ${newStatus} successfully`);
+      if (onStatusChange) {
+        // Call onStatusChange with just the new status
+        // The parent component will handle fetching the current post data
+        await onStatusChange(newStatus);
+        toast.success(`Post ${newStatus} successfully`);
+      }
     } catch (error) {
       console.error('Error updating status:', error);
       toast.error('Failed to update post status');
@@ -31,30 +39,30 @@ const PostStatus = ({ className, currentStatus = 'pending', onStatusChange, disa
       onClick={handleClick}
       disabled={disabled}
       className={cn(
-        "relative w-9 h-9",
+        "relative w-7 h-7 rounded-full p-0 flex items-center justify-center",
         currentStatus === 'pending' 
-          ? "text-orange-400 hover:text-orange-500" 
+          ? "bg-orange-100/70 text-orange-500 hover:bg-orange-200/80 hover:text-orange-600" 
           : currentStatus === 'scheduled'
-          ? "text-green-400 hover:text-green-500"
+          ? "bg-green-100/70 text-green-500 hover:bg-green-200/80 hover:text-green-600"
           : currentStatus === 'published'
-          ? "text-blue-400 hover:text-blue-500"
+          ? "bg-blue-100/70 text-blue-500 hover:bg-blue-200/80 hover:text-blue-600"
           : currentStatus === 'failed'
-          ? "text-red-400 hover:text-red-500"
+          ? "bg-red-100/70 text-red-500 hover:bg-red-200/80 hover:text-red-600"
           : "",
         className
       )}
     >
       {currentStatus === 'pending' && (
-        <Clock className="h-4 w-4" />
+        <Clock className="h-3.5 w-3.5" />
       )}
       {currentStatus === 'scheduled' && (
-        <CalendarCheck className="h-4 w-4" />
+        <CalendarCheck className="h-3.5 w-3.5" />
       )}
       {currentStatus === 'published' && (
-        <Check className="h-4 w-4" />
+        <Check className="h-3.5 w-3.5" />
       )}
       {currentStatus === 'failed' && (
-        <AlertTriangle className="h-4 w-4" />
+        <AlertTriangle className="h-3.5 w-3.5" />
       )}
     </Button>
   );

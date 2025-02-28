@@ -15,13 +15,22 @@ export const createPost = async (req, res) => {
       throw new ApiError(400, 'Invalid date format');
     }
 
+    // Prepare the image object with default values
+    const image = req.body.image || {};
+
     const post = new Post({
       accountId: req.body.accountId,
       platforms: req.body.platforms,
       datePost: datePost,
       timePost: req.body.timePost,
       text: req.body.text || { post: '', title: '', subtitle: '' },
-      image: req.body.image || { url: '', size: { width: 0, height: 0 }, template: '' },
+      image: {
+        url: image.url || '',
+        size: image.size || { width: 0, height: 0 },
+        template: image.template || '',
+        video: image.video || '',
+        videoscreenshot: image.videoscreenshot || ''
+      },
       prompts: req.body.prompts || { image: '', video: '', text: '' },
       models: req.body.models || { image: '', video: '', text: '' }
     });
@@ -61,6 +70,9 @@ export const updatePost = async (req, res) => {
     datePost = date.toISOString();
   }
 
+  // Prepare the image object with videoscreenshot if provided
+  const image = req.body.image || {};
+  
   // Update the post
   const updatedPost = await Post.findByIdAndUpdate(
     id,
@@ -70,7 +82,13 @@ export const updatePost = async (req, res) => {
         datePost: datePost,
         timePost: req.body.timePost,
         text: req.body.text,
-        image: req.body.image,
+        image: {
+          url: image.url,
+          size: image.size,
+          template: image.template,
+          video: image.video,
+          videoscreenshot: image.videoscreenshot
+        },
         prompts: req.body.prompts,
         models: req.body.models,
         templatesUrls: req.body.templatesUrls,
@@ -266,5 +284,48 @@ export const clearMonthPosts = async (req, res, next) => {
     });
   } catch (error) {
     next(error);
+  }
+};
+
+// Add a new function to generate video and take screenshot
+export const generateVideo = async (req, res) => {
+  try {
+    const { prompt, model, size, accountId } = req.body;
+    
+    if (!process.env.FAL_KEY) {
+      throw new ApiError(500, 'FAL_KEY is not configured');
+    }
+
+    // Validate size parameter
+    if (!size || !size.width || !size.height) {
+      throw new ApiError(400, 'Size with valid width and height properties is required');
+    }
+
+    // Ensure width and height are numbers
+    const width = parseInt(size.width);
+    const height = parseInt(size.height);
+    
+    if (isNaN(width) || isNaN(height) || width <= 0 || height <= 0) {
+      throw new ApiError(400, 'Width and height must be positive numbers');
+    }
+   
+    // Import the textToVideo function from videoService
+    const { textToVideo } = await import('../services/videoService.js');
+    
+    // Generate video and get both video URL and screenshot URL
+    const { videoUrl, screenshotUrl } = await textToVideo(prompt, model, { 
+      size: { width, height } 
+    });
+
+    res.json({ 
+      videoUrl, 
+      screenshotUrl 
+    });
+  } catch (error) {
+    console.error('Error generating video:', error);
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    throw new ApiError(500, `Failed to generate video: ${error.message}`);
   }
 };

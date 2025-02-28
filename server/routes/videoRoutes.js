@@ -1,55 +1,54 @@
 import express from 'express';
-import { textToVideo, imageToVideo } from '../services/videoService.js';
-import Post from '../models/Post.js';
+import { auth } from '../middleware/auth.js';
 import { ApiError } from '../utils/ApiError.js';
+import { generateVideo } from '../controllers/postsController.js';
+import { imageToVideo } from '../services/videoService.js';
+import Post from '../models/Post.js';
 
 const router = express.Router();
 
-router.post('/generate', async (req, res, next) => {
+// Generate video from text
+router.post('/generate', auth, generateVideo);
+
+// Generate video from image
+router.post('/generate-from-image', auth, async (req, res, next) => {
   try {
     const { prompt, model, imageUrl, size, postId } = req.body;
 
-    if (!prompt) {
-      throw new ApiError(400, 'Prompt is required');
-    }
-    if (!model) {
-      throw new ApiError(400, 'Model ID is required');
-    }
-    if (!size || !size.width || !size.height) {
-      throw new ApiError(400, 'Size with width and height is required');
-    }
-    if (!postId) {
-      throw new ApiError(400, 'Post ID is required');
+    if (!prompt || !model || !imageUrl) {
+      throw new ApiError(400, 'Missing required fields');
     }
 
-    // Choose generation method based on imageUrl presence
-    const result = imageUrl ? 
-      await imageToVideo(prompt, model, imageUrl, { size }) :
-      await textToVideo(prompt, model, { size });
+    // Generate video and get both video URL and screenshot URL
+    const { videoUrl, screenshotUrl, requestId } = await imageToVideo(prompt, model, imageUrl, { size });
+    
+    // Update post with video URL and screenshot URL if postId is provided
+    if (postId) {
+      const post = await Post.findById(postId);
+      if (!post) {
+        throw new ApiError(404, 'Post not found');
+      }
 
-    // Update post with video URL
-    const post = await Post.findById(postId);
-    if (!post) {
-      throw new ApiError(404, 'Post not found');
+      // Preserve all existing image fields and only update the video URL and screenshot URL
+      await Post.findByIdAndUpdate(
+        postId,
+        {
+          $set: {
+            'image.video': videoUrl,
+            'image.videoscreenshot': screenshotUrl,
+            'prompts.video': prompt,
+            'models.video': model
+          }
+        },
+        { new: true }
+      );
     }
-
-    // Preserve all existing image fields and only update the video URL
-    const updatedPost = await Post.findByIdAndUpdate(
-      postId,
-      {
-        $set: {
-          'image.video': result.data.video.url,
-          'prompts.video': prompt,
-          'models.video': model
-        }
-      },
-      { new: true }
-    );
 
     res.json({ 
       success: true,
-      videoUrl: result.data.video.url,
-      requestId: result.requestId 
+      videoUrl,
+      screenshotUrl,
+      requestId
     });
   } catch (error) {
     next(error);

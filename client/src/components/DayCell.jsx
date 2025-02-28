@@ -4,6 +4,7 @@ import { Video } from 'lucide-react';
 import EditPostResponsive from './EditPostResponsive';
 import { usePosts } from '../hooks/usePosts';
 import DayCellStatusChange from './editPost/DayCellStatusChange';
+import api from '../lib/api';
 
 const DraggablePost = ({ post, index, onDragStart, children }) => {
   const [{ isDragging }, drag] = useDrag(() => ({
@@ -138,7 +139,20 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
     try {
       if (!currentPost?._id) return;
       
-      const updatedPost = await updatePost(currentPost._id, { status: newStatus });
+      // Get the current post data to ensure we don't lose any fields
+      const currentPostData = await api.getPost(currentPost._id);
+      
+      if (!currentPostData) {
+        console.error('Could not fetch current post data');
+        return;
+      }
+      
+      // Update only the status while preserving all other fields
+      const updatedPost = await updatePost(currentPost._id, { 
+        ...currentPostData,
+        status: newStatus 
+      });
+      
       // Force a refresh of the calendar
       onUpdate?.();
       return updatedPost;
@@ -218,19 +232,24 @@ const DayCell = ({ day, month, year, isToday, posts = [], accountId, currentPlat
                       currentStatus={currentPost.status} 
                       onStatusChange={handleStatusChange}
                       disabled={isLoading}
+                      postId={currentPost._id}
                     />
                     
                     {/* Image Container - Full size */}
                     <div className="absolute inset-0">
-                      {currentPost.image?.url ? (
+                      {currentPost.image?.url || (currentPost.image?.showVideo && currentPost.image?.videoscreenshot) ? (
                         <div className="relative w-full h-full">
                           <img
-                            src={currentPost.image.template}
+                            src={
+                              currentPost.image?.showVideo && currentPost.image?.videoscreenshot
+                                ? currentPost.image?.videoscreenshot 
+                                : currentPost.image?.template || currentPost.image?.url
+                            }
                             alt="Post preview"
                             className="w-full h-full object-cover rounded-xl"
                           />
                           {/* Video icon overlay */}
-                          {currentPost.image?.showVideo && (
+                          {currentPost.image?.showVideo && currentPost.image?.video && (
                             <div className="absolute inset-0 flex items-center justify-center">
                               <div className="bg-black/30 p-2 rounded-full">
                                 <Video className="w-6 h-6 text-white opacity-80" />
