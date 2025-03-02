@@ -71,7 +71,7 @@ export default function PostNow({ accountId, post }) {
     <div className='w-full'>
       <Button
         variant="outline"
-        className='w-full bg-yellow-300'
+        className='w-full bg-yellow-300 '
         onClick={handlePostNow}
         disabled={!isButtonEnabled() || isLoading}
       >

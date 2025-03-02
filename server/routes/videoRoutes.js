@@ -2,56 +2,33 @@ import express from 'express';
 import { auth } from '../middleware/auth.js';
 import { ApiError } from '../utils/ApiError.js';
 import { generateVideo } from '../controllers/postsController.js';
-import { imageToVideo } from '../services/videoService.js';
 import Post from '../models/Post.js';
 
 const router = express.Router();
 
-// Generate video from text
+// Route for generating video from text or image
 router.post('/generate', auth, generateVideo);
 
-// Generate video from image
-router.post('/generate-from-image', auth, async (req, res, next) => {
+// Legacy route for backward compatibility - can be removed later
+router.post('/generate-from-image', auth, async (req, res) => {
   try {
-    const { prompt, model, imageUrl, size, postId } = req.body;
-
-    if (!prompt || !model || !imageUrl) {
-      throw new ApiError(400, 'Missing required fields');
-    }
-
-    // Generate video and get both video URL and screenshot URL
-    const { videoUrl, screenshotUrl, requestId } = await imageToVideo(prompt, model, imageUrl, { size });
+    const { prompt, model, imageUrl, postId } = req.body;
     
-    // Update post with video URL and screenshot URL if postId is provided
-    if (postId) {
-      const post = await Post.findById(postId);
-      if (!post) {
-        throw new ApiError(404, 'Post not found');
-      }
-
-      // Preserve all existing image fields and only update the video URL and screenshot URL
-      await Post.findByIdAndUpdate(
-        postId,
-        {
-          $set: {
-            'image.video': videoUrl,
-            'image.videoscreenshot': screenshotUrl,
-            'prompts.video': prompt,
-            'models.video': model
-          }
-        },
-        { new: true }
-      );
+    // Validate required fields
+    if (!prompt || !model || !imageUrl) {
+      throw new ApiError(400, 'Missing required fields: prompt, model, and imageUrl are required');
     }
-
-    res.json({ 
-      success: true,
-      videoUrl,
-      screenshotUrl,
-      requestId
-    });
+    
+    // Forward to the main generateVideo controller with imageUrl
+    req.body = { ...req.body, imageUrl };
+    return generateVideo(req, res);
   } catch (error) {
-    next(error);
+    console.error('Error generating video from image:', error);
+    if (error instanceof ApiError) {
+      res.status(error.statusCode).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: `Failed to generate video: ${error.message}` });
+    }
   }
 });
 

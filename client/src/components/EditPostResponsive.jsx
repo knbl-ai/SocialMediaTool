@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { ImagePlus, X, Trash2 } from "lucide-react";
+import { ImagePlus, X, Trash2, Video, Image as ImageIcon } from "lucide-react";
 import { Modal } from "./ui/modal";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
@@ -16,6 +16,7 @@ import api from '../lib/api';
 import MODELS from '../config/models';
 import PulsatingButton from "@/components/ui/pulsating-button";
 import PostNow from "./editPost/PostNow";
+import ImageVideoToggle from "./editPost/ImageVideoToggle";
 // import { toast } from "react-hot-toast";
 
 
@@ -53,13 +54,10 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
   const currentPostRef = useRef(currentPost);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
 
-  console.log("currentPost", currentPost);
-
   // Update ref when currentPost changes
   useEffect(() => {
     if (currentPost) {
       currentPostRef.current = currentPost;
-      console.log("Updated currentPostRef with:", currentPost);
     }
   }, [currentPost]);
 
@@ -96,6 +94,40 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
   const [selectedImageModel, setSelectedImageModel] = useState(DEFAULT_STATE.selectedImageModel);
   const [selectedVideoModel, setSelectedVideoModel] = useState(DEFAULT_STATE.selectedVideoModel);
   const [selectedLLMModel, setSelectedLLMModel] = useState(DEFAULT_STATE.selectedLLMModel);
+
+  // Add a state to track if we're showing video or image
+  const [showVideo, setShowVideo] = useState(initialPost?.image?.showVideo || false);
+  // Add a state to track if we're using image-to-video
+  const [useImageToVideo, setUseImageToVideo] = useState(false);
+
+  // Custom model change handlers that preserve showVideo state
+  const handleImageModelChange = (newModel) => {
+    setSelectedImageModel(newModel);
+    // No need to update showVideo here as this is for image model
+  };
+
+  const handleVideoModelChange = async (newModel) => {
+    setSelectedVideoModel(newModel);
+    // Ensure showVideo remains true when changing video model
+    if (showVideo) {
+      // Explicitly update the server with the correct showVideo value
+      try {
+        if (postId) {
+          await api.request('patch', `/posts/${postId}`, {
+            models: { video: newModel },
+            image: { showVideo: true } // Force showVideo to remain true
+          });
+        }
+      } catch (error) {
+        console.error("Error preserving showVideo state:", error);
+      }
+    }
+  };
+
+  const handleLLMModelChange = (newModel) => {
+    setSelectedLLMModel(newModel);
+    // No need to update showVideo here as this is for text model
+  };
 
   // Initialize state from initialPost only once
   useEffect(() => {
@@ -156,8 +188,18 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
         
         fetchLatestPostData();
       }
+      
+      // Initialize showVideo state
+      setShowVideo(initialPost.image?.showVideo || false);
     }
   }, []); // Empty dependency array as we only want this to run once
+
+  // Update showVideo state when currentPost changes
+  useEffect(() => {
+    if (currentPost?.image?.showVideo !== undefined) {
+      setShowVideo(currentPost.image.showVideo);
+    }
+  }, [currentPost]);
 
   // Debounced save effect
   useEffect(() => {
@@ -166,6 +208,9 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
     const hasChanges = () => {
       const current = currentPostRef.current;
       if (!current) return false;
+      
+      // Also check if showVideo has changed
+      const currentShowVideo = current.image?.showVideo;
       
       return (
         !arraysEqual(current.platforms, selectedPlatforms) ||
@@ -179,7 +224,8 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
         current.prompts?.text !== textPrompt ||
         current.models?.image !== selectedImageModel ||
         current.models?.video !== selectedVideoModel ||
-        current.models?.text !== selectedLLMModel
+        current.models?.text !== selectedLLMModel ||
+        currentShowVideo !== showVideo // Check if showVideo has changed
       );
     };
 
@@ -201,14 +247,18 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
 
         // Make sure we preserve the showVideo property and other image properties
         const currentImage = currentPostRef.current?.image || {};
+        
+        // Ensure we're using the latest showVideo value from state
+        const imageWithCorrectShowVideo = {
+          ...currentImage,
+          showVideo: showVideo // Use the current state value to ensure it's up-to-date
+        };
 
         const postData = {
           platforms: selectedPlatforms,
           datePost: utcDate.toISOString().split('T')[0], // Only use the date portion
           timePost: selectedTime,
-          image: {
-            ...currentImage, // Preserve all image properties including showVideo
-          },
+          image: imageWithCorrectShowVideo, // Use our updated image object
           text: {
             post: postText,
             title: postTitle,
@@ -255,7 +305,8 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
     selectedImageModel,
     selectedVideoModel,
     selectedLLMModel,
-    updatePost
+    updatePost,
+    showVideo
   ]);
 
   const handleDimensionsChange = async (newDimensions, newSize) => {
@@ -413,6 +464,11 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
     }
   };
 
+  // Toggle between text-to-video and image-to-video
+  const handleToggleImageToVideo = () => {
+    setUseImageToVideo(prev => !prev);
+  };
+
   const onGenerateVideo = async () => {
     try {
       if (!videoPrompt || !selectedVideoModel) {
@@ -500,45 +556,84 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
         }
       };
 
-      // If we have an image URL, use imageToVideo
-      if (currentPost?.image?.url) {
-        params.imageUrl = currentPost.image.url;
-      }
-
-      const response = await api.generateVideo(params);
-
-      console.log("Video generation successful, setting showVideo to true");
-
-      // Safely build the updated post data
-      const updatedPostData = {
-        // Only spread if currentPost exists
-        ...(currentPost || {}),
-        image: {
-          // Safely spread image properties if they exist
-          ...(currentPost?.image || {}),
-          video: response.videoUrl,
-          videoscreenshot: response.screenshotUrl,
-          showVideo: true, // Explicitly set showVideo to true when generating a video
-          // Ensure size is properly set
-          size: { width, height }
-        },
-        prompts: {
-          // Safely spread prompts if they exist
-          ...(currentPost?.prompts || {}),
-          video: videoPrompt
-        },
-        models: {
-          // Safely spread models if they exist
-          ...(currentPost?.models || {}),
-          video: selectedVideoModel
-        }
-      };
+      // Check if we should use image-to-video
+      const shouldUseImageToVideo = useImageToVideo && currentPost?.image?.url;
       
-      // Update the post and state
-      const updatedPost = await updatePost(currentPostId, updatedPostData);
-      setCurrentPost(null); // Force a rerender by clearing the state
-      setTimeout(() => setCurrentPost(updatedPost), 0); // Set the new state in the next tick
-      setLocalError(null);
+      // If we have an image URL and useImageToVideo is true, use imageToVideo
+      if (shouldUseImageToVideo) {
+        params.imageUrl = currentPost.image.url;
+        
+        // Save the current image URL as screenshot before generating video
+        const imageScreenshot = currentPost.image.url;
+        
+        // Generate video using image-to-video
+        const response = await api.generateVideo(params);
+        
+        // Safely build the updated post data
+        const updatedPostData = {
+          // Only spread if currentPost exists
+          ...(currentPost || {}),
+          image: {
+            // Safely spread image properties if they exist
+            ...(currentPost?.image || {}),
+            video: response.videoUrl,
+            videoscreenshot: imageScreenshot, // Use the original image as screenshot
+            showVideo: true, // Explicitly set showVideo to true when generating a video
+            // Ensure size is properly set
+            size: { width, height }
+          },
+          prompts: {
+            // Safely spread prompts if they exist
+            ...(currentPost?.prompts || {}),
+            video: videoPrompt
+          },
+          models: {
+            // Safely spread models if they exist
+            ...(currentPost?.models || {}),
+            video: selectedVideoModel
+          }
+        };
+        
+        // Update the post and state
+        const updatedPost = await updatePost(currentPostId, updatedPostData);
+        setCurrentPost(null); // Force a rerender by clearing the state
+        setTimeout(() => setCurrentPost(updatedPost), 0); // Set the new state in the next tick
+        setLocalError(null);
+      } else {
+        // Use regular text-to-video
+        const response = await api.generateVideo(params);
+
+        // Safely build the updated post data
+        const updatedPostData = {
+          // Only spread if currentPost exists
+          ...(currentPost || {}),
+          image: {
+            // Safely spread image properties if they exist
+            ...(currentPost?.image || {}),
+            video: response.videoUrl,
+            videoscreenshot: response.screenshotUrl,
+            showVideo: true, // Explicitly set showVideo to true when generating a video
+            // Ensure size is properly set
+            size: { width, height }
+          },
+          prompts: {
+            // Safely spread prompts if they exist
+            ...(currentPost?.prompts || {}),
+            video: videoPrompt
+          },
+          models: {
+            // Safely spread models if they exist
+            ...(currentPost?.models || {}),
+            video: selectedVideoModel
+          }
+        };
+        
+        // Update the post and state
+        const updatedPost = await updatePost(currentPostId, updatedPostData);
+        setCurrentPost(null); // Force a rerender by clearing the state
+        setTimeout(() => setCurrentPost(updatedPost), 0); // Set the new state in the next tick
+        setLocalError(null);
+      }
     } catch (error) {
       console.error('Error generating video:', error);
       setLocalError(error.message || 'Failed to generate video');
@@ -587,6 +682,27 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
     } catch (error) {
       console.error('Error updating post status:', error);
       throw error;
+    }
+  };
+
+  // Add toggle function for switching between image and video
+  const handleToggleVideo = async (newShowVideo) => {
+    try {
+      if (!postId) {
+        console.error('Post ID is required to toggle video state');
+        return;
+      }
+
+      setShowVideo(newShowVideo);
+      
+      // Update showVideo in the database
+      await api.request('patch', `/posts/${postId}`, {
+        image: { showVideo: newShowVideo }
+      });
+    } catch (error) {
+      console.error('Error updating video state:', error);
+      // Revert state on error
+      setShowVideo(!newShowVideo);
     }
   };
 
@@ -658,16 +774,13 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                 videoUrl={currentPost?.image?.video}
                 templatesUrls={currentPost?.templatesUrls || []}
                 onTemplateSelect={handleTemplateSelect}
-                showVideo={currentPost?.image?.showVideo}
+                showVideo={showVideo}
                 postId={postId}
                 onImageUpload={async (imageUrl, additionalProps = {}) => {
                   try {
                     // If this is a video upload (imageUrl is null), we only update video-related properties
                     if (imageUrl === null && additionalProps.video) {
-                      console.log("EditPostResponsive: Handling video upload with:", additionalProps);
-                      
                       // Update post with new video URL and screenshot
-                      console.log("EditPostResponsive: Current post before update:", currentPost);
                       const updatedPostData = {
                         ...currentPost,
                         image: {
@@ -677,17 +790,14 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                           showVideo: true // Ensure showVideo is true when uploading a video
                         }
                       };
-                      console.log("EditPostResponsive: Updated post data to send:", updatedPostData);
                       
                       const updatedPost = await updatePost(postId, updatedPostData);
-                      console.log("EditPostResponsive: Response from updatePost:", updatedPost);
                       
                       // Force a UI refresh by temporarily clearing the state
                       setCurrentPost(null);
                       // Use setTimeout to ensure the state update is processed
                       setTimeout(() => {
                         setCurrentPost(updatedPost);
-                        console.log("EditPostResponsive: UI refreshed with new video:", updatedPost.image?.video);
                       }, 0);
                       
                       return;
@@ -704,9 +814,8 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                       await api.deleteFiles([currentPost.image.url]);
                     }
 
-                    // Get the current showVideo value
-                    const currentShowVideo = currentPost?.image?.showVideo;
-                    console.log("Current showVideo value before image generation:", currentShowVideo);
+                    // Set showVideo to false when uploading an image
+                    setShowVideo(false);
 
                     // Update post with new image URL and set it as template initially
                     const updatedPost = await updatePost(postId, {
@@ -717,7 +826,7 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
                         template: imageUrl, // Set template to the same URL initially
                         size: imageSize, // Make sure we're using the current imageSize
                         dimensions: dimensions,
-                        showVideo: currentShowVideo // Preserve the current showVideo value
+                        showVideo: false // Explicitly set showVideo to false when uploading an image
                       },
                       templatesUrls: [] // Clear existing templates
                     });
@@ -757,225 +866,233 @@ const EditPostResponsive = ({ show, onClose, date, accountId, initialPlatform, p
           </div>
 
           {/* Right Column */}
-          <div className="col-span-3 flex flex-col ">
-            {/* Top Box - Close Button */}
-            <div className="h-16 rounded-lg flex justify-end items-center pr-2">
-            <div className="flex items-center justify-end w-full">
-              <PostNow accountId={accountId} post={currentPost} />
-            </div>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={handleDelete}
-                className={`relative w-9 h-9 ${
-                  deleteConfirm 
-                    ? 'bg-red-100 hover:bg-red-200 text-red-600 w-[70px]' 
-                    : 'text-red-400 hover:text-red-500'
-                } ml-4 transition-all duration-200`}
-              >
-                {deleteConfirm ? (
-                  <span className="text-xs font-medium">Delete?</span>
-                ) : (
-                  <Trash2 className="h-4 w-4" />
-                )}
-              </Button>
+          <div className="col-span-3 flex flex-col">
+            {/* Top Box - Actions and Toggle */}
+            <div className="h-16 rounded-lg flex justify-between items-center px-2 ">
+              <div className="flex items-center w-full">
+                <PostNow accountId={accountId} post={currentPost} />
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={handleDelete}
+                  className={`relative w-9 h-9 ${
+                    deleteConfirm 
+                      ? 'bg-red-100 hover:bg-red-200 text-red-600 w-[70px]' 
+                      : 'text-red-400 hover:text-red-500'
+                  } ml-4 transition-all duration-200`}
+                >
+                  {deleteConfirm ? (
+                    <span className="text-xs font-medium">Delete?</span>
+                  ) : (
+                    <Trash2 className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
             </div>
 
             {/* Bottom Box - Generation Controls */}
             <div className="flex-1 rounded-lg">
-              <div className="h-full flex flex-col justify-between">
-                {/* Image Generation */}
-                <PostSelectItems 
-                  type="image"
-                  selectedModel={selectedImageModel}
-                  onModelChange={setSelectedImageModel}
-                  models={MODELS.image}
-                  placeholder="Describe the image you want to generate..."
-                  buttonText="Generate Image"
-                  value={imagePrompt}
-                  onChange={setImagePrompt}
-                  isLoading={isGeneratingImage}
-                  onGenerate={async () => {
-                    if (!imagePrompt || !selectedImageModel || !imageSize.width || !imageSize.height) {
-                      console.log('Missing fields for image generation:', {
-                        hasPrompt: !!imagePrompt,
-                        hasModel: !!selectedImageModel,
-                        imageSize
-                      });
-                      setLocalError('Please provide all required fields for image generation');
-                      return;
-                    }
-                    try {
-                      console.log('Starting image generation with size:', imageSize);
-                      setIsGeneratingImage(true);
-                      // Generate the main image first
-                      const { url } = await api.generateImage({
-                        prompt: imagePrompt,
-                        model: selectedImageModel,
-                        width: imageSize.width,
-                        height: imageSize.height,
-                        accountId: accountId
-                      });
-                      
-                      // Delete old templates if they exist
-                      if (currentPost?.templatesUrls?.length > 0) {
-                        await api.deleteFiles(currentPost.templatesUrls);
-                      }
-
-                      // Delete old image if it exists
-                      if (currentPost?.image?.url) {
-                        await api.deleteFiles([currentPost.image.url]);
-                      }
-
-                      console.log('Updating post with new image and size:', imageSize);
-                      
-                      // Get the current showVideo value
-                      const currentShowVideo = currentPost?.image?.showVideo;
-                      console.log("Current showVideo value before image generation:", currentShowVideo);
-                      
-                      // Update post with new image URL and set it as template initially
-                      const updatedPost = await updatePost(postId, {
-                        ...currentPost,
-                        image: {
-                          ...currentPost?.image,
-                          url: url,
-                          template: url, // Set template to the same URL initially
-                          size: imageSize, // Make sure we're using the current imageSize
-                          dimensions: dimensions,
-                          showVideo: currentShowVideo // Preserve the current showVideo value
-                        },
-                        prompts: {
-                          ...currentPost?.prompts,
-                          image: imagePrompt
-                        },
-                        models: {
-                          ...currentPost?.models,
-                          image: selectedImageModel
-                        },
-                        templatesUrls: []
-                      });
-                      
-                      setCurrentPost(updatedPost);
-                      setImageTemplate(url); // Update template state
-
-                      // Generate new templates if we have all required fields
-                      if (updatedPost.image?.url && postTitle && postSubtitle) {
+              <div className="h-full flex flex-col gap-4">
+                {/* Image/Video Toggle */}
+                <div className="flex flex-col items-center gap-3">
+                  <ImageVideoToggle 
+                    showVideo={showVideo} 
+                    onToggle={handleToggleVideo} 
+                  />
+                </div>
+                
+                {/* Conditionally show Image or Video Generation based on showVideo state */}
+                <div>
+                  {showVideo ? (
+                    /* Video Generation */
+                    <PostSelectItems 
+                      type="video"
+                      selectedModel={selectedVideoModel}
+                      onModelChange={handleVideoModelChange}
+                      models={MODELS.video}
+                      placeholder="Describe the video you want to generate..."
+                      buttonText="Generate Video"
+                      value={videoPrompt}
+                      onChange={setVideoPrompt}
+                      isLoading={isGeneratingVideo}
+                      onGenerate={onGenerateVideo}
+                      currentPost={currentPost}
+                      useImageToVideo={useImageToVideo}
+                      onToggleImageToVideo={handleToggleImageToVideo}
+                    />
+                  ) : (
+                    /* Image Generation */
+                    <PostSelectItems 
+                      type="image"
+                      selectedModel={selectedImageModel}
+                      onModelChange={handleImageModelChange}
+                      models={MODELS.image}
+                      placeholder="Describe the image you want to generate..."
+                      buttonText="Generate Image"
+                      value={imagePrompt}
+                      onChange={setImagePrompt}
+                      isLoading={isGeneratingImage}
+                      onGenerate={async () => {
+                        if (!imagePrompt || !selectedImageModel || !imageSize.width || !imageSize.height) {
+                          setLocalError('Please provide all required fields for image generation');
+                          return;
+                        }
                         try {
-                          const templatesResult = await api.generateTemplates(postId);
-                          setCurrentPost(templatesResult);
+                          setIsGeneratingImage(true);
+                          // Generate the main image first
+                          const { url } = await api.generateImage({
+                            prompt: imagePrompt,
+                            model: selectedImageModel,
+                            width: imageSize.width,
+                            height: imageSize.height,
+                            accountId: accountId
+                          });
+                          
+                          // Delete old templates if they exist
+                          if (currentPost?.templatesUrls?.length > 0) {
+                            await api.deleteFiles(currentPost.templatesUrls);
+                          }
+
+                          // Delete old image if it exists
+                          if (currentPost?.image?.url) {
+                            await api.deleteFiles([currentPost.image.url]);
+                          }
+                          
+                          // Get the current showVideo value - we want to preserve it
+                          const currentShowVideo = currentPost?.image?.showVideo || false;
+                          
+                          // Update post with new image URL and set it as template initially
+                          const updatedPost = await updatePost(postId, {
+                            ...currentPost,
+                            image: {
+                              ...currentPost?.image,
+                              url: url,
+                              template: url, // Set template to the same URL initially
+                              size: imageSize, // Make sure we're using the current imageSize
+                              dimensions: dimensions,
+                              showVideo: currentShowVideo // Preserve the current showVideo value
+                            },
+                            prompts: {
+                              ...currentPost?.prompts,
+                              image: imagePrompt
+                            },
+                            models: {
+                              ...currentPost?.models,
+                              image: selectedImageModel
+                            },
+                            templatesUrls: []
+                          });
+                          
+                          setCurrentPost(updatedPost);
+                          setImageTemplate(url); // Update template state
+
+                          // Generate new templates if we have all required fields
+                          if (updatedPost.image?.url && postTitle && postSubtitle) {
+                            try {
+                              const templatesResult = await api.generateTemplates(postId);
+                              setCurrentPost(templatesResult);
+                            } catch (error) {
+                              console.error('Error generating templates:', error);
+                              setLocalError('Image saved but template generation failed');
+                            }
+                          }
+                          setLocalError(null);
                         } catch (error) {
-                          console.error('Error generating templates:', error);
-                          setLocalError('Image saved but template generation failed');
+                          console.error('Error generating image:', error);
+                          setLocalError(error.message || 'Failed to generate image');
+                        } finally {
+                          setIsGeneratingImage(false);
                         }
+                      }}
+                    />
+                  )}
+                </div>
+
+                {/* Text Generation - Always show */}
+                <div>
+                  <PostSelectItems 
+                    type="text"
+                    selectedModel={selectedLLMModel}
+                    onModelChange={handleLLMModelChange}
+                    models={MODELS.llm}
+                    placeholder="Write your prompt for AI text generation..."
+                    buttonText="Generate Text"
+                    value={textPrompt}
+                    onChange={setTextPrompt}
+                    isLoading={isGeneratingText}
+                    onGenerate={async () => {
+                      if (!textPrompt || !selectedLLMModel) {
+                        setLocalError('Please provide all required fields for text generation');
+                        return;
                       }
-                      setLocalError(null);
-                    } catch (error) {
-                      console.error('Error generating image:', error);
-                      setLocalError(error.message || 'Failed to generate image');
-                    } finally {
-                      setIsGeneratingImage(false);
-                    }
-                  }}
-                />
+                      try {
+                        setIsGeneratingText(true);
+                        // Generate text with the prompt
+                        const result = await api.generateText({
+                          prompt: textPrompt,
+                          model: selectedLLMModel,
+                          accountId: accountId
+                        });
 
-                {/* Video Generation */}
-                <PostSelectItems 
-                  type="video"
-                  selectedModel={selectedVideoModel}
-                  onModelChange={setSelectedVideoModel}
-                  models={MODELS.video}
-                  placeholder="Describe the video you want to generate..."
-                  buttonText="Generate Video"
-                  value={videoPrompt}
-                  onChange={setVideoPrompt}
-                  isLoading={isGeneratingVideo}
-                  onGenerate={onGenerateVideo}
-                />
-
-                {/* Text Generation */}
-                <PostSelectItems 
-                  type="text"
-                  selectedModel={selectedLLMModel}
-                  onModelChange={setSelectedLLMModel}
-                  models={MODELS.llm}
-                  placeholder="Write your prompt for AI text generation..."
-                  buttonText="Generate Text"
-                  value={textPrompt}
-                  onChange={setTextPrompt}
-                  isLoading={isGeneratingText}
-                  onGenerate={async () => {
-                    if (!textPrompt || !selectedLLMModel) {
-                      setLocalError('Please provide all required fields for text generation');
-                      return;
-                    }
-                    try {
-                      setIsGeneratingText(true);
-                      // Generate text with the prompt
-                      const result = await api.generateText({
-                        prompt: textPrompt,
-                        model: selectedLLMModel,
-                        accountId: accountId
-                      });
-
-                      // Ensure we have valid data
-                      if (!result.post && !result.title && !result.subtitle) {
-                        throw new Error('Invalid response from text generation service');
-                      }
-                      
-                      // Update all text fields with the generated content
-                      let updatedPost = await updatePost(postId, {
-                        ...currentPost,
-                        text: {
-                          ...currentPost?.text,
-                          post: result.post || '',
-                          title: result.title || '',
-                          subtitle: result.subtitle || ''
-                        },
-                        prompts: {
-                          ...currentPost?.prompts,
-                          text: textPrompt
+                        // Ensure we have valid data
+                        if (!result.post && !result.title && !result.subtitle) {
+                          throw new Error('Invalid response from text generation service');
                         }
-                      });
+                        
+                        // Update all text fields with the generated content
+                        let updatedPost = await updatePost(postId, {
+                          ...currentPost,
+                          text: {
+                            ...currentPost?.text,
+                            post: result.post || '',
+                            title: result.title || '',
+                            subtitle: result.subtitle || ''
+                          },
+                          prompts: {
+                            ...currentPost?.prompts,
+                            text: textPrompt
+                          }
+                        });
 
-                      // Only generate templates if we have all required fields
-                      if (updatedPost.image?.url && updatedPost.text?.title && updatedPost.text?.subtitle) {
-                        try {
-                          const templatesResult = await api.generateTemplates(postId);
-                          // Update UI with text content and templates
-                          setCurrentPost(templatesResult);
+                        // Only generate templates if we have all required fields
+                        if (updatedPost.image?.url && updatedPost.text?.title && updatedPost.text?.subtitle) {
+                          try {
+                            const templatesResult = await api.generateTemplates(postId);
+                            // Update UI with text content and templates
+                            setCurrentPost(templatesResult);
+                            setPostText(result.post);
+                            setPostTitle(result.title);
+                            setPostSubtitle(result.subtitle);
+                          } catch (error) {
+                            console.error('Error generating templates:', error);
+                            setLocalError('Text saved but template generation failed');
+                          }
+                        } else {
+                          // Still update the UI with text content
                           setPostText(result.post);
                           setPostTitle(result.title);
                           setPostSubtitle(result.subtitle);
-                        } catch (error) {
-                          console.error('Error generating templates:', error);
-                          setLocalError('Text saved but template generation failed');
                         }
-                      } else {
-                        console.log('Skipping template generation - missing required fields');
-                        // Still update the UI with text content
-                        setPostText(result.post);
-                        setPostTitle(result.title);
-                        setPostSubtitle(result.subtitle);
+                        setLocalError(null);
+                      } catch (error) {
+                        console.error('Error generating text:', error);
+                        setLocalError(error.message || 'Failed to generate text');
+                      } finally {
+                        setIsGeneratingText(false);
                       }
-                      setLocalError(null);
-                    } catch (error) {
-                      console.error('Error generating text:', error);
-                      setLocalError(error.message || 'Failed to generate text');
-                    } finally {
-                      setIsGeneratingText(false);
-                    }
-                  }}
-                />
+                    }}
+                  />
+                </div>
+                
                 <PulsatingButton 
                   onClick={handleClose}
-                  className="w-full mt-5 bg-[#5CB338] hover:bg-[#4a9c2d] text-white rounded-lg" 
+                  className="w-full mt-auto bg-[#5CB338] hover:bg-[#4a9c2d] text-white rounded-lg" 
                   pulseColor="92 179 56"
                   duration="2s"
                 >
                   Save Changes
                 </PulsatingButton>
               </div>
-             
             </div>
           </div>
         </div>

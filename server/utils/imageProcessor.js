@@ -6,7 +6,12 @@ const STANDARD_ASPECT_RATIOS = [
   { name: '1:1', width: 1080, height: 1080 },
   { name: '4:3', width: 1280, height: 960 },
   { name: '16:9', width: 1280, height: 720 },
-  { name: '9:16', width: 720, height: 1280 }
+  { name: '9:16', width: 720, height: 1280 },
+  // Add more common aspect ratios to support a wider range of videos
+  { name: '3:2', width: 1200, height: 800 },
+  { name: '2:3', width: 800, height: 1200 },
+  { name: '5:4', width: 1250, height: 1000 },
+  { name: '4:5', width: 1000, height: 1250 }
 ];
 
 /**
@@ -38,8 +43,6 @@ export const prepareImageForVideo = async (imageUrl) => {
     const { width, height } = metadata;
     const originalRatio = width / height;
 
-    console.log(`Original image dimensions: ${width}x${height}, ratio: ${originalRatio.toFixed(3)}`);
-
     // Find the closest standard aspect ratio
     let closestRatio = STANDARD_ASPECT_RATIOS[0];
     let minDifference = Infinity;
@@ -48,19 +51,15 @@ export const prepareImageForVideo = async (imageUrl) => {
       const ratioValue = ratio.width / ratio.height;
       const difference = Math.abs(originalRatio - ratioValue);
       
-      console.log(`Comparing to ${ratio.name} (${ratioValue.toFixed(3)}): difference = ${difference.toFixed(3)}`);
-      
       if (difference < minDifference) {
         minDifference = difference;
         closestRatio = ratio;
       }
     }
 
-    console.log(`Selected aspect ratio: ${closestRatio.name} (${closestRatio.width}x${closestRatio.height})`);
-
     // For extreme aspect ratios, we might want to use a different approach
     if (minDifference > 0.5) {
-      console.warn(`Warning: Image has an unusual aspect ratio (${originalRatio.toFixed(3)}). Cropping may be significant.`);
+      // Removed console.warn about unusual aspect ratio
     }
 
     // Resize and crop the image to match the target aspect ratio
@@ -73,8 +72,6 @@ export const prepareImageForVideo = async (imageUrl) => {
       })
       .jpeg({ quality: 90 })
       .toBuffer({ resolveWithObject: true });
-
-    console.log(`Processed image: ${resizedImage.info.width}x${resizedImage.info.height}, size: ${(resizedImage.data.length / 1024 / 1024).toFixed(2)}MB`);
 
     return {
       buffer: resizedImage.data,

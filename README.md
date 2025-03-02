@@ -104,7 +104,121 @@ These improvements ensure:
 - Prevention of errors caused by special characters in filenames
 - Better error handling and logging throughout the process
 
-#### 3. Benefits and Troubleshooting
+#### 3. Image-to-Video Toggle Functionality
+We've implemented a new feature that allows users to toggle between text-to-video and image-to-video generation modes:
+
+```javascript
+// Image-to-Video Toggle Implementation
+1. UI Enhancement
+   - Added image icon next to "Video Generation" header
+   - Icon appears active/inactive based on image availability
+   - Visual feedback shows current mode (blue when active)
+   - Tooltip explains functionality to users
+
+2. State Management
+   - New state variable: useImageToVideo (boolean)
+   - Toggle function: handleToggleImageToVideo
+   - Conditional logic in video generation based on toggle state
+   - Preserves original image as screenshot when using image-to-video
+
+3. Server-Side Processing
+   - Enhanced generateVideo controller to handle both modes
+   - Detects mode based on presence of imageUrl parameter
+   - Uses appropriate video generation service based on mode
+   - Returns consistent response format for both modes
+
+4. Video Generation Flow
+   - Text-to-Video: Uses prompt to generate video from scratch
+   - Image-to-Video: Uses existing image as starting point with prompt for guidance
+   - Both modes maintain consistent dimensions and aspect ratios
+   - Both update post with appropriate video URLs and screenshots
+```
+
+**Technical Implementation:**
+
+1. **Client-Side Toggle Component**
+   ```jsx
+   // PostSelectItems.jsx
+   {type === 'video' && (
+     <div 
+       className={`flex items-center ${hasImage ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
+       onClick={() => hasImage && onToggleImageToVideo && onToggleImageToVideo()}
+       title={hasImage ? 'Toggle image-to-video mode' : 'No image available for image-to-video'}
+     >
+       <Image 
+         className={`w-4 h-4 ml-2 ${useImageToVideo ? 'text-blue-500' : 'text-gray-400'}`} 
+       />
+     </div>
+   )}
+   ```
+
+2. **Video Generation Logic**
+   ```javascript
+   // EditPostResponsive.jsx
+   const onGenerateVideo = async () => {
+     // ... existing setup code ...
+     
+     // Check if we should use image-to-video
+     const shouldUseImageToVideo = useImageToVideo && currentPost?.image?.url;
+     
+     // If we have an image URL and useImageToVideo is true, use imageToVideo
+     if (shouldUseImageToVideo) {
+       params.imageUrl = currentPost.image.url;
+       
+       // Save the current image URL as screenshot before generating video
+       const imageScreenshot = currentPost.image.url;
+       
+       // Generate video using image-to-video
+       const response = await api.generateVideo(params);
+       
+       // Update post with video URL and original image as screenshot
+       // ... update logic ...
+     } else {
+       // Use regular text-to-video
+       // ... existing text-to-video logic ...
+     }
+   };
+   ```
+
+3. **Server-Side Controller**
+   ```javascript
+   // postsController.js
+   export const generateVideo = async (req, res) => {
+     // ... existing setup code ...
+     
+     // Check if we should use image-to-video or text-to-video
+     if (imageUrl) {
+       // Use image-to-video if imageUrl is provided
+       const result = await imageToVideo(prompt, model, imageUrl, { 
+         size: { width, height } 
+       });
+       
+       videoUrl = result.videoUrl;
+       screenshotUrl = result.screenshotUrl;
+     } else {
+       // Use text-to-video if no imageUrl is provided
+       // ... existing text-to-video logic ...
+     }
+   };
+   ```
+
+**Benefits:**
+- **Enhanced User Control**: Users can choose the most appropriate video generation method
+- **Improved Results**: Using existing images often produces more consistent and predictable videos
+- **Resource Efficiency**: Image-to-video can be faster and use fewer resources than text-to-video
+- **Workflow Integration**: Seamlessly integrates with the existing image generation workflow
+- **Visual Feedback**: Clear UI indicators show which mode is active and when it's available
+
+**Usage:**
+1. First generate or upload an image in the post editor
+2. Switch to video generation tab
+3. If an image is available, the image icon next to "Video Generation" becomes clickable
+4. Click the icon to toggle between text-to-video and image-to-video modes
+5. When image-to-video is active, the icon turns blue
+6. Enter a prompt to guide the video generation
+7. Click "Generate Video" to create a video based on the selected mode
+
+#### 4. Benefits and Troubleshooting
 
 **Key Benefits:**
 - **Improved Reliability**: Eliminates failures due to non-standard filenames or unusual aspect ratios

@@ -29,7 +29,6 @@ router.post('/:accountId/publish', async (req, res) => {
       });
     }
   } catch (error) {
-    console.error('Error publishing post:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -39,8 +38,6 @@ router.post('/:accountId/download-pdf', async (req, res) => {
   try {
     const { accountId } = req.params;
     const { startDate, endDate, platform } = req.body;
-
-    console.log('Received request:', { accountId, startDate, endDate, platform });
 
     if (!platform) {
       return res.status(400).json({ error: 'Platform is required' });
@@ -69,15 +66,11 @@ router.post('/:accountId/download-pdf', async (req, res) => {
       }
     };
 
-    console.log('MongoDB query:', JSON.stringify(query, null, 2));
-
     // Fetch posts and account info
     const [posts, account] = await Promise.all([
       Post.find(query).sort({ datePost: 1 }),
       Account.findById(accountId)
     ]);
-
-    console.log(`Found ${posts.length} posts`);
 
     if (!account) {
       return res.status(404).json({ error: 'Account not found' });
@@ -103,8 +96,6 @@ router.post('/:accountId/download-pdf', async (req, res) => {
       endDate: format(parsedEndDate, 'yyyy-MM-dd'),
       contents
     };
-
-    console.log('Request to templates API:', JSON.stringify(requestBody, null, 2));
 
     // Make request to templates API
     const response = await axios.post(
@@ -134,27 +125,7 @@ router.post('/:accountId/download-pdf', async (req, res) => {
     // Send the PDF buffer directly
     res.end(Buffer.from(response.data));
   } catch (error) {
-    console.error('Error generating PDF:', error);
-    console.error('Request details:', {
-      accountId: req.params.accountId,
-      body: req.body,
-      headers: req.headers
-    });
-    
-    // Try to parse error response if it's JSON
-    let errorMessage = 'Failed to generate PDF';
-    if (error.response?.data) {
-      try {
-        const decoder = new TextDecoder('utf-8');
-        const errorData = JSON.parse(decoder.decode(error.response.data));
-        errorMessage = errorData.error || errorMessage;
-        console.error('Templates API error:', errorData);
-      } catch (e) {
-        console.error('Failed to parse error response:', e);
-      }
-    }
-    
-    res.status(500).json({ error: errorMessage });
+    res.status(500).json({ error: error.message });
   }
 });
 

@@ -51,7 +51,6 @@ router.post('/upload-video', upload.single('video'), async (req, res) => {
 
     // Upload the video file
     const videoUrl = await uploadImage(req.file);
-    console.log('Video URL:', videoUrl);
     
     // Generate a screenshot from the video
     const screenshotUrl = await getVideoScreenshot(videoUrl);

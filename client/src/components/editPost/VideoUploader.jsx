@@ -10,7 +10,6 @@ const VideoUploader = ({ videoUrl, onVideoUpload, postId }) => {
 
   // Update internal state when videoUrl prop changes
   useEffect(() => {
-    console.log("VideoUploader: videoUrl prop changed:", videoUrl);
     setCurrentVideoUrl(videoUrl);
   }, [videoUrl]);
 
@@ -37,26 +36,17 @@ const VideoUploader = ({ videoUrl, onVideoUpload, postId }) => {
 
     try {
       setIsUploading(true);
-      console.log('Starting video upload...');
       
       const formData = new FormData();
       formData.append('video', file);
       
       if (postId) {
         formData.append('postId', postId);
-        console.log('Added postId to formData:', postId);
       }
       
-      console.log('Sending video upload request...');
       const response = await api.uploadVideo(formData);
-      console.log('Video upload response:', response);
       
       if (response.videoUrl && response.screenshotUrl) {
-        console.log('Video upload successful. URLs:', {
-          videoUrl: response.videoUrl,
-          screenshotUrl: response.screenshotUrl
-        });
-        
         toast.success('Video uploaded successfully');
         
         // Update internal state immediately for a faster UI update
@@ -64,7 +54,6 @@ const VideoUploader = ({ videoUrl, onVideoUpload, postId }) => {
         
         // Call the callback with both URLs
         if (onVideoUpload) {
-          console.log('Calling onVideoUpload with:', response.videoUrl, response.screenshotUrl);
           onVideoUpload(response.videoUrl, response.screenshotUrl);
         } else {
           console.warn('onVideoUpload callback is not defined');
@@ -112,7 +101,7 @@ const VideoUploader = ({ videoUrl, onVideoUpload, postId }) => {
                 controls
                 autoPlay
                 loop
-                style={{ maxWidth: '100%', maxHeight: '100%' }}
+                style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
                 key={currentVideoUrl} // Add key to force re-render when URL changes
               >
                 <source src={currentVideoUrl} type="video/mp4" />
@@ -123,7 +112,7 @@ const VideoUploader = ({ videoUrl, onVideoUpload, postId }) => {
         ) : (
           <div className="flex flex-col items-center justify-center gap-2">
             <Video className="h-12 w-12 text-gray-400 dark:text-gray-500" />
-            <span className="text-sm text-gray-500 dark:text-gray-400">Click to upload video</span>
+            <span className="text-sm text-gray-500 dark:text-gray-400">Click to upload video (any aspect ratio)</span>
           </div>
         )}
       </div>

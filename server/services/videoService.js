@@ -80,13 +80,17 @@ const calculateAspectRatio = (size) => {
 
   const ratio = width / height;
   
-  // Round to common aspect ratios
+  // Round to common aspect ratios with more precise thresholds
   if (Math.abs(ratio - 1) < 0.1) return '1:1'; 
-  else if (width > height && height === 720) return '16:9';
-  else if (width > height && height === 960) return '4:3';
+  else if (Math.abs(ratio - 16/9) < 0.1) return '16:9';
+  else if (Math.abs(ratio - 4/3) < 0.1) return '4:3';
   else if (Math.abs(ratio - 9/16) < 0.1) return '9:16';
+  else if (Math.abs(ratio - 3/2) < 0.1) return '3:2';
+  else if (Math.abs(ratio - 2/3) < 0.1) return '2:3';
   
-  return '1:1';
+  // If no close match, return the closest standard ratio
+  if (ratio > 1) return ratio > 1.5 ? '16:9' : '4:3';
+  else return ratio < 0.67 ? '9:16' : '3:4';
 };
 
 /**
@@ -115,7 +119,13 @@ export const textToVideo = async (prompt, model, options = {}) => {
 
     const duration = DURATIONS.includes(options.duration) ? options.duration : '5';
     let aspect_ratio = calculateAspectRatio(options.size);
-    if (model === 'fal-ai/luma-dream-machine/ray-2' && aspect_ratio === '1:1') aspect_ratio = '16:9';
+    
+    // Only adjust aspect ratio if absolutely necessary for model compatibility
+    const modelSupports1to1 = model !== 'fal-ai/luma-dream-machine/ray-2';
+    
+    if (!modelSupports1to1 && aspect_ratio === '1:1') {
+      aspect_ratio = '16:9';
+    }
 
     const result = await fal.subscribe(model, {
       input: {
@@ -169,7 +179,6 @@ export const imageToVideo = async (prompt, model, imageUrl, options = {}) => {
     }
 
     // Process the image to ensure it has a standard aspect ratio
-  
     const processedImage = await prepareImageForVideo(imageUrl);
     
     // Use the processed image dimensions and aspect ratio
@@ -189,7 +198,13 @@ export const imageToVideo = async (prompt, model, imageUrl, options = {}) => {
 
     // Use the aspect ratio from the processed image
     let aspect_ratio = processedImage.aspectRatio;
-    if (model === 'fal-ai/luma-dream-machine/ray-2' && aspect_ratio === '1:1') aspect_ratio = '16:9';
+    
+    // Only adjust aspect ratio if absolutely necessary for model compatibility
+    const modelSupports1to1 = model !== 'fal-ai/luma-dream-machine/ray-2';
+    
+    if (!modelSupports1to1 && aspect_ratio === '1:1') {
+      aspect_ratio = '16:9';
+    }
 
     const result = await fal.subscribe(`${model}/image-to-video`, {
       input: {

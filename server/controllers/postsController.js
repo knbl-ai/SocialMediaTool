@@ -52,16 +52,11 @@ export const createPost = async (req, res) => {
 export const updatePost = async (req, res) => {
   const { id } = req.params;
   
-  console.log('updatePost: Received request to update post:', id);
-  console.log('updatePost: Request body:', JSON.stringify(req.body, null, 2));
-  
   // Get the old post
   const oldPost = await Post.findById(id);
   if (!oldPost) {
     throw ApiError.notFound('Post not found');
   }
-  
-  console.log('updatePost: Found existing post:', JSON.stringify(oldPost, null, 2));
 
   // If datePost is provided, ensure it's a valid date
   let datePost = req.body.datePost;
@@ -86,8 +81,6 @@ export const updatePost = async (req, res) => {
     if (req.body.image.video !== undefined) imageUpdate.video = req.body.image.video;
     if (req.body.image.videoscreenshot !== undefined) imageUpdate.videoscreenshot = req.body.image.videoscreenshot;
   }
-  
-  console.log('updatePost: Prepared image update:', JSON.stringify(imageUpdate, null, 2));
 
   // Update the post
   const updatedPost = await Post.findByIdAndUpdate(
@@ -115,8 +108,6 @@ export const updatePost = async (req, res) => {
   if (!updatedPost) {
     throw ApiError.notFound('Post not found');
   }
-  
-  console.log('updatePost: Updated post:', JSON.stringify(updatedPost, null, 2));
 
   res.json(updatedPost);
 };
@@ -305,7 +296,7 @@ export const clearMonthPosts = async (req, res, next) => {
 // Add a new function to generate video and take screenshot
 export const generateVideo = async (req, res) => {
   try {
-    const { prompt, model, size, accountId } = req.body;
+    const { prompt, model, size, accountId, imageUrl } = req.body;
     
     if (!process.env.FAL_KEY) {
       throw new ApiError(500, 'FAL_KEY is not configured');
@@ -324,13 +315,31 @@ export const generateVideo = async (req, res) => {
       throw new ApiError(400, 'Width and height must be positive numbers');
     }
    
-    // Import the textToVideo function from videoService
-    const { textToVideo } = await import('../services/videoService.js');
+    // Import the necessary functions from videoService
+    const { textToVideo, imageToVideo } = await import('../services/videoService.js');
     
-    // Generate video and get both video URL and screenshot URL
-    const { videoUrl, screenshotUrl } = await textToVideo(prompt, model, { 
-      size: { width, height } 
-    });
+    let videoUrl, screenshotUrl;
+    
+    // Check if we should use image-to-video or text-to-video
+    if (imageUrl) {
+      // Use image-to-video if imageUrl is provided
+      const result = await imageToVideo(prompt, model, imageUrl, { 
+        size: { width, height } 
+      });
+      
+      videoUrl = result.videoUrl;
+      // For image-to-video, we could use the original image as the screenshot
+      // but we'll use the generated screenshot for consistency
+      screenshotUrl = result.screenshotUrl;
+    } else {
+      // Use text-to-video if no imageUrl is provided
+      const result = await textToVideo(prompt, model, { 
+        size: { width, height } 
+      });
+      
+      videoUrl = result.videoUrl;
+      screenshotUrl = result.screenshotUrl;
+    }
 
     res.json({ 
       videoUrl, 

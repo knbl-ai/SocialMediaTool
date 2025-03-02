@@ -262,15 +262,9 @@ router.post('/:id/generate-templates', auth, async (req, res) => {
         { new: true }
       );
 
-      // Delete old templates from bucket
+      // Delete old templates if they exist
       if (oldTemplateUrls.length > 0) {
-        try {
-          await deleteFiles(oldTemplateUrls);
-          console.log('Successfully deleted old templates');
-        } catch (deleteError) {
-          console.error('Error deleting old templates:', deleteError);
-          // Don't throw error here, as new templates were successfully generated
-        }
+        await deleteFiles(oldTemplateUrls);
       }
 
       res.json({ 

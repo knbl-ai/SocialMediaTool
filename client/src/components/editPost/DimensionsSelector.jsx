@@ -23,8 +23,8 @@ export const DimensionsSelector = ({ value, onChange }) => {
   };
 
   return (
-    <Select value={value} onValueChange={handleChange}>
-      <SelectTrigger className="h-[40px] bg-background">
+    <Select value={value} onValueChange={handleChange} className="w-[100px]">
+      <SelectTrigger className="h-[40px] bg-background w-[9vw]">
         <SelectValue placeholder="Select format" />
       </SelectTrigger>
       <SelectContent>
