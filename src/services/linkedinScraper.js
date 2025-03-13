@@ -19,6 +19,12 @@ class LinkedInScraper {
     this.loginEmail = process.env.LINKEDIN_EMAIL;
     this.loginPassword = process.env.LINKEDIN_PASSWORD;
     this.isLoggedIn = false;
+    
+    // Log environment variable status (without revealing actual credentials)
+    console.log('LinkedIn Scraper Configuration:');
+    console.log(`- Cookies Path: ${this.cookiesPath}`);
+    console.log(`- LinkedIn Email: ${this.loginEmail ? 'Set' : 'Not set'}`);
+    console.log(`- LinkedIn Password: ${this.loginPassword ? 'Set' : 'Not set'}`);
   }
 
   async acquireBrowserLock(timeout = 30000) {
@@ -329,6 +335,11 @@ class LinkedInScraper {
 
   async login() {
     try {
+      // Check if login credentials are defined
+      if (!this.loginEmail || !this.loginPassword) {
+        throw new Error('LinkedIn login credentials are missing. Please check your .env file.');
+      }
+      
       // Go to LinkedIn login page
       await this.page.goto('https://www.linkedin.com/login', { waitUntil: 'domcontentloaded' });
       
