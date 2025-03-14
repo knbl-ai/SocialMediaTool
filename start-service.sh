@@ -14,7 +14,7 @@ fi
 
 # Start ngrok in the background
 echo "Starting ngrok tunnel..."
-nohup ngrok http 3000 --log=stdout > ./logs/ngrok.log 2>&1 &
+nohup ngrok http 3001 --log=stdout > ./logs/ngrok.log 2>&1 &
 
 # Save the ngrok PID
 echo $! > ./logs/ngrok.pid
