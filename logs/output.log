@@ -265,3 +265,65 @@
 2025-03-13 19:07:29: Successfully extracted 20 company posts
 2025-03-13 19:07:29: Profile scraping completed successfully
 2025-03-13 19:07:46: No personal profile card found
+2025-04-06 17:26:14: LinkedIn Scraper Configuration:
+2025-04-06 17:26:14: - Cookies Path: ./cookies.json
+2025-04-06 17:26:14: - LinkedIn Email: Set
+2025-04-06 17:26:14: - LinkedIn Password: Set
+2025-04-06 17:26:14: Server running on port 3001
+2025-04-06 17:26:14: Health check available at http://localhost:3001/health
+2025-04-06 17:26:14: LinkedIn scraping endpoint available at http://localhost:3001/api/linkedin
+2025-04-06 17:26:58: Received scrape request
+2025-04-06 17:27:15: Received scrape request
+2025-04-06 17:27:15: Processing request for LinkedIn URL: https://www.linkedin.com/company/rolls-royce/posts/?feedView=all
+2025-04-06 17:27:15: Checking for existing browser...
+2025-04-06 17:27:15: Browser lock acquired
+2025-04-06 17:27:15: No WebSocket endpoint file found
+2025-04-06 17:27:15: Browser lock released
+2025-04-06 17:27:15: No existing browser found or connection failed, initializing LinkedIn scraper...
+2025-04-06 17:27:15: Initializing LinkedIn scraper...
+2025-04-06 17:27:15: Global browser status: null
+2025-04-06 17:27:15: Browser lock acquired
+2025-04-06 17:27:15: No WebSocket endpoint file found
+2025-04-06 17:27:15: Launching a new browser instance
+2025-04-06 17:27:16: Error saving browser endpoint: globalBrowser.wsEndpoint is not a function
+2025-04-06 17:27:16: Browser assigned to scraper instance
+2025-04-06 17:27:16: Creating new browser context
+2025-04-06 17:27:16: Cookies loaded successfully
+2025-04-06 17:27:16: Creating new page
+2025-04-06 17:27:18: Checking for security checkpoints...
+2025-04-06 17:27:19: Already logged in to LinkedIn
+2025-04-06 17:27:19: Browser lock released
+2025-04-06 17:27:19: LinkedIn scraper initialization successful
+2025-04-06 17:27:19: Starting profile scraping...
+2025-04-06 17:27:19: Navigating to profile: https://www.linkedin.com/company/rolls-royce/posts/?feedView=all
+2025-04-06 17:27:21: Waiting for profile page to load...
+2025-04-06 17:27:23: Profile page loaded, proceeding with scraping
+2025-04-06 17:27:23: Detected profile type: Company
+2025-04-06 17:27:23: Scraping company profile data...
+2025-04-06 17:27:24: Debug screenshot saved as company-profile-debug.png
+2025-04-06 17:27:24: Attempting to scrape company posts...
+2025-04-06 17:27:24: Found posts tab, clicking...
+2025-04-06 17:27:26: Scrolling to load more posts...
+2025-04-06 17:27:26: Starting scroll to load more posts...
+2025-04-06 17:27:26: Initially found 3 posts before scrolling
+2025-04-06 17:27:27: After scroll attempt 1, found 5 posts
+2025-04-06 17:27:28: After scroll attempt 2, found 6 posts
+2025-04-06 17:27:29: After scroll attempt 3, found 6 posts
+2025-04-06 17:27:30: After scroll attempt 4, found 7 posts
+2025-04-06 17:27:31: After scroll attempt 5, found 10 posts
+2025-04-06 17:27:32: After scroll attempt 6, found 10 posts
+2025-04-06 17:27:33: After scroll attempt 7, found 10 posts
+2025-04-06 17:27:33: No new posts found, trying a longer scroll...
+2025-04-06 17:27:36: After scroll attempt 8, found 13 posts
+2025-04-06 17:27:37: After scroll attempt 9, found 16 posts
+2025-04-06 17:27:38: After scroll attempt 10, found 16 posts
+2025-04-06 17:27:39: After scroll attempt 11, found 16 posts
+2025-04-06 17:27:39: No new posts found, trying a longer scroll...
+2025-04-06 17:27:41: After scroll attempt 12, found 22 posts
+2025-04-06 17:27:41: Finished scrolling. Found 22 posts after 12 scroll attempts.
+2025-04-06 17:27:41: Company posts screenshot saved as company-posts-loaded.png
+2025-04-06 17:27:41: Found 33 company posts with selector: .ember-view.occludable-update
+2025-04-06 17:27:41: Processing 20 company posts...
+2025-04-06 17:27:41: Successfully extracted 20 company posts
+2025-04-06 17:27:41: Profile scraping completed successfully
+2025-04-06 17:27:51: No personal profile card found
